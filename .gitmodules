@@ -1,0 +1,3 @@
+[submodule "st_interp"]
+	path = st_interp
+	url = git@github.com:Ludecan/st_interp.git
