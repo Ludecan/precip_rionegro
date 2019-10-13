@@ -1,0 +1,4 @@
+*.RData
+*.Rhistory
+ResultadosEjemplo/
+datos/CartografiaBase/RCache/
