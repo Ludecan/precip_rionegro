@@ -12,15 +12,10 @@ setwd('F:/ADME/precip_rionegro')
 pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 
-source(paste(pathSTInterp, 'descargador/descargadorEx.r', sep=''))
-
-dt_ini <- '2018-01-01'
-dt_fin <- '2019-10-12'
-url <- paste('***REMOVED***?dtIni=', dt_ini, '&dtFin=', dt_fin, 
-             sep = '')
-localFile <- paste(gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx', sep = '')
-descargarArchivos(urls = url, nombresArchivosDestino = localFile, forzarReDescarga = T)
-
+source('descargaDatos.r')
+localFile <- descargaPluviosADME(dt_ini='2010-01-01', dt_fin = '2019-10-26',
+                                 pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
+localFile <- paste(pathDatos, 'pluviometros/20181110_20191026_rainfall.xlsx')
 # 0 - Comentarios iniciales
 # Este script sirve como plantilla base para llevar a cabo todos los pasos del pipeline de 
 # interpolación.
@@ -54,6 +49,7 @@ valoresObservaciones <- datos$datos
 source(paste(pathSTInterp, 'grillas/uIOGrillas.r', sep=''))
 proj4StringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
 coordsAInterpolar <- leerGrillaGDAL(nombreArchivo = paste(pathDatos, 'grilla_uy.tiff', sep=''))
+coordsAInterpolar <- as(geometry(coordsAInterpolar), 'SpatialPixels')
 
 # 4 - Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
 source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
