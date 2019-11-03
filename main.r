@@ -13,13 +13,12 @@ pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 
 source('descargaDatos.r')
-localFile <- descargaPluviosADME(dt_ini='2010-01-01', dt_fin = '2019-10-26',
+localFile <- descargaPluviosADME(dt_ini='2018-10-21', dt_fin = '2019-10-26',
                                  pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
-localFile <- paste(pathDatos, 'pluviometros/20181110_20191026_rainfall.xlsx')
+
 # 0 - Comentarios iniciales
 # Este script sirve como plantilla base para llevar a cabo todos los pasos del pipeline de 
 # interpolación.
-
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
@@ -33,7 +32,7 @@ localFile <- paste(pathDatos, 'pluviometros/20181110_20191026_rainfall.xlsx')
 # Los fuentes que están en la librería hacen instant_pkgs de los paquetes que precisan así que 
 # seguramente se instale alguno más
 source(paste(pathSTInterp, 'instalarPaquetes/instant_pkgs.r', sep=''))
-instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF'))
+instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'h5', 'ncdf4'))
 
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones

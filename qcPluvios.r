@@ -14,8 +14,6 @@ coordsAInterpolar <- as(geometry(coordsAInterpolar), 'SpatialPixels')
 shpBase <- cargarSHP(paste(pathDatos, 'CartografiaBase/CuencasPrincipales.shp', sep=''))
 shpBase <- spTransform(shpBase, proj4string(coordsAInterpolar))
 
-shpBase[3,]
-
 i <- !is.na(over(coordsAInterpolar, shpBase[3,])[,1])
 coordsAInterpolar <- coordsAInterpolar[i]
 
@@ -49,11 +47,11 @@ dist <- rdist(coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
 bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
-estacionesRaras <- names(bajaCorr)[bajaCorr >= 4]
+estacionesRaras <- names(bajaCorr)[bajaCorr >= 3]
+# estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
 
 clasesEstaciones <- rep('General', nrow(estaciones))
-for (estacion in estacionesRaras)
-  clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
+for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
 
 graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
                        nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
