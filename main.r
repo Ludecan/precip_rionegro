@@ -12,6 +12,10 @@ setwd('F:/ADME/precip_rionegro')
 pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 
+dt_ini='2018-10-21'
+dt_fin = '2019-10-26'
+horaUTCInicioAcumulacion = 10
+
 source('descargaDatos.r')
 localFile <- descargaPluviosADME(dt_ini='2018-10-21', dt_fin = '2019-10-26',
                                  pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
@@ -134,6 +138,10 @@ params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemp
 # La función cargar regresor se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
 pathsRegresores <- NULL
+
+pathsRegresores <- descargaGSMaP(
+  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
+  shpBase = shpMask$shp)
 
 # Las climatologías son un poco diferentes y por ahora las cargo "a mano". 
 # Al pasarle por arriba a pathsRegresores, estoy dejando como regresor solo las climatologías, 
