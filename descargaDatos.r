@@ -19,12 +19,10 @@ descargaPluviosADME <- function(dt_ini=dt_fin, dt_fin=date(now()), pathSalida='d
 }
 
 descargaGSMaP <- function(
-    dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 24*60*60, dt_fin=date(now()),
+    dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL) {
   urlBase <- 'ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/'
   producto <- 'hourly_G'
-  
-  authInfo <- fromJSON(txt = 'GSMaP_authInfo.json')
   
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion + 1)
@@ -42,12 +40,11 @@ descargaGSMaP <- function(
   ctl$xdef$from <- ctl$xdef$from - 180
   ctl$xdef$vals <- ctl$xdef$vals - 180
   
-  
   # Armo urls y pathsLocales horarios
   horas <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="hour")
   urls <- strftime(x = horas, 
                    format = paste(urlBase, producto, '/%Y/%m/%d/gsmap_gauge.%Y%m%d.%H%M.dat.gz', sep=''))
-  pathsLocales <- paste(pathSalida, basename(urls), sep='')
+  pathsLocales <- paste(pathSalida, 'originales/', basename(urls), sep='')
   pathsLocalesDescomprimidos <- substr(pathsLocales, start = 1, stop = nchar(pathsLocales) - 3)
   # write(toJSON(authInfo), 'GSMaP_authInfo.json')
   
@@ -63,27 +60,100 @@ descargaGSMaP <- function(
     for (i in seq_along(iNoExisten)) { 
       iHorasADescargar[(24*(i-1) + 1):(24*i)] <- iHorasADescargar[(24*(i-1) + 1):(24*i)] + (iNoExisten[i]-1)*24
     }
-    # Si ya existe el archivo o el descomprimido, lo omito de las descargas
-    idx <- (!file.exists(pathsLocales[iHorasADescargar]) | file.info(pathsLocales[iHorasADescargar])$size <= 0) |
-           (!file.exists(pathsLocalesDescomprimidos[iHorasADescargar]) | file.info(pathsLocalesDescomprimidos[iHorasADescargar])$size <= 0)
     
-    res <- descargarArchivos(
-      urls = urls, nombresArchivosDestino = pathsLocales[iHorasADescargar][idx], authInfo = authInfo)
-    if (any(res == 0)) {
-      stop(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
+    # Si ya existe el archivo o el descomprimido, lo omito de las descargas
+    idx <- iHorasADescargar[
+            (!file.exists(pathsLocales[iHorasADescargar]) | file.info(pathsLocales[iHorasADescargar])$size <= 0) &
+            (!file.exists(pathsLocalesDescomprimidos[iHorasADescargar]) | file.info(pathsLocalesDescomprimidos[iHorasADescargar])$size <= 0)]
+    if (length(idx) > 0) {
+      res <- descargarArchivos(
+        urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
+        nConexionesSimultaneas = 10)
+      if (any(res == 0)) {
+        stop(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+      }
     }
     
-    # Descomprimo en paralelo
-    nCoresAUsar <- min(detectCores(T, T), length(pathsLocales))
-    cl <- makeCluster(getOption('cl.cores', nCoresAUsar))
-    parSapplyLB(cl = cl, X = pathsLocales[iHorasADescargar], FUN = function(x) try(R.utils::gunzip(x)))
-    stopCluster(cl)
-    pathsLocales
+    # Si ya existe el descomprimido lo omito de las descompresiones
+    idx <- iHorasADescargar[file.exists(pathsLocales[iHorasADescargar]) & 
+                            (!file.exists(pathsLocalesDescomprimidos[iHorasADescargar]) | 
+                             file.info(pathsLocalesDescomprimidos[iHorasADescargar])$size <= 0)]
+    if (length(idx) > 0) {
+      # Descomprimo en paralelo
+      nCoresAUsar <- min(detectCores(T, T), length(pathsLocales))
+      cl <- makeCluster(getOption('cl.cores', nCoresAUsar))
+      parSapplyLB(cl = cl, X = pathsLocales[idx], FUN = R.utils::gunzip, overwrite=TRUE)
+      stopCluster(cl)
+    }
     
     agregacionTemporalGrillada(
-      fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar], 
-      formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), nFechasAAgregar = 24,
-      funcionAgregacion = base::sum, padding = FALSE, ctl=ctl, shpBase = shpBase)
+      fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
+      formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
+      nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
+      overlap = FALSE)
+    # unlink(pathsLocales)
+  }
+  return(pathsLocalesDiarios)
+}
+
+descargaGPM <- function(
+    dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
+    horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
+    productVersion='V06B') {
+  urlBase <- 'ftp://jsimpson.pps.eosdis.nasa.gov/data/imerg/'
+  producto <- 'gis'
+  
+  # fijo la hora inicial
+  dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
+  dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion-1)
+  
+  formatoPrefijo <- paste(urlBase, producto, '/%Y/%m/3B-HHR-L.MS.MRG.3IMERG.%Y%m%d-S%H%M%S', sep='')
+  formatoE <- '-E%H%M%S.'
+  formatoPostfijo <- paste('%04d.', productVersion, '.30min.tif', sep='')
+  
+  # Armo urls y pathsLocales horarios
+  mediasHoras <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin) + 30 * 60, by="30 mins")
+  urls <- paste(strftime(x = head(mediasHoras, -1), format = formatoPrefijo),
+                strftime(x=tail(mediasHoras, -1) - 1, format = formatoE),
+                sprintf(fmt = formatoPostfijo, 
+                        (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30), sep='')
+  
+  pathsLocales <- paste(pathSalida, 'originales/', basename(urls), sep='')
+  
+  # Armo paths locales diarios para la agregación
+  dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
+  pathsLocalesDiarios <- strftime(x = dias, format = paste(pathSalida, '%Y%m%d.tif', sep=''))
+  
+  # Busco los paths locales diarios que no existan
+  iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)
+  if (length(iNoExisten) > 0) {
+    # Descargo los archivos horarios de los paths diarios que no existan
+    numPeriodos <- 48
+    iPeriodosADescargar <- rep(1:numPeriodos, length(iNoExisten))
+    for (i in seq_along(iNoExisten)) { 
+      idx <- (numPeriodos*(i-1) + 1):(numPeriodos*i)
+      iPeriodosADescargar[idx] <- iPeriodosADescargar[idx] + (iNoExisten[i]-1)*numPeriodos
+    }
+    
+    # Si ya existe el archivo o el descomprimido, lo omito de las descargas
+    idx <- iPeriodosADescargar[
+      (!file.exists(pathsLocales[iPeriodosADescargar]) |
+       file.info(pathsLocales[iPeriodosADescargar])$size <= 0)]
+    
+    if (length(idx) > 0) {
+      res <- descargarArchivos(
+        urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
+        nConexionesSimultaneas = 10)
+      if (any(res == 0)) {
+        stop(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+      }
+    }
+    
+    agregacionTemporalGrillada(
+      fechas = head(mediasHoras, -1), pathsRegresor = pathsLocales,
+      formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
+      minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
+      funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE)
     # unlink(pathsLocales)
   }
   return(pathsLocalesDiarios)

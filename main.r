@@ -125,6 +125,12 @@ params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemp
                                         nCoresAUsar=0, 
                                         modoDiagnostico = TRUE)
 
+# Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
+shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=params$pathSHPMapaBase, grilla=coordsAInterpolar)
+# Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
+# mapas independientemente de los datos que tenga
+xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpMask$shp), ejesXYLatLong = T)
+
 # La otra parte de la función F a definir son los valores de U1, U2, ... Un.
 # Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
 # regresor y con una fila por fecha
@@ -140,6 +146,9 @@ params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemp
 pathsRegresores <- NULL
 
 pathsRegresores <- descargaGSMaP(
+  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
+  shpBase = shpMask$shp)
+pathsRegresores <- descargaGPM(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
   shpBase = shpMask$shp)
 
@@ -166,11 +175,6 @@ params$formulaCoordenadas <- 'x + y'
 listaMapas <- createDefaultListaMapas(paramsIyM = params, fechasObservaciones = fechasObservaciones,
                                       dibujarEscalaFija=F, salvarGeoTiff=T, recalcularSiYaExiste=F)
 
-# Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
-shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=params$pathSHPMapaBase, grilla=coordsAInterpolar)
-# Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
-# mapas independientemente de los datos que tenga
-xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpMask$shp), ejesXYLatLong = T)
 
 # Una vez que está todo armado, la función nombreModelo sirve para ver que el modelo que
 # especificamos sea efectivamente el que queremos
