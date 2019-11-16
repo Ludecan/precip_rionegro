@@ -33,7 +33,7 @@ descargaGSMaP <- function(
   pathLocalCTL <- paste(pathSalida, nomArchCTL, sep = '')
   if (!file.exists(pathLocalCTL) | file.info(pathLocalCTL)$size <= 0) {
     res <- descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
-                             nombresArchivosDestino = pathLocalCTL, authInfo = authInfo)  
+                             nombresArchivosDestino = pathLocalCTL)  
   }
   ctl <- parseCTL_V2(ctlFile = pathLocalCTL)
   # Corrijo la longitud a estar en -180, 180. Esto se podría pasaer directo al parseCTL_v2
@@ -70,7 +70,7 @@ descargaGSMaP <- function(
         urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
         nConexionesSimultaneas = 10)
       if (any(res == 0)) {
-        stop(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+        warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
       }
     }
     
@@ -145,7 +145,7 @@ descargaGPM <- function(
         urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
         nConexionesSimultaneas = 10)
       if (any(res == 0)) {
-        stop(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+        warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
       }
     }
     
