@@ -47,7 +47,9 @@ dist <- rdist(coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
 bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
-estacionesRaras <- names(bajaCorr)[bajaCorr >= 3]
+corrNA <- sapply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
+estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 3], names(corrNA[corrNA])))
+  
 # estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
 
 clasesEstaciones <- rep('General', nrow(estaciones))
@@ -112,7 +114,7 @@ mapaEstacionesConDistMax <- mapaEstaciones +
   geom_text(data=dfRadio, aes(x=x1 + distMax / 2, y=y1 + 20, label=value), size=5, colour="black")
 
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
-       dpi=dpi, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
+       dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
 
 
 
@@ -125,7 +127,7 @@ test <- testEspacialPrecipitacion(
 mapearResultadosDeteccionOutliersV2(
   test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
   tiposOutliersDeInteres = c(TTO_OutlierPorLoBajo, TTO_OutlierPorLoAlto, TTO_PrecipitacionAislada, TTO_SequedadAislada),
-  carpetaSalida = 'Resultados/2-QC/mapas', shpBase = shpBase)
+  carpetaSalida = 'Resultados/2-QC/mapas/', shpBase = shpBase)
 
 test[test$tipoOutlier == TTO_OutlierPorLoBajo, ]
 test[test$tipoOutlier == TTO_OutlierPorLoAlto, ]

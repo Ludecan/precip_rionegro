@@ -36,7 +36,7 @@ descargaGSMaP <- function(
                              nombresArchivosDestino = pathLocalCTL)  
   }
   ctl <- parseCTL_V2(ctlFile = pathLocalCTL)
-  # Corrijo la longitud a estar en -180, 180. Esto se podría pasaer directo al parseCTL_v2
+  # Corrijo la longitud a estar en -180, 180. Esto se podría pasar directo al parseCTL_v2
   ctl$xdef$from <- ctl$xdef$from - 180
   ctl$xdef$vals <- ctl$xdef$vals - 180
   
@@ -150,7 +150,8 @@ descargaGPM <- function(
     }
     
     agregacionTemporalGrillada(
-      fechas = head(mediasHoras, -1), pathsRegresor = pathsLocales,
+      fechas = head(mediasHoras[iPeriodosADescargar], -1), 
+      pathsRegresor = pathsLocales[iPeriodosADescargar],
       formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
       minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
       funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE)
