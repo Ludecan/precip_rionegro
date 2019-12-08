@@ -20,7 +20,8 @@ descargaPluviosADME <- function(dt_ini=dt_fin, dt_fin=date(now()), pathSalida='d
 
 descargaGSMaP <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
-    horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL) {
+    horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
+    forzarReDescarga=FALSE) {
   urlBase <- 'ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/'
   producto <- 'hourly_G'
   
@@ -31,10 +32,9 @@ descargaGSMaP <- function(
   # Descargo y parseo el CTL
   nomArchCTL <- paste('GSMaP_NRT.', producto, '.rain.ctl', sep = '')
   pathLocalCTL <- paste(pathSalida, nomArchCTL, sep = '')
-  if (!file.exists(pathLocalCTL) | file.info(pathLocalCTL)$size <= 0) {
-    res <- descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
-                             nombresArchivosDestino = pathLocalCTL)  
-  }
+  descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
+                    nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga, 
+                    curlOpts = curlOptions(netrc=1))
   ctl <- parseCTL_V2(ctlFile = pathLocalCTL)
   # Corrijo la longitud a estar en -180, 180. Esto se podría pasar directo al parseCTL_v2
   ctl$xdef$from <- ctl$xdef$from - 180
@@ -61,29 +61,11 @@ descargaGSMaP <- function(
       iHorasADescargar[(24*(i-1) + 1):(24*i)] <- iHorasADescargar[(24*(i-1) + 1):(24*i)] + (iNoExisten[i]-1)*24
     }
     
-    # Si ya existe el archivo o el descomprimido, lo omito de las descargas
-    idx <- iHorasADescargar[
-            (!file.exists(pathsLocales[iHorasADescargar]) | file.info(pathsLocales[iHorasADescargar])$size <= 0) &
-            (!file.exists(pathsLocalesDescomprimidos[iHorasADescargar]) | file.info(pathsLocalesDescomprimidos[iHorasADescargar])$size <= 0)]
-    if (length(idx) > 0) {
-      res <- descargarArchivos(
-        urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
-        nConexionesSimultaneas = 10)
-      if (any(res == 0)) {
-        warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
-      }
-    }
-    
-    # Si ya existe el descomprimido lo omito de las descompresiones
-    idx <- iHorasADescargar[file.exists(pathsLocales[iHorasADescargar]) & 
-                            (!file.exists(pathsLocalesDescomprimidos[iHorasADescargar]) | 
-                             file.info(pathsLocalesDescomprimidos[iHorasADescargar])$size <= 0)]
-    if (length(idx) > 0) {
-      # Descomprimo en paralelo
-      nCoresAUsar <- min(detectCores(T, T), length(pathsLocales))
-      cl <- makeCluster(getOption('cl.cores', nCoresAUsar))
-      parSapplyLB(cl = cl, X = pathsLocales[idx], FUN = R.utils::gunzip, overwrite=TRUE)
-      stopCluster(cl)
+    res <- descargarArchivos(
+      urls = urls, nombresArchivosDestino = pathsLocales, curlOpts = curlOptions(netrc=1),
+      nConexionesSimultaneas = 10, forzarReDescarga = forzarReDescarga)
+    if (any(res == 0)) {
+      warning(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
     }
     
     agregacionTemporalGrillada(
@@ -135,18 +117,11 @@ descargaGPM <- function(
       iPeriodosADescargar[idx] <- iPeriodosADescargar[idx] + (iNoExisten[i]-1)*numPeriodos
     }
     
-    # Si ya existe el archivo o el descomprimido, lo omito de las descargas
-    idx <- iPeriodosADescargar[
-      (!file.exists(pathsLocales[iPeriodosADescargar]) |
-       file.info(pathsLocales[iPeriodosADescargar])$size <= 0)]
-    
-    if (length(idx) > 0) {
-      res <- descargarArchivos(
-        urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
-        nConexionesSimultaneas = 10)
-      if (any(res == 0)) {
-        warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
-      }
+    res <- descargarArchivos(
+      urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
+      nConexionesSimultaneas = 10)
+    if (any(res == 0)) {
+      warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
     }
     
     agregacionTemporalGrillada(
@@ -154,7 +129,8 @@ descargaGPM <- function(
       pathsRegresor = pathsLocales[iPeriodosADescargar],
       formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
       minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
-      funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE)
+      funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
+      funcEscalado = function(x) { x / 20})
     # unlink(pathsLocales)
   }
   return(pathsLocalesDiarios)

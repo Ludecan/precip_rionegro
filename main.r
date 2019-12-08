@@ -13,13 +13,13 @@ pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 
 dt_ini='2018-10-21'
-dt_fin = '2019-10-26'
+dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
+horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 
 source('descargaDatos.r')
-localFile <- descargaPluviosADME(dt_ini='2018-10-21', dt_fin = '2019-10-26',
+localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin = dt_fin, 
                                  pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
-
 # 0 - Comentarios iniciales
 # Este script sirve como plantilla base para llevar a cabo todos los pasos del pipeline de 
 # interpolación.
@@ -41,16 +41,101 @@ instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'h5', 'ncdf4'))
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
 source(paste(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r', sep=''))
-datos <- leerSeriesXLSX(localFile)
+datos <- leerSeriesXLSX(pathArchivoDatos = localFile, hojaDatos = 'MedidasHorarias', fileEncoding = 'UTF-8')
 estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
+
+triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
+                      PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
+                      PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
+                      PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
+                      BARRA.DE.PORONGOS.RHT=NA,
+                      VILLA.SORIANO.RHT=NA)
+valoresObservaciones_i <- valoresObservaciones[, 6]
+
+colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
+rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
+  if (!is.na(x)) { iDatesToConsider <- which(fechasObservaciones <= x)
+  } else { iDatesToConsider <- seq_along(fechasObservaciones) }
+  
+  return(iDatesToConsider[seq(1, length(iDatesToConsider), 3)])
+}, fechasObservaciones=fechasObservaciones)
+
+
+splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
+  splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
+    # i <- colsToSplit[1]
+    rowsToSplit_i <- rowsToSplit[[i]]
+    idx_i <- colsToSplit[i]
+    j <- 2
+    for (j in seq_along(rowsToSplit_i)) {
+      endRow <- rowsToSplit_i[j]
+      if (j > 1) { startRow <- rowsToSplit_i[j - 1] + 1
+      } else { startRow <- 1 }
+      
+      n <- endRow - startRow + 1
+      
+      if (!is.null(rowWeights)) { rowWeightsJ <- rowWeights[j]
+      } else { rowWeightsJ <- rep(1 / n, n)  }
+      
+      valoresObservaciones[startRow:endRow, idx_i] <- valoresObservaciones[endRow, idx_i] * rowWeightsJ
+    }
+    
+    return(valoresObservaciones[, idx_i])
+  }
+  
+  
+  valoresObservaciones[, colsToSplit] <- sapply(
+    seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
+    colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
+  return(valoresObservaciones)
+}
+
+valoresObservaciones <- splitAccumulated(
+  valoresObservaciones, colsToSplit, rowsToSplit, rowWeights = NULL)
+
+
+iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
+                    x = rownames(valoresObservaciones), fixed = T)
+iStartHour <- iStartHours[1]
+if (iStartHours[length(iStartHours)] + 23 < nrow(valoresObservaciones)) {
+  iEndHour <- iStartHours[length(iStartHours)] + 23
+} else {
+  iEndHour <- iStartHours[length(iStartHours) - 1] + 23
+}
+idx <- iStartHour:iEndHour
+fechasObservaciones <- fechasObservaciones[idx]
+valoresObservaciones <- valoresObservaciones[idx, ]
+clases <- (seq_along(fechasObservaciones) - 1) %/% 24L
+clases <- fechasObservaciones[(clases * 24L) + 1]
+clases <- parse_date_time(substr(as.character(clases), 1, 10), 
+                          orders = 'Ymd', tz=tz(fechasObservaciones), truncated = 0)
+
+# max_gap_lengths <- aggregate(valoresObservaciones, by=list(day=clases), FUN=max_run_length)
+nNoNa <- aggregate(valoresObservaciones, by=list(day=clases), FUN=function(x) sum(!is.na(x)))[, -1]
+valoresObservaciones <- aggregate(valoresObservaciones, by=list(day=clases), FUN=sum, na.rm=T)[, -1]
+fechasObservaciones <- clases
+
+valoresObservaciones[nNoNa <= 21] <- NA
+valoresObservaciones[nNoNa > 21] <- valoresObservaciones[nNoNa > 21] * 24 / nNoNa[nNoNa > 21]
+
+max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
+  enc <- rle(conditionFunc(x))
+  if (any(enc$values, na.rm = T)) {
+    return(max(enc$lengths[enc$values], na.rm = T))
+  } else {
+    return(0)
+  }
+}
+
+max_dry_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x == 0 })
+max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x > 0 })
 
 
 # 3 - Lectura de rasters del satélite en formato geoTiff y definición de la grilla a interpolar
 # Leemos la grilla en el archivo fname
 source(paste(pathSTInterp, 'grillas/uIOGrillas.r', sep=''))
-proj4StringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
 coordsAInterpolar <- leerGrillaGDAL(nombreArchivo = paste(pathDatos, 'grilla_uy.tiff', sep=''))
 coordsAInterpolar <- as(geometry(coordsAInterpolar), 'SpatialPixels')
 
@@ -126,7 +211,8 @@ params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemp
                                         modoDiagnostico = TRUE)
 
 # Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
-shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=params$pathSHPMapaBase, grilla=coordsAInterpolar)
+shpMask <- cargarSHPYObtenerMascaraParaGrilla(
+  pathSHP=params$pathSHPMapaBase, grilla=coordsAInterpolar, encoding = 'UTF-8')
 # Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
 # mapas independientemente de los datos que tenga
 xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpMask$shp), ejesXYLatLong = T)
@@ -144,13 +230,75 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpMask$shp), ejesXYLatLong = 
 # La función cargar regresor se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
 pathsRegresores <- NULL
+shpBase = shpMask$shp
 
 pathsRegresores <- descargaGSMaP(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
   shpBase = shpMask$shp)
-pathsRegresores <- descargaGPM(
+
+pathsRegresores2 <- descargaGPM(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
   shpBase = shpMask$shp)
+
+pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
+                                    fechasRegresando = fechasObservaciones)
+pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}) ]
+
+
+grillaRegresor <- as(object = geometry(readGDAL(pathsRegresores[1, 1])), Class = 'SpatialPixels')
+shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
+shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
+i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
+coordsQC <- grillaRegresor[i, ]
+
+i <- !is.na(over(coordsAInterpolar, geometry(shpRioNegro)))
+coordsAInterpolar <- coordsAInterpolar[i, ]
+
+# mapearPuntosGGPlot(SpatialPointsDataFrame(coordsQC, data = data.frame(rep(1, length(coordsQC)))), shpBase)
+# mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsQC, data = data.frame(rep(1, length(coordsQC)))), shpBase = shpBase)
+# mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data = data.frame(rep(1, length(coordsAInterpolar)))), shpBase = shpBase)
+# mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar[shpMask$mask], data = data.frame(rep(1, length(coordsAInterpolar[shpMask$mask])))), shpBase = shpBase)
+
+# guardarSHP(as(SpatialPixelsDataFrame(coordsQC, data = data.frame(rep(1, length(coordsQC)))), 'SpatialPointsDataFrame'), 'lala.shp')
+GPM = extraerValoresRegresorSobreSP(objSP = coordsQC, pathsRegresor = pathsRegresores[, 1])
+GSMaP = extraerValoresRegresorSobreSP(objSP = coordsQC, pathsRegresor = pathsRegresores[, 2])
+
+source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
+test <- testEspacialPrecipitacion(
+  coordsObservaciones = coordsQC, fechasObservaciones = rownames(pathsRegresores),
+  valoresObservaciones = GPM, maxDistKm=11 * sqrt(2),
+  ispMax=0.3, ispObs=8, 
+  isdMin=1, isdObs=0.3, isdEstMin=5,
+  fInf=1.5, fSup=3, amplitudMin=1)
+
+nrow(test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,])
+
+mapearResultadosDeteccionOutliersV2(
+  test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], coordsObservaciones = coordsQC, 
+  valoresObservaciones = GPM,
+  tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
+  carpetaSalida = 'Resultados/2-QC/mapas/GPM/', shpBase = shpBase)
+
+
+test <- testEspacialPrecipitacion(
+  coordsObservaciones = coordsQC, fechasObservaciones = rownames(pathsRegresores),
+  valoresObservaciones = GSMaP, maxDistKm=11 * sqrt(2),
+  ispMax=0.3, ispObs=8, 
+  isdMin=1, isdObs=0.3, isdEstMin=5,
+  fInf=1.5, fSup=3, amplitudMin=1)
+
+nrow(test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,])
+
+mapearResultadosDeteccionOutliersV2(
+  test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], coordsObservaciones = coordsQC, 
+  valoresObservaciones = GSMaP,
+  tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
+  carpetaSalida = 'Resultados/2-QC/mapas/GSMaP/', shpBase = shpBase)
+
+plotObservacionesYRegresores(coordsObservaciones, fechasObservaciones, valoresObservaciones, 
+                             pathsRegresoresAEvaluar = pathsRegresores, shpBase = shpBase, nColsPlots = 3, 
+                             carpetaSalida = 'Resultados/1-Exploracion/mapas', 
+                             grillaAlternativaRegresores=coordsAInterpolar, replot = TRUE)
 
 # Las climatologías son un poco diferentes y por ahora las cargo "a mano". 
 # Al pasarle por arriba a pathsRegresores, estoy dejando como regresor solo las climatologías, 
