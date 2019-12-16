@@ -1,4 +1,5 @@
-setwd('F:/ADME/precip_rionegro')
+if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
+} else { setwd('D:/ADME/precip_rionegro') }
 
 # Índice
 # 5 - Preparación de Parámetros
@@ -120,7 +121,7 @@ paramsI$metodoIgualacionDistribuciones <- 'GLS'
 paramsI$umbralMascaraCeros <- 0.2
 paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
 listaParams[[4]] <- paramsI
-listaRegresores[[4]] <- pathsRegresores[,c('GPM'), drop=FALSE]
+listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
 
 # 5 - Kriging Universal Espacial + Regresion Generalizada en GSMaP
 paramsI <- paramsBase
@@ -148,7 +149,7 @@ source(paste(pathSTInterp, 'interpolar/testInterpolationModels.r', sep=''))
 ############# Tests Regresores #############
 if (runTestsRegresores) {
   testRegressors(valoresObservaciones, pathsRegresores, pathSHPNotNUll=pathSHPMapaBase, 
-                 pathResultados='Resultados/', seriesName='Rainfall', 
+                 pathResultados='Resultados/1-Exploracion/', seriesName='Rainfall', 
                  outputTableFilename='testRegresores.csv')
 }
 

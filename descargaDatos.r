@@ -64,13 +64,16 @@ descargaGSMaP <- function(
       forzarReDescarga = forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
+      iHorasADescargar <- iHorasADescargar[res != 0]
     }
     
-    agregacionTemporalGrillada(
-      fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
-      formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
-      nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
-      overlap = FALSE)
+    if (length(iHorasADescargar) > 0) {
+      agregacionTemporalGrillada(
+        fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
+        formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
+        nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
+        overlap = FALSE)
+    }
     # unlink(pathsLocales)
   }
   return(pathsLocalesDiarios)
@@ -116,19 +119,22 @@ descargaGPM <- function(
     }
     
     res <- descargarArchivos(
-      urls = urls[idx], nombresArchivosDestino = pathsLocales[idx], curlOpts = curlOptions(netrc=1),
+      urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], curlOpts = curlOptions(netrc=1),
       nConexionesSimultaneas = 10)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+      iPeriodosADescargar <- iPeriodosADescargar[res != 0]
     }
     
-    agregacionTemporalGrillada(
-      fechas = head(mediasHoras[iPeriodosADescargar], -1), 
-      pathsRegresor = pathsLocales[iPeriodosADescargar],
-      formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
-      minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
-      funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
-      funcEscalado = function(x) { x / 20})
+    if (length(iPeriodosADescargar) > 0) {
+      agregacionTemporalGrillada(
+        fechas = head(mediasHoras[iPeriodosADescargar], -1), 
+        pathsRegresor = pathsLocales[iPeriodosADescargar],
+        formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
+        minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
+        funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
+        funcEscalado = function(x) { x / 20})
+    }
     # unlink(pathsLocales)
   }
   return(pathsLocalesDiarios)

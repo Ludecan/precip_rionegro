@@ -29,7 +29,7 @@ localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin = dt_fin,
 # Los fuentes que están en la librería hacen instant_pkgs de los paquetes que precisan así que 
 # seguramente se instale alguno más
 source(paste(pathSTInterp, 'instalarPaquetes/instant_pkgs.r', sep=''))
-instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'h5', 'ncdf4'))
+instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
 
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
@@ -178,7 +178,7 @@ pathsRegresores2 <- descargaGPM(
 
 pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
                                     fechasRegresando = fechasObservaciones)
-pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}) ]
+pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
 
 
 grillaRegresor <- as(object = geometry(readGDAL(pathsRegresores[1, 1])), Class = 'SpatialPixels')
