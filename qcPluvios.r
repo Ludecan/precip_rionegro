@@ -1,45 +1,11 @@
-pathSTInterp <- 'st_interp/'
-pathDatos <- 'datos/'
-
-
 ##### 0 - Descarga y preparación de los datos
+dt_ini='2017-09-01'
+dt_ini='2018-10-21'
+dt_fin = '2019-12-07'
+horaUTCInicioAcumulacion = 10
+horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 
-###### 0.1 - Area Interpolación
-source(paste(pathSTInterp, 'grillas/uIOGrillas.r', sep=''))
-proj4StringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
-coordsAInterpolar <- leerGrillaGDAL(nombreArchivo = paste(pathDatos, 'grilla_uy.tiff', sep=''))
-coordsAInterpolar <- as(geometry(coordsAInterpolar), 'SpatialPixels')
-
-###### 0.2 - Mapa Base
-shpBase <- cargarSHP(paste(pathDatos, 'CartografiaBase/CuencasPrincipales.shp', sep=''))
-shpBase <- spTransform(shpBase, proj4string(coordsAInterpolar))
-
-i <- !is.na(over(coordsAInterpolar, shpBase[3,])[,1])
-coordsAInterpolar <- coordsAInterpolar[i]
-
-###### 0.3 - Pluviometros
-source('descargaDatos.r')
-localFile <- descargaPluviosADME(dt_ini='2018-11-10', pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
-
-source(paste(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r', sep=''))
-datos <- leerSeriesXLSX(localFile)
-estaciones <- datos$estaciones
-fechasObservaciones <- datos$fechas
-valoresObservaciones <- datos$datos
-
-source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
-# Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
-# un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
-coordsObservaciones <- estaciones
-coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
-
-# Las coordenadas de las estaciones están sin proyectar, es decir directamente en latitud/longitud. 
-# Le asignamos al objeto una proyección que represente esto
-proj4string(coordsObservaciones) <- "+proj=longlat +datum=WGS84"
-# Reproyectamos las estaciones a la misma proyección que la grilla a interpolar
-coordsObservaciones <- spTransform(x = coordsObservaciones, CRS(proj4string(coordsAInterpolar)))
-
-
+source('cargaDatos.r')
 
 ##### 1 - Correlación VS Distancia
 source(paste(pathSTInterp, 'Graficas/graficas.r', sep=''))
@@ -47,7 +13,7 @@ dist <- rdist(coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
 bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
-corrNA <- sapply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
+corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
 estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 3], names(corrNA[corrNA])))
   
 # estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
@@ -63,7 +29,6 @@ graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones,
 ##### 2 - Ubicación Estaciones
 colores <- rep('red', nrow(estaciones))
 colores[clasesEstaciones != 'General'] <- 'green'
-
 
 xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase, coordsObservaciones), ejesXYLatLong = T)
 
@@ -117,17 +82,19 @@ ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesCo
        dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
 
 
-
 # qcTests
 source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
 test <- testEspacialPrecipitacion(
   coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
   valoresObservaciones = valoresObservaciones)
 
+test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,]
+
 mapearResultadosDeteccionOutliersV2(
-  test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
-  tiposOutliersDeInteres = c(TTO_OutlierPorLoBajo, TTO_OutlierPorLoAlto, TTO_PrecipitacionAislada, TTO_SequedadAislada),
-  carpetaSalida = 'Resultados/2-QC/mapas/', shpBase = shpBase)
+  test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
+  coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
+  tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
+  carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/', shpBase = shpBase)
 
 test[test$tipoOutlier == TTO_OutlierPorLoBajo, ]
 test[test$tipoOutlier == TTO_OutlierPorLoAlto, ]

@@ -35,11 +35,8 @@ descargaGSMaP <- function(
   descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
                     nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga, 
                     curlOpts = curlOptions(netrc=1))
-  ctl <- parseCTL_V2(ctlFile = pathLocalCTL)
-  # Corrijo la longitud a estar en -180, 180. Esto se podría pasar directo al parseCTL_v2
-  ctl$xdef$from <- ctl$xdef$from - 180
-  ctl$xdef$vals <- ctl$xdef$vals - 180
-  
+  ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
+
   # Armo urls y pathsLocales horarios
   horas <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="hour")
   urls <- strftime(x = horas, 
@@ -62,8 +59,9 @@ descargaGSMaP <- function(
     }
     
     res <- descargarArchivos(
-      urls = urls, nombresArchivosDestino = pathsLocales, curlOpts = curlOptions(netrc=1),
-      nConexionesSimultaneas = 10, forzarReDescarga = forzarReDescarga)
+      urls = urls[iHorasADescargar], nombresArchivosDestino = pathsLocales[iHorasADescargar], 
+      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = 10, 
+      forzarReDescarga = forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
     }
