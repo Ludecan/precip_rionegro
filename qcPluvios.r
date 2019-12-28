@@ -22,9 +22,10 @@ clasesEstaciones <- rep('General', nrow(estaciones))
 for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
 
 graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
-                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
+                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png'
+                       )
 
-
+estacionesRaras
 
 ##### 2 - Ubicación Estaciones
 colores <- rep('red', nrow(estaciones))
@@ -56,9 +57,14 @@ mapearGrillaGGPlot(grilla = mapaDistancias, shpBase = shpBase, xyLims = xyLims, 
                    nomArchResultados = 'Resultados/1-Exploracion/mapaDistanciaAEstaciones.png',
                    widthPx = widthPx, heightPx = heightPx, DPI = DPI)
 
+coordsObservaciones$etiqueta <- paste(
+  coordsObservaciones$Nombre, ' (',
+  apply(valoresObservaciones, MARGIN = 2, function(x) sum(!is.na(x)))
+  , ')', sep='')
+ 
 mapaEstaciones <- mapearPuntosConEtiquetasGGPlot(
   puntos = coordsObservaciones, shpBase = shpBase, xyLims = xyLims, coloresPuntos = colores, 
-  zcol='Nombre', titulo = 'Red de Observación Disponible', tamaniosPuntos = 3, 
+  zcol='etiqueta', titulo = 'Red de Observación Disponible', tamaniosPuntos = 3, 
   tamanioFuentePuntos = 3, nomArchResultados = 'Resultados/1-Exploracion/mapaEstaciones.png', 
   widthPx = widthPx, heightPx = heightPx, DPI = DPI)
 
@@ -81,22 +87,9 @@ mapaEstacionesConDistMax <- mapaEstaciones +
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
        dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
 
+source('aplicaQC.r')
 
-# qcTests
-source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
-test <- testEspacialPrecipitacion(
-  coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
-  valoresObservaciones = valoresObservaciones)
-
-test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,]
-
-mapearResultadosDeteccionOutliersV2(
-  test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
-  coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
-  tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-  carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/', shpBase = shpBase)
-
-test[test$tipoOutlier == TTO_OutlierPorLoBajo, ]
-test[test$tipoOutlier == TTO_OutlierPorLoAlto, ]
-test[test$tipoOutlier == TTO_PrecipitacionAislada, ]
-test[test$tipoOutlier == TTO_SequedadAislada, ]
+valoresObservaciones <- applyQCTests(
+  coordsObservaciones, fechasObservaciones, valoresObservaciones, 
+  paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
+  plotMaps = TRUE)

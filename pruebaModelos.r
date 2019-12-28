@@ -15,13 +15,13 @@ horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 
 source('cargaDatos.r')
-source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
-test <- testEspacialPrecipitacion(
-  coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
-  valoresObservaciones = valoresObservaciones)
+source(paste(pathSTInterp, 'interpolar/interpolarYMapearEx.r', sep=''))
 
-test$reemplazar[test$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
-valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+source('aplicaQC.r')
+valoresObservaciones <- applyQCTests(
+  coordsObservaciones, fechasObservaciones, valoresObservaciones, 
+  paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
+  plotMaps = FALSE)
 
 runTestsRegresores <- TRUE
 runCV <- TRUE
@@ -78,6 +78,7 @@ paramsBase <- createParamsInterpolarYMapear(
   difMaxFiltradoDeOutliersRLM = 0,
   difMaxFiltradoDeOutliersCV = 0,
   modoDiagnostico=TRUE)
+paramsBase$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0()
 
 {
 listaParams <- list()
@@ -118,6 +119,7 @@ paramsI <- paramsBase
 paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
 paramsI$interpolationMethod <- 'automap'
 paramsI$metodoIgualacionDistribuciones <- 'GLS'
+#paramsI$metodoIgualacionDistribuciones <- 'regresionLineal'
 paramsI$umbralMascaraCeros <- 0.2
 paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
 listaParams[[4]] <- paramsI
@@ -128,6 +130,7 @@ paramsI <- paramsBase
 paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
 paramsI$interpolationMethod <- 'automap'
 paramsI$metodoIgualacionDistribuciones <- 'GLS'
+#paramsI$metodoIgualacionDistribuciones <- 'regresionLineal'
 paramsI$umbralMascaraCeros <- 0.2
 paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
 listaParams[[5]] <- paramsI
@@ -138,11 +141,14 @@ paramsI <- paramsBase
 paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
 paramsI$interpolationMethod <- 'automap'
 paramsI$metodoIgualacionDistribuciones <- 'GLS'
+#paramsI$metodoIgualacionDistribuciones <- 'regresionLineal'
 paramsI$umbralMascaraCeros <- 0.2
 paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
 listaParams[[6]] <- paramsI
 listaRegresores[[6]] <- pathsRegresores[,c('GPM', 'GSMaP'), drop=FALSE]
 }
+
+modelosACorrer <- 1:length(listaParams)
 
 source(paste(pathSTInterp, 'interpolar/testInterpolationModels.r', sep=''))
 
@@ -153,84 +159,73 @@ if (runTestsRegresores) {
                  outputTableFilename='testRegresores.csv')
 }
 
-############# Cross Validation #############
+############# Gridding #############
+if (runGridding) {
+  i <- modelosACorrer[1]
+  pathResultadosGrillado <- 'Resultados/3-Grillado/'
+  for (i in modelosACorrer) {
+    try({
+      paramsI <- listaParams[[i]]
+      if (is.na(listaRegresores[i])) { pr <- NULL 
+      } else { pr <- listaRegresores[[i]] }
+      
+      nomModelo <- nombreModelo(params = paramsI, pathsRegresores=pr)
+      print(paste(Sys.time(), ': Gridding ', nomModelo, sep=''))
+      
+      pathModelo <- paste(pathResultadosGrillado, nomModelo ,'/', sep='')
+      dir.create(pathModelo, showWarnings = F, recursive = T)
+      
+      # paramsI$nCoresAUsar <- 1
+      listaMapas <- createDefaultListaMapas(
+        paramsI, fechasObservaciones, dibujarEscalaFija = FALSE, salvarGeoTiff = TRUE, 
+        recalcularSiYaExiste = FALSE, incluirSubtitulo = FALSE)
+      nomModeloFormateadoParaArchivos <- gsub(pattern = '*', replacement = '', x = nomModelo, fixed = T)
+      listaMapas$nombreArchivo <- 
+        paste(pathResultadosGrillado, nomModeloFormateadoParaArchivos,'/', 
+              appendToFileName(filename=listaMapas$nombreArchivo, 
+                               postFijo=paste('_', nomModeloFormateadoParaArchivos, sep='')), sep='')
+      
+      #pathsRegresores = pr
+      #paramsIyM = paramsI
+      #paramsParaRellenoRegresores = NULL
+      #pathsRegresoresParaRellenoRegresores = NULL
+      #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
+      #returnInterpolacion <- FALSE
+      #tsAInterpolar <- 48
+      #tsAInterpolar <- 1:nrow(valoresObservaciones)
+      interpolarYMapear(
+        coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones, 
+        valoresObservaciones = valoresObservaciones, pathsRegresores = pr, 
+        coordsAInterpolar = coordsAInterpolar, paramsIyM = paramsI, shpMask = shpMask, 
+        xyLims = xyLims, listaMapas=listaMapas, returnInterpolacion = F, 
+        paramsParaRellenoRegresores = NULL, pathsRegresoresParaRellenoRegresores = NULL)
+    })
+  }
+}
 
+############# Cross Validation #############
 if (runCV) {
+  pathResultadosValidacion <- 'Resultados/4-Validacion/'
   cvs <- st_interpCrossValidations(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores, 
-    pathResultados='Resultados/3-GrilladoYCV/', recalcCV=FALSE, modelosACorrer=1:length(listaParams))
+    coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores,
+    pathResultados=pathResultadosValidacion, recalcCV=FALSE)
     
     ############# Validation Stats #############
     if (runValidation) {
-      validationStats <- calcValidationStatistics(valoresObservaciones, cvs, climatologias=NULL, 
-                                                  pathResultados='Resultados/4-Validacion/')
+      validationStats <- calcValidationStatisticsMultipleModels(
+        valoresObservaciones, cvs, climatologias=NULL, pathResultados='Resultados/4-Validacion/')
       
-      ordenModelosPorColumnas <- nombresModelosACorrer
+      validationStats$validationStatsOverall
+      
+      ordenModelosPorColumnas <- names(cvs)
       calcAndPlotAllValidationStatisticsV2(
         fechas = fechasObservaciones, pronosticos = cvs, observaciones = valoresObservaciones, 
-        climatologias = climatologias, coordsObservaciones = coordsObservaciones, 
+        climatologias = NULL, coordsObservaciones = coordsObservaciones, 
         shpBase = shpBase, xyLims = xyLims, nColsPlots = min(length(ordenModelosPorColumnas), 3),
-        ordenModelosPorColumnas = ordenModelosPorColumnas, carpetaSalida = pathResultados, 
-        tamaniosPuntos = 8, tamanioFuentePuntos = 7, tamanioFuenteEjes = 20)    
+        ordenModelosPorColumnas = ordenModelosPorColumnas,
+        tamaniosPuntos = 8, tamanioFuentePuntos = 7, tamanioFuenteEjes = 20,
+        carpetaSalida=pathResultadosValidacion)    
     }
-}
-
-############# Gridding #############
-iAnio <- 1
-# nombresModelosACorrer
-i <- modelosACorrer[1]
-if (runGridding) {
-  #for (iAnio in 1:nrow(tSeqs)) {
-  for (iAnio in 1:1) {
-    for (i in modelosACorrer) {
-      try({
-        paramsI <- listaParams[[i]]
-        if (is.na(listaRegresores[i])) { pr <- NULL 
-        } else { pr <- listaRegresores[[i]] }
-        
-        nomModelo <- nombreModelo(params = paramsI, pathsRegresores=pr)
-        print(paste(Sys.time(), ': Gridding ', nomModelo, ' ', tSeqs$anio[iAnio], ' (', (iAnio-1) * length(listaParams) + i, '/', nrow(tSeqs) * length(listaParams), ')', sep=''))
-        
-        if (!is.null(paramsI$tlagsAR)) { modTIni <- 2 * paramsI$ventanaIgualacionDistribuciones + max(paramsI$tlagsAR)
-        } else { modTIni <- 0 }
-        tIni <- max(1, tSeqs$tIni[iAnio] - modTIni)
-        #tIni <- tSeqs$tFin[iAnio] - (2 * paramsI$ventanaIgualacionDistribuciones + 1) # Para debuggear varios modelos rápido
-        tFin <- tSeqs$tFin[iAnio]
-        tSeq <- seq.int(from = tIni, to = tFin, by=1)      
-        
-        pathsModelos[i] <- paste('Resultados/2-GrilladoYCV/', nomModelo ,'/', sep='')
-        dir.create(pathsModelos[i], showWarnings = F, recursive = T)
-        
-        # Hay problemas con el uso de RAM. Hay que disminuir el tamaño de la ventana para los stUniversalKriging porque están usando como 4 gigas por thread
-        if (paramsI$interpolationMethod == 'stUniversalKriging') paramsI$nCoresAUsar <- 6
-        # paramsI$nCoresAUsar <- 1
-        
-        nomModeloFormateadoParaArchivos <- gsub(pattern = '*', replacement = '', x = nomModelo, fixed = T)
-        listaMapas$nombreArchivo <- paste('Resultados/2-GrilladoYCV/', nomModeloFormateadoParaArchivos,'/', 
-                                          appendToFileName(filename=nombresArchivos, postFijo=paste('_', nomModeloFormateadoParaArchivos, sep='')), sep='')
-        
-        #fechasObservaciones = fechasObservaciones[tSeq]
-        #valoresObservaciones = valoresObservaciones[tSeq,]
-        #pathsRegresores = pr[tSeq, , drop = F]
-        #pathsRegresores = pr                          # Solo usar este para deteccionOutliersRLM
-        #paramsIyM = paramsI
-        #listaMapas=listaMapas[tSeq,]
-        #paramsParaRellenoRegresores = NULL
-        #pathsRegresoresParaRellenoRegresores = NULL
-        #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
-        #tsAInterpolar <- which(fechasObservaciones[tSeq] == as.POSIXct('2014-01-02', tz=tz(fechasObservaciones[1])))
-        #returnInterpolacion <- FALSE
-        #tsAInterpolar <- 48
-        tsAInterpolar <- seq_along(tSeq)
-        
-        interpolarYMapear(coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones[tSeq], 
-                          valoresObservaciones = valoresObservaciones[tSeq,, drop=F], pathsRegresores = pr[tSeq, , drop = F], 
-                          coordsAInterpolar = coordsAInterpolar, paramsIyM = paramsI, shpMask = shpMask, xyLims = xyLims,
-                          listaMapas=listaMapas[tSeq,,drop=F], returnInterpolacion = F, paramsParaRellenoRegresores = NULL,
-                          pathsRegresoresParaRellenoRegresores = NULL, tsAInterpolar = tsAInterpolar)
-      })
-    }
-  }
 }
 
 ############# Plots #############

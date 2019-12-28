@@ -189,3 +189,6 @@ coordsQC <- grillaRegresor[i, ]
 
 i <- !is.na(over(coordsAInterpolar, geometry(shpRioNegro)))
 coordsAInterpolar <- coordsAInterpolar[i, ]
+
+shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
+                                              encoding = 'UTF-8')
