@@ -210,22 +210,22 @@ plotEjemplosRellenoRasters <- function() {
   stopCluster(cl)
 }
 
-plotComparacionModelos <- function(coordsObservaciones, fechasObservaciones, valoresObservaciones,
-                                   pathsModelos=cargarRegresores(carpetaRegresores = 'Resultados/2-GrilladoYCV', fechasRegresando = fechasObservaciones), 
-                                   shpBase, nColsPlots, carpetaSalida='Resultados/4-ComparacionModelos', replot=T) {
-  pathsModelos <- pathsModelos[, c("K", 
-                                   "GRK-alt+x+y+I(dist^0.125)",
-                                   "GRK-LST_Night_Combinada_Clim_mean+x+y",
-                                   "RRK-MOD11A1_LST_Night_FR+MYD11A1_LST_Night_FR+LST_Night_Combinada_Clim_mean+x+y",
-                                   "GRK-MOD11A1_LST_Night_FR+MYD11A1_LST_Night_FR+LST_Night_Combinada_Clim_mean+x+y"
-                                   )]
-  colnames(pathsModelos) <- c('K', 'GRK-alt+dist+x+y', 'GRK-Clim+x+y', 'RRK-Clim+Sats+x+y', 'GRK-Clim+Sats+x+y')
-  nColsPlots <- 3
+plotComparacionModelos <- function(
+    coordsObservaciones, fechasObservaciones, valoresObservaciones, 
+    pathsModelos=cargarRegresores(carpetaRegresores = 'Resultados/3-Grillado', fechasRegresando = fechasObservaciones), 
+    modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
+    especificacionEscala, shpBase, nColsPlots=3, carpetaSalida='Resultados/5-ComparacionModelos', 
+    replot=FALSE) {
+  pathsModelos <- pathsModelos[, modelosAPlotear]
+  especificacionEscala <- paramsBase$especEscalaDiagnostico
   
-  iFecha <- 4560
-  plotComparacionModelosI <- function(iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones,
-                                      pathsModelos, shpBase, nColsPlots, carpetaSalida, replot) {
-    nomArchMapa <- paste(carpetaSalida, '/', format(fechasObservaciones[iFecha], format='%Y_%m_%d'), '.png', sep='')
+  
+  iFecha <- 384
+  plotComparacionModelosI <- function(
+      iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones, pathsModelos, 
+      especificacionEscala, shpBase, nColsPlots, carpetaSalida, replot) {
+    print(iFecha)
+    nomArchMapa <- paste0(carpetaSalida, '/', format(fechasObservaciones[iFecha], format='%Y%m%d'), '.png')
     
     if (replot || !file.exists(nomArchMapa) || file.info(nomArchMapa)$size == 0) {
       if (!any(is.na(pathsModelos[iFecha,]))) {
@@ -236,17 +236,21 @@ plotComparacionModelos <- function(coordsObservaciones, fechasObservaciones, val
         rastersI <- lapply(pathsModelos[iFecha,], FUN = readGDAL, silent=T)
         
         xyLims <- getXYLims(c(shpBase, coordsObservaciones, rastersI), ejesXYLatLong = F)
-        escala <- crearEscalaEquiespaciada(c(coordsObservaciones$value, sapply(rastersI, FUN = function(x) x@data[,1])), nDigitos = 1, nIntervalos = 10, continuo = T)
+        escala <- darEscala(especificacionEscala, 
+                            c(coordsObservaciones$value, 
+                              unlist(sapply(rastersI, FUN = function(x) x@data[,1]))))
         
         gs <- vector(mode = "list", length = ncol(pathsModelos) + 1)    
-        gs[[1]] <- mapearPuntosGGPlot(puntos = coordsObservaciones, shpBase = shpBase, escala = escala, xyLims = xyLims, zcol='value', dibujarTexto = T,
-                                      titulo = paste('Observaciones - ', fechasObservaciones[iFecha], sep=''), dibujar = F,
-                                      alturaEscalaContinua = alturaEscalaContinua)
+        gs[[1]] <- mapearPuntosGGPlot(
+          puntos=coordsObservaciones, shpBase=shpBase, escala=escala, xyLims=xyLims, zcol='value', 
+          dibujarTexto = T, titulo = paste0('Observaciones - ', fechasObservaciones[iFecha]), 
+          dibujar=F, alturaEscalaContinua=alturaEscalaContinua)
         for (iModelo in 1:ncol(pathsModelos)) {
-          gs[[iModelo+1]] <- mapearGrillaGGPlot(grilla = rastersI[[iModelo]], shpBase = shpBase, escala = escala, xyLims = xyLims, 
-                                                titulo = paste(colnames(pathsModelos)[iModelo], ' - ', fechasObservaciones[iFecha], sep=''), 
-                                                dibujarPuntosObservaciones = T, coordsObservaciones = coordsObservaciones, dibujar = F,
-                                                alturaEscalaContinua = alturaEscalaContinua)
+          gs[[iModelo+1]] <- mapearGrillaGGPlot(
+            grilla=rastersI[[iModelo]], shpBase=shpBase, escala=escala, xyLims=xyLims, 
+            titulo = paste0(colnames(pathsModelos)[iModelo], ' - ', fechasObservaciones[iFecha]), 
+            dibujarPuntosObservaciones=T, coordsObservaciones=coordsObservaciones, dibujar=F,
+            alturaEscalaContinua = alturaEscalaContinua)
         }
         
         gs <- gs[permutacionColumnasParaGraficarPorFilas(length(gs), nColsPlot = nColsPlots)]
@@ -258,37 +262,49 @@ plotComparacionModelos <- function(coordsObservaciones, fechasObservaciones, val
   }
   
   nCoresAUsar <- detectCores(T, T)
-  cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
-  clusterExport(cl, varlist = c('script.dir.funcionesAuxiliares'))
-  clusterEvalQ(cl = cl, expr = {
-    require(rgdal)
-    require(sp)
-    require(Rmisc)
-    source(paste(script.dir.funcionesAuxiliares, 'mapearEx.r', sep=''))
-    source(paste(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r', sep=''))
-  })
-  parSapplyLB(cl=cl, X=seq_along(fechasObservaciones), FUN=plotComparacionModelosI, coordsObservaciones=coordsObservaciones, 
-              fechasObservaciones=fechasObservaciones, valoresObservaciones=valoresObservaciones, pathsModelos=pathsModelos, 
-              shpBase=shpBase, nColsPlots=nColsPlots, carpetaSalida=carpetaSalida, replot=replot)
-  stopCluster(cl)
+  if (nCoresAUsar > 1) {
+    cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
+    paste(pathSTInterp, 'interpolar/mapearEx.r', sep='')
+    clusterExport(cl, varlist = c('pathSTInterp'))
+    clusterEvalQ(cl = cl, expr = {
+      require(rgdal)
+      require(sp)
+      require(Rmisc)
+      source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'))
+      source(paste0(pathSTInterp, 'interpolar/mapearEx.r'))
+      source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'))
+    })
+    parSapplyLB(
+      cl=cl, X=seq_along(fechasObservaciones), FUN=plotComparacionModelosI, 
+      coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
+      valoresObservaciones=valoresObservaciones, pathsModelos=pathsModelos, 
+      especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=nColsPlots, 
+      carpetaSalida=carpetaSalida, replot=replot)
+    stopCluster(cl)
+  } else {
+    sapply(
+      X=seq_along(fechasObservaciones), FUN=plotComparacionModelosI, 
+      coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
+      valoresObservaciones=valoresObservaciones, pathsModelos=pathsModelos, 
+      especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=nColsPlots, 
+      carpetaSalida=carpetaSalida, replot=replot)
+  }
 }
 
 plotObservacionesYRegresores <- function(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
-    pathsRegresoresAEvaluar=pathsRegresores[,c('LST_Night_Combinada_Clim_mean', 'MOD11A1_LST_Night_FRv2', 'MYD11A1_LST_Night_FRv2')], 
-    shpBase, nColsPlots=ncol(pathsRegresoresAEvaluar)+1, carpetaSalida='Resultados/0-EvaluacionRegresores', replot=T,
-    grillaAlternativaRegresores=NULL) {
+    pathsRegresoresAEvaluar=pathsRegresores, shpBase, nColsPlots=ncol(pathsRegresoresAEvaluar)+1, 
+    carpetaSalida='datos/mapas/', replot=FALSE, grillaAlternativaRegresores=coordsAInterpolar,
+    especificacionEscala=NULL) {
   # replot=F
-  
-  if (!identicalCRS(shpBase, coordsObservaciones)) shpBase <- spTransform(shpBase, CRS(proj4string(coordsObservaciones)))
-  
   plotObservacionesYRegresoresI <- function(
       iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones, 
-      pathsRegresoresAEvaluar, shpBase, nColsPlots, carpetaSalida, replot, grillaAlternativaRegresores) {
-    # iFecha <- 381
+      pathsRegresoresAEvaluar, shpBase, nColsPlots, carpetaSalida, replot, 
+      grillaAlternativaRegresores, especificacionEscala) {
+    # iFecha <- 253
     print(iFecha)
     
-    nomArchMapa <- paste(carpetaSalida, '/', format(fechasObservaciones[iFecha], format='%Y_%m_%d'), '.png', sep='')
+    nomArchMapa <- paste(carpetaSalida, format(fechasObservaciones[iFecha], format='%Y%m%d'), '.png', sep='')
     
     if (replot || !file.exists(nomArchMapa) || file.info(nomArchMapa)$size == 0) {
       if (!all(is.na(pathsRegresoresAEvaluar[iFecha,]))) {
@@ -296,8 +312,10 @@ plotObservacionesYRegresores <- function(
         alturaEscalaContinua = unit(x=0.7 * nFilasPlots, units = 'in')
         
         coordsObservaciones$value <- valoresObservaciones[iFecha, ]
+        # x <- pathsRegresoresAEvaluar[iFecha, 1]
         rastersI <- lapply(pathsRegresoresAEvaluar[iFecha,], FUN = function(x) {
-            if (!is.na(x)) { return(readGDAL(x, silent = T))
+            if (!is.na(x)) { 
+              return(readGDAL(x, silent = T))
             } else { 
               grillaAux <- grillaSobreBoundingBox(objSP = shpBase, nCeldasX = 2, nCeldasY = 2)
               grillaAux <- SpatialGridDataFrame(grillaAux, data = data.frame(value=rep(NA, length(grillaAux))))
@@ -324,7 +342,16 @@ plotObservacionesYRegresores <- function(
         }
         
         xyLims <- getXYLims(c(shpBase, coordsObservaciones, rastersI), ejesXYLatLong = F)
-        escala <- crearEscalaEquiespaciada(c(coordsObservaciones$value, sapply(rastersI, FUN = function(x) x@data[,1])), nDigitos = 1, nIntervalos = 10, continuo = T)
+        if (is.null(especificacionEscala)) {
+          escala <- crearEscalaEquiespaciada(
+            c(coordsObservaciones$value, sapply(rastersI, FUN = function(x) x@data[,1])), 
+            nDigitos = 1, nIntervalos = 10, continuo = T)  
+        } else {
+          escala <- darEscala(
+            especificacion = especificacionEscala,
+            valores = c(coordsObservaciones$value, 
+                        unlist(sapply(rastersI, FUN = function(x) x@data[,1])), use.names = FALSE))
+        }
         
         gs <- vector(mode = "list", length = ncol(pathsRegresoresAEvaluar) + 1)
         gs[[1]] <- mapearPuntosGGPlot(
@@ -348,16 +375,18 @@ plotObservacionesYRegresores <- function(
     }
   }
   
+  if (!identicalCRS(shpBase, coordsObservaciones)) {
+    shpBase <- spTransform(shpBase, CRS(proj4string(coordsObservaciones)))
+  }
+  
   dir.create(carpetaSalida, showWarnings = FALSE, recursive = TRUE)
   nCoresAUsar <- detectCores(T, T)
   if (nCoresAUsar > 1) {
     cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
     clusterExport(cl, varlist = c('script.dir.funcionesAuxiliares'))
     clusterEvalQ(cl = cl, expr = {
-      require(rgdal)
-      require(sp)
-      require(Rmisc)
       source(paste(script.dir.funcionesAuxiliares, 'interpolarEx.r', sep=''))
+      source(paste(script.dir.funcionesAuxiliares, 'leerEscalas.r', sep=''))
       source(paste(script.dir.funcionesAuxiliares, 'mapearEx.r', sep=''))
       source(paste(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r', sep=''))
     })
@@ -366,7 +395,7 @@ plotObservacionesYRegresores <- function(
       coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
       valoresObservaciones=valoresObservaciones, pathsRegresoresAEvaluar=pathsRegresoresAEvaluar, 
       shpBase=shpBase, nColsPlots=nColsPlots, carpetaSalida=carpetaSalida, replot=replot,
-      grillaAlternativaRegresores=grillaAlternativaRegresores)
+      grillaAlternativaRegresores=grillaAlternativaRegresores, especificacionEscala=especificacionEscala)
     stopCluster(cl)
   } else {
     sapply(
@@ -374,8 +403,10 @@ plotObservacionesYRegresores <- function(
       coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
       valoresObservaciones=valoresObservaciones, pathsRegresoresAEvaluar=pathsRegresoresAEvaluar, 
       shpBase=shpBase, nColsPlots=nColsPlots, carpetaSalida=carpetaSalida, replot=replot,
-      grillaAlternativaRegresores=grillaAlternativaRegresores)    
+      grillaAlternativaRegresores=grillaAlternativaRegresores, especificacionEscala=especificacionEscala)    
   }
+  replot = F
+  nColsPlots <- 3
 }
 
 plotClimatologiasYSD_v006 <- function() {

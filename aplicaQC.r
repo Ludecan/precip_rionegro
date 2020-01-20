@@ -53,7 +53,6 @@ paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
 applyQCTests <- function(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, paramsInterpolacion, 
     pathsRegresores, plotMaps=FALSE) {
-  
   replot <- FALSE
   
   # Two rounds of QC tests
@@ -62,6 +61,8 @@ applyQCTests <- function(
     valoresObservaciones = valoresObservaciones)
   
   # test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,]
+  
+  # test[test$fecha == '2019-01-08',]
   
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
@@ -78,6 +79,7 @@ applyQCTests <- function(
     coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
     valoresObservaciones = valoresObservaciones, minNCuadrantes=3, fInf = 1.4, amplitudMin = 1, 
     amplitudMinRatio = 0.15)
+  # test[test$fecha == '2019-01-08',]
   
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
@@ -97,25 +99,53 @@ applyQCTests <- function(
   
   test <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
-    pathsRegresores = pathsRegresores[, 'GPM', drop=F], listaMapas = listaMapas, desvMedAbsMin = 1, 
-    factorMADHaciaAbajo = 8, returnTestDF = TRUE)
+    pathsRegresores = pathsRegresores[, 'GPM', drop=F], listaMapas = listaMapas, 
+    factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
+  
+  # test[test$fecha == '2019-01-08',]
   
   test2 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
     pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], listaMapas = listaMapas, 
-    desvMedAbsMin = 1, factorMADHaciaAbajo = 8, returnTestDF = TRUE)
+    factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
   
+  iTest <- test$tipoOutlier %in% tiposOutliersValoresSospechosos & 
+    test$tipoOutlier == test2$tipoOutlier & 
+    (test$estimado + test2$estimado)*0.5 > 10
+  
+  # test[test$fecha == '2019-07-14',]
+  # test2[test2$fecha == '2019-07-14',]
+  # test3[test3$fecha == '2019-07-14', ]
+  # test2[test2$fecha == '2019-08-27',]
+  # test2[test2$fecha == '2019-08-28',]
+  # test[test$fecha == '2019-09-25',]
+  # plotMaps <- T
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
-      test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos & 
-                  test$tipoOutlier == test2$tipoOutlier & 
-                  (test$estimado + test2$estimado)*0.5 > 10, ], 
+      test = test[iTest, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/3/', shpBase = shpBase, replot=replot)
   }
   
-  test[test$tipoOutlier == test2$tipoOutlier & test$tipoOutlier %in% tiposOutliersValoresSospechosos, ]$reemplazar <- 1
+  test[iTest, ]$reemplazar <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  
+  test3 <- deteccionOutliersMediaSD(x = valoresObservaciones, factorSDHaciaAbajo = 3, sdMin = 1)
+  # test3 <- deteccionOutliersMedianaMAD(x = valoresObservaciones, factorMADHaciaAbajo = 3, desvMedAbsMin = 1)
+  # test3[test3$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
+  
+  iTest <- test3$tipoOutlier %in% tiposOutliersValoresSospechosos & test3$estimado >= 3 & test3$estimado <= 15
+  if (plotMaps) {
+    mapearResultadosDeteccionOutliersV2(
+      test = test3[iTest, ], 
+      coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
+      tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
+      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/4/', shpBase = shpBase, replot=replot)
+  }
+  
+  test3[iTest, ]$reemplazar <- 1
+  valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  
   return(valoresObservaciones)
 }

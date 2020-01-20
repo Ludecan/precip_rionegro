@@ -9,9 +9,13 @@ pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 pathResultados <- 'Resultados/'
 pathSHPMapaBase=paste(pathDatos, 'CartografiaBase/CuencasPrincipales.shp', sep='')
+proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
+# La grilla resultante tendrá factorEscaladoGrillaInterpolacion píxeles en cada dirección por cada
+# pixel de la grilla de los regresores
+factorEscaladoGrillaInterpolacion <- 2
 
 source('descargaDatos.r')
-localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin = dt_fin, 
+localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin=dt_fin, 
                                  pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
 # 0 - Comentarios iniciales
 # Este script sirve como plantilla base para llevar a cabo todos los pasos del pipeline de 
@@ -125,14 +129,38 @@ max_dry_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, con
 max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x > 0 })
 
 
-# 3 - Lectura de rasters del satélite en formato geoTiff y definición de la grilla a interpolar
-# Leemos la grilla en el archivo fname
-source(paste(pathSTInterp, 'grillas/uIOGrillas.r', sep=''))
-coordsAInterpolar <- leerGrillaGDAL(nombreArchivo = paste(pathDatos, 'grilla_uy.tiff', sep=''))
-coordsAInterpolar <- as(geometry(coordsAInterpolar), 'SpatialPixels')
+# 3 - Definición de la grilla de interpolación
+source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
+shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'UTF-8')
+pathsGSMaP <- descargaGSMaP(
+  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
+  shpBase = shpBase)
+pathsGPM <- descargaGPM(
+  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
+  shpBase = shpBase)
+
+# La otra parte de la función F a definir son los valores de U1, U2, ... Un.
+# Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
+# regresor y con una fila por fecha
+# Una cosa a tener en cuenta y muy importante, los valores en las filas de pathsRegresores deben 
+# coincidir con los valores en las filas de valoresObservaciones, 
+# es decir la fila i debe corresponder a la misma fecha en pathsRegresores que en valoresObservaciones, 
+# para poder matchear los valores de fechas correspondientes.
+# Otra cosa útil es que la columna j tenga un nombre descriptivo del regresor j, para después poder 
+# saber de cual se trata
+# La función cargarRegresor(es) se encarga de esto. Para cargar un dato de satélite  se debe llamar 
+# cambiando el path a la carpeta de datos en cuestión
+pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
+                                    fechasRegresando = fechasObservaciones)
+pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
+
+grillaRegresor <- geometry(readGDAL(pathsRegresores[1, 1]))
+newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
+coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, p4string = proj4stringAInterpolar, nCeldasX = newNCeldasX)
+# mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
+
 
 # 4 - Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
-source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
 coordsObservaciones <- estaciones
@@ -144,44 +172,19 @@ proj4string(coordsObservaciones) <- "+proj=longlat +datum=WGS84"
 
 # Reproyectamos las estaciones a la misma proyección que la grilla a interpolar
 coordsObservaciones <- spTransform(x = coordsObservaciones, CRS(proj4string(coordsAInterpolar)))
-
+coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
+iValue <- which(colnames(coordsObservaciones@data) == 'value')
+coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]
 
 # Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
                                               encoding = 'UTF-8')
+shpBase = shpMask$shp
 # Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
 # mapas independientemente de los datos que tenga
-xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpMask$shp), ejesXYLatLong = T)
+xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 
-# La otra parte de la función F a definir son los valores de U1, U2, ... Un.
-# Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
-# regresor y con una fila por fecha
-# Una cosa a tener en cuenta y muy importante, los valores en las filas de pathsRegresores deben 
-# coincidir con los valores en las filas de tempAireMin$datos, 
-# es decir la fila i debe corresponder a la misma fecha en pathsRegresores que en tempAireMin$datos, 
-# para poder matchear los valores de fechas correspondientes.
-# Otra cosa útil es que la columna j tenga un nombre descriptivo del regresor j, para después poder 
-# saber de cual se trata
-
-
-# La función cargar regresor se encarga de esto. Para cargar un dato de satélite  se debe llamar 
-# cambiando el path a la carpeta de datos en cuestión
-shpBase = shpMask$shp
-
-pathsRegresores <- descargaGSMaP(
-  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpMask$shp)
-
-pathsRegresores2 <- descargaGPM(
-  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpMask$shp)
-
-pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
-                                    fechasRegresando = fechasObservaciones)
-pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
-
-
-grillaRegresor <- as(object = geometry(readGDAL(pathsRegresores[1, 1])), Class = 'SpatialPixels')
+grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
 shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
@@ -192,3 +195,5 @@ coordsAInterpolar <- coordsAInterpolar[i, ]
 
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
                                               encoding = 'UTF-8')
+
+
