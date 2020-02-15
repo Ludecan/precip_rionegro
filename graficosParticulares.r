@@ -181,8 +181,8 @@ plotEjemplosRellenoRasters <- function() {
     require(rgdal)
     require(sp)
     require(Rmisc)
-    source(paste(script.dir.funcionesAuxiliares, 'mapearEx.r', sep=''))
-    source(paste(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r', sep=''))
+    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
+    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
   })
   parSapplyLB(cl=cl, X=1:length(fechasObservaciones), FUN=plotMultiRastersEnPanelesI, pathsRasters = paths[, c(1, 3, 2, 4)], 
               fechasRasters = fechasObservaciones, shpBase = shpMask$shp, escalas = NULL, 
@@ -201,8 +201,8 @@ plotEjemplosRellenoRasters <- function() {
     require(rgdal)
     require(sp)
     require(Rmisc)
-    source(paste(script.dir.funcionesAuxiliares, 'mapearEx.r', sep=''))
-    source(paste(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r', sep=''))
+    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
+    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
   })
   parSapplyLB(cl=cl, X=1:length(fechasObservaciones), FUN=plotMultiRastersEnPanelesI, pathsRasters = paths[, c(1, 4, 2, 3)], 
               fechasRasters = fechasObservaciones, shpBase = shpMask$shp, escalas = NULL, 
@@ -219,8 +219,7 @@ plotComparacionModelos <- function(
   pathsModelos <- pathsModelos[, modelosAPlotear]
   especificacionEscala <- paramsBase$especEscalaDiagnostico
   
-  
-  iFecha <- 384
+  iFecha <- 4
   plotComparacionModelosI <- function(
       iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones, pathsModelos, 
       especificacionEscala, shpBase, nColsPlots, carpetaSalida, replot) {
@@ -261,6 +260,8 @@ plotComparacionModelos <- function(
     }
   }
   
+  dir.create(carpetaSalida, showWarnings = F)
+  
   nCoresAUsar <- detectCores(T, T)
   if (nCoresAUsar > 1) {
     cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
@@ -270,9 +271,9 @@ plotComparacionModelos <- function(
       require(rgdal)
       require(sp)
       require(Rmisc)
-      source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'))
-      source(paste0(pathSTInterp, 'interpolar/mapearEx.r'))
-      source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'))
+      source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
+      source(paste0(pathSTInterp, 'interpolar/mapearEx.r'), encoding = 'WINDOWS-1252')
+      source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
     })
     parSapplyLB(
       cl=cl, X=seq_along(fechasObservaciones), FUN=plotComparacionModelosI, 
@@ -385,10 +386,10 @@ plotObservacionesYRegresores <- function(
     cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
     clusterExport(cl, varlist = c('script.dir.funcionesAuxiliares'))
     clusterEvalQ(cl = cl, expr = {
-      source(paste(script.dir.funcionesAuxiliares, 'interpolarEx.r', sep=''))
-      source(paste(script.dir.funcionesAuxiliares, 'leerEscalas.r', sep=''))
-      source(paste(script.dir.funcionesAuxiliares, 'mapearEx.r', sep=''))
-      source(paste(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r', sep=''))
+      source(paste0(script.dir.funcionesAuxiliares, 'interpolarEx.r'), encoding = 'WINDOWS-1252')
+      source(paste0(script.dir.funcionesAuxiliares, 'leerEscalas.r'), encoding = 'WINDOWS-1252')
+      source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
+      source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
     })
     parSapplyLB(
       cl=cl, X=seq_along(fechasObservaciones), FUN=plotObservacionesYRegresoresI, 

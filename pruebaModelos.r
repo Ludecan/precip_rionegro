@@ -1,5 +1,13 @@
 if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
+} else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else { setwd('D:/ADME/precip_rionegro') }
+# Linux installations need to run these to have rgdal available
+# sudo apt-get update
+# sudo apt-get install libgdal-dev libproj-dev
+# and this for Cairo
+# sudo apt-get install libcairo2-dev libgtk2.0-dev xvfb xauth xfonts-base libxt-dev
+# and this for devtools
+# sudo apt-get install libcurl4-gnutls-dev libssl-dev libxml2-dev libxslt-dev libcurl4-openssl-dev
 
 # Índice
 # 5 - Preparación de Parámetros
@@ -15,16 +23,18 @@ horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 plotDatos <- FALSE
 runTestsRegresores <- FALSE
-runCV <- TRUE
-runValidation <- TRUE
 runGridding <- TRUE
+runCV <- FALSE
+runValidation <- FALSE
 runPlots <- TRUE
 
-source('cargaDatos.r')
+nombreExperimento <- '_mascara03'
+
+source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
 localFileQCed <- changeFileExt(appendToFileName(localFile, '_qced'), '.tsv')
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
-  source('aplicaQC.r')
+  source('aplicaQC.r', encoding = 'WINDOWS-1252')
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
@@ -33,32 +43,37 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
     pathArchivoDatos = localFileQCed, estaciones=estaciones, fechas = fechasObservaciones, 
     datos = valoresObservaciones)
 } else {
-  datos <- leerSeriesArchivoUnico(pathArchivoDatos = localFileQCed, nFilasEstaciones = 4, filaId = 2)
+  datos <- leerSeriesArchivoUnico(
+    pathArchivoDatos = localFileQCed, nFilasEstaciones = 4, filaId = 2, fileEncoding = 'WINDOWS-1252')
   valoresObservaciones <- datos$datos
   rm(datos)
 }
 
 if (plotDatos) {
-  source('graficosParticulares.r')
-  source(paste(pathSTInterp, 'interpolar/leerEscalas.r', sep=''))
+  source('graficosParticulares.r', encoding = 'WINDOWS-1252')
+  source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
   especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
-    nDigitos = 2, continuo = T)
+    nDigitos = 1, continuo = T)
   plotObservacionesYRegresores(
     coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
     valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = TRUE,
     grillaAlternativaRegresores=coordsAInterpolar, especificacionEscala=especificacionEscala)
 }
 
-source(paste(pathSTInterp, 'interpolar/interpolarYMapearEx.r', sep=''))
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
 # pathsRegresores <- pathsRegresores[, -3]
 
 
-cuts <- cut(x = valoresObservaciones, breaks=c(0, 0.1, 2, 5, 10, 15, 25, 50, 100, 500), include.lowest=T, ordered_result=T)
-uniqueCuts <- levels(cuts)
-sapply(uniqueCuts, FUN = function(x) {
-  idx = cuts == x
-  return(cor(valoresObservaciones[idx], valoresRegresores[['GPM']][idx], use = "pairwise.complete.obs"))
-})
+if (FALSE) {
+  cuts <- cut(x = valoresObservaciones, breaks=c(0, 0.1, 2, 5, 10, 15, 25, 50, 100, 500), include.lowest=T, ordered_result=T)
+  uniqueCuts <- levels(cuts)
+  valoresRegresores <- extraerValoresRegresoresSobreSP(
+    objSP = coordsObservaciones, pathsRegresores = pathsRegresores)
+  sapply(uniqueCuts, FUN = function(x) {
+    idx = cuts == x
+    return(cor(valoresObservaciones[idx], valoresRegresores[['GPM']][idx], use = "pairwise.complete.obs"))
+  })
+}
 
 getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
   valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)
@@ -175,7 +190,7 @@ paramsBase <- createParamsInterpolarYMapear(
   nmax=Inf,
   maxdist=Inf,
   inverseDistancePower=NA,
-  umbralMascaraCeros=0.25,
+  umbralMascaraCeros=0.3,
   metodoRemocionDeSesgo='IDW_ResiduosPositivos',
   modelosVariograma=c('Exp', 'Sph', 'Pow', 'Cir', 'Pen'),
   #cutoff=quantile(spDists(coordsObservaciones, longlat=!is.projected(coordsObservaciones)), probs = 0.4),
@@ -196,7 +211,8 @@ paramsBase <- createParamsInterpolarYMapear(
   difMaxFiltradoDeOutliersRLM = 0,
   difMaxFiltradoDeOutliersCV = 0,
   modoDiagnostico=TRUE,
-  simpleKrigingEnRK=FALSE)
+  simpleKrigingEnRK=FALSE,
+  preECDFMatching=FALSE)
 paramsBase$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos = 2, continuo = T)
 
 # escala <- darEscala(especificacion = paramsBase$especEscalaDiagnostico, valores = c(0, 1, 10))
@@ -276,116 +292,116 @@ if (FALSE) {
 
 
 {
-listaParams <- list()
-listaRegresores <- list()
-
-# 1 - Kriging Ordinario Espacial
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'ninguna'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[1]] <- paramsI
-listaRegresores[[1]] <- NA
-
-# 2 - GPM sin calibrar
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'NoLimitar'
-paramsI$interpolationMethod <- 'none'
-paramsI$metodoIgualacionDistribuciones <- 'ninguna'
-paramsI$umbralMascaraCeros <- 0
-paramsI$metodoRemocionDeSesgo <- 'ninguno'
-listaParams[[2]] <- paramsI
-listaRegresores[[2]] <- pathsRegresores[,c('GPM'), drop=FALSE]
-
-# 3 - GSMaP sin calibrar
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'NoLimitar'
-paramsI$interpolationMethod <- 'none'
-paramsI$metodoIgualacionDistribuciones <- 'ninguna'
-paramsI$umbralMascaraCeros <- 0
-paramsI$metodoRemocionDeSesgo <- 'ninguno'
-listaParams[[3]] <- paramsI
-listaRegresores[[3]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
-
-# 4 - Kriging Universal Espacial + Regresion Generalizada en GPM
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[4]] <- paramsI
-listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
-
-# 5 - Kriging Universal Espacial + Regresion Generalizada en GSMaP
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[5]] <- paramsI
-listaRegresores[[5]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
-
-# 6 - Kriging Universal Espacial + Regresion Generalizada en GPM y GSMaP
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[6]] <- paramsI
-listaRegresores[[6]] <- pathsRegresores[,c('GPM', 'GSMaP'), drop=FALSE]
-
-# 7 - Kriging Universal Espacial + Regresion Generalizada en Combinado
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[7]] <- paramsI
-listaRegresores[[7]] <- pathsRegresores[, 'Combinado', drop=FALSE]
-
-# 8 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.5
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[8]] <- paramsI
-listaRegresores[[8]] <- pathsRegresores[, 'Combinado0.5', drop=FALSE]
-
-# 9 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.6
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[9]] <- paramsI
-listaRegresores[[9]] <- pathsRegresores[, 'Combinado0.6', drop=FALSE]
-
-# 10 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.7
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[10]] <- paramsI
-listaRegresores[[10]] <- pathsRegresores[, 'Combinado0.7', drop=FALSE]
-
-# 11 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.8
-paramsI <- paramsBase
-paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
-paramsI$interpolationMethod <- 'automap'
-paramsI$metodoIgualacionDistribuciones <- 'GLS'
-paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
-listaParams[[11]] <- paramsI
-listaRegresores[[11]] <- pathsRegresores[, 'Combinado0.8', drop=FALSE]
+  listaParams <- list()
+  listaRegresores <- list()
+  
+  # 1 - Kriging Ordinario Espacial
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'ninguna'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[1]] <- paramsI
+  listaRegresores[[1]] <- NA
+  
+  # 2 - GPM sin calibrar
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'NoLimitar'
+  paramsI$interpolationMethod <- 'none'
+  paramsI$metodoIgualacionDistribuciones <- 'ninguna'
+  paramsI$umbralMascaraCeros <- 0
+  paramsI$metodoRemocionDeSesgo <- 'ninguno'
+  listaParams[[2]] <- paramsI
+  listaRegresores[[2]] <- pathsRegresores[,c('GPM'), drop=FALSE]
+  
+  # 3 - GSMaP sin calibrar
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'NoLimitar'
+  paramsI$interpolationMethod <- 'none'
+  paramsI$metodoIgualacionDistribuciones <- 'ninguna'
+  paramsI$umbralMascaraCeros <- 0
+  paramsI$metodoRemocionDeSesgo <- 'ninguno'
+  listaParams[[3]] <- paramsI
+  listaRegresores[[3]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
+  
+  # 4 - Kriging Universal Espacial + Regresion Generalizada en GPM
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[4]] <- paramsI
+  listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
+  
+  # 5 - Kriging Universal Espacial + Regresion Generalizada en GSMaP
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[5]] <- paramsI
+  listaRegresores[[5]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
+  
+  # 6 - Kriging Universal Espacial + Regresion Generalizada en GPM y GSMaP
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[6]] <- paramsI
+  listaRegresores[[6]] <- pathsRegresores[,c('GPM', 'GSMaP'), drop=FALSE]
+  
+  # 7 - Kriging Universal Espacial + Regresion Generalizada en Combinado
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[7]] <- paramsI
+  listaRegresores[[7]] <- pathsRegresores[, 'Combinado', drop=FALSE]
+  
+  # 8 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.5
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[8]] <- paramsI
+  listaRegresores[[8]] <- pathsRegresores[, 'Combinado0.5', drop=FALSE]
+  
+  # 9 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.6
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[9]] <- paramsI
+  listaRegresores[[9]] <- pathsRegresores[, 'Combinado0.6', drop=FALSE]
+  
+  # 10 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.7
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[10]] <- paramsI
+  listaRegresores[[10]] <- pathsRegresores[, 'Combinado0.7', drop=FALSE]
+  
+  # 11 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.8
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  listaParams[[11]] <- paramsI
+  listaRegresores[[11]] <- pathsRegresores[, 'Combinado0.8', drop=FALSE]
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'GRK-Combinado', 'GRK-Combinado0.6', 'GRK-Combinado0.7')
-modelosACorrer <- c(1, 7, 9, 10)
+modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GRK-Combinado', 'GRK-Combinado0.6')
+modelosACorrer <- c(1, 2, 3, 7, 9)
 
-source(paste(pathSTInterp, 'interpolar/testInterpolationModels.r', sep=''))
+source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
 
 ############# Tests Regresores #############
 if (runTestsRegresores) {
@@ -396,8 +412,8 @@ if (runTestsRegresores) {
 
 ############# Gridding #############
 if (runGridding) {
-  i <- modelosACorrer[6]
-  pathResultadosGrillado <- 'Resultados/3-Grillado/'
+  i <- 7
+  pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
   for (i in modelosACorrer) {
     try({
       paramsI <- listaParams[[i]]
@@ -442,70 +458,70 @@ if (runGridding) {
 
 ############# Cross Validation #############
 if (runCV) {
-  pathResultadosValidacion <- 'Resultados/4-Validacion/'
+  pathResultadosValidacion <- paste0('Resultados/4-Validacion', nombreExperimento, '/')
   cvs <- st_interpCrossValidations(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores,
     pathResultados=pathResultadosValidacion, modelosACorrer=modelosACorrer, recalcCV=FALSE)
-    
-    ############# Validation Stats #############
-    if (runValidation) {
-      if (FALSE) {
-        idx <- !is.na(pathsRegresores[, 'Combinado0.6'])
-        fObs <- fechasObservaciones[idx]
-        vObs <- valoresObservaciones[idx, ]
-        cvs_idx <- sapply(cvs, FUN = function(x) { return(x[idx,])})
-      } else {
-        fObs <- fechasObservaciones
-        vObs <- valoresObservaciones
-        cvs_idx <- cvs
-      }
-      
-      validationStats <- calcValidationStatisticsMultipleModels(
-        vObs, cvs_idx, climatologias=NULL, pathResultados='Resultados/4-Validacion/')
-      
-      validationStats$validationStatsOverall
-      
-      validationStats$validationStatsTemporales
-      
-      rmses <- sapply(validationStats$validationStatsTemporales, FUN = function(x) {return(x[, 'RMSE'])} )
-      
-      
-      mejores <- unlist(apply(rmses, MARGIN = 1, which.min))
-      uMejores <- unique(mejores)
-      i <- uMejores[1]
-      for (i in uMejores) {
-        print(sum(!is.na(mejores) & mejores==i))
-      }
-      
-      
-      linePlot(x=fechasObservaciones, y=rmses)
-      
-      
-      lapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)})
-      
-      ordenModelosPorColumnas <- names(cvs)
-      ordenModelosPorColumnas <- c('K', 'GRK-Combinado', 'GRK-Combinado0.6')
-      calcAndPlotAllValidationStatisticsV2(
-        fechas = fObs, pronosticos = cvs_idx, observaciones = vObs,
-        climatologias = NULL, coordsObservaciones = coordsObservaciones, 
-        shpBase = shpBase, xyLims = xyLims, nColsPlots = min(length(ordenModelosPorColumnas), 3),
-        ordenModelosPorColumnas = ordenModelosPorColumnas,
-        tamaniosPuntos=8, tamanioFuentePuntos=7, tamanioFuenteEjes=20, tamanioFuenteTitulo=22,
-        carpetaSalida=pathResultadosValidacion)    
+  
+  ############# Validation Stats #############
+  if (runValidation) {
+    if (FALSE) {
+      idx <- !is.na(pathsRegresores[, 'Combinado0.6'])
+      fObs <- fechasObservaciones[idx]
+      vObs <- valoresObservaciones[idx, ]
+      cvs_idx <- sapply(cvs, FUN = function(x) { return(x[idx,])})
+    } else {
+      fObs <- fechasObservaciones
+      vObs <- valoresObservaciones
+      cvs_idx <- cvs
     }
+    
+    validationStats <- calcValidationStatisticsMultipleModels(
+      vObs, cvs_idx, climatologias=NULL, pathResultados='Resultados/4-Validacion/')
+    
+    validationStats$validationStatsOverall
+    
+    validationStats$validationStatsTemporales
+    
+    rmses <- sapply(validationStats$validationStatsTemporales, FUN = function(x) {return(x[, 'RMSE'])} )
+    
+    
+    mejores <- unlist(apply(rmses, MARGIN = 1, which.min))
+    uMejores <- unique(mejores)
+    i <- uMejores[1]
+    for (i in uMejores) {
+      print(sum(!is.na(mejores) & mejores==i))
+    }
+    
+    
+    linePlot(x=fechasObservaciones, y=rmses)
+    
+    
+    lapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)})
+    
+    ordenModelosPorColumnas <- names(cvs)
+    ordenModelosPorColumnas <- c('K', 'GRK-Combinado', 'GRK-Combinado0.6')
+    calcAndPlotAllValidationStatisticsV2(
+      fechas = fObs, pronosticos = cvs_idx, observaciones = vObs,
+      climatologias = NULL, coordsObservaciones = coordsObservaciones, 
+      shpBase = shpBase, xyLims = xyLims, nColsPlots = min(length(ordenModelosPorColumnas), 3),
+      ordenModelosPorColumnas = ordenModelosPorColumnas,
+      tamaniosPuntos=8, tamanioFuentePuntos=7, tamanioFuenteEjes=20, tamanioFuenteTitulo=22,
+      carpetaSalida=pathResultadosValidacion)    
+  }
 }
 
 ############# Plots #############
 if (runPlots) {
-  dirPlots <- 'Resultados/5-ComparacionModelos/'
-  dir.create(dirPlots, showWarnings = F)
-  source('graficosParticulares.r')
+  dirPlots <- paste0('Resultados/5-ComparacionModelos', nombreExperimento, '/')
+  source('graficosParticulares.r', encoding = 'WINDOWS-1252')
   # ti <- 1
+  
   plotComparacionModelos(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
-    pathsModelos=cargarRegresores(carpetaRegresores = 'Resultados/3-Grillado', fechasRegresando = fechasObservaciones), 
+    pathsModelos=cargarRegresores(carpetaRegresores = pathResultadosGrillado, fechasRegresando = fechasObservaciones), 
     modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
-    especificacionEscala, shpBase, nColsPlots=3, carpetaSalida='Resultados/5-ComparacionModelos', 
-    replot=FALSE)
+    especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=3, 
+    carpetaSalida=dirPlots, replot=FALSE)
 }
 

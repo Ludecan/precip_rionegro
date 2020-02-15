@@ -1,5 +1,5 @@
-source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
-source(paste(pathSTInterp, 'interpolar/interpolarYMapearEx.r', sep=''))
+source(paste0(pathSTInterp, 'qc/qcTests.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
 
 paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
   proj4StringObservaciones=proj4string(coordsObservaciones),

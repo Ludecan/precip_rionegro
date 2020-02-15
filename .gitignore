@@ -6,3 +6,7 @@ Resultados/
 datos/satelites/
 GSMaP_authInfo.json
 GPM_authInfo.json
+datos/mapas/
+RCache/
+RCache_windows/
+*.rej

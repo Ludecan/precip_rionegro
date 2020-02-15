@@ -14,7 +14,7 @@ proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_
 # pixel de la grilla de los regresores
 factorEscaladoGrillaInterpolacion <- 2
 
-source('descargaDatos.r')
+source('descargaDatos.r', encoding = 'WINDOWS-1252')
 localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin=dt_fin, 
                                  pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
 # 0 - Comentarios iniciales
@@ -32,12 +32,12 @@ localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin=dt_fin,
 # como los de MODIS
 # Los fuentes que están en la librería hacen instant_pkgs de los paquetes que precisan así que 
 # seguramente se instale alguno más
-source(paste(pathSTInterp, 'instalarPaquetes/instant_pkgs.r', sep=''))
+source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
 
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
-source(paste(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r', sep=''))
+source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding = 'WINDOWS-1252')
 datos <- leerSeriesXLSX(pathArchivoDatos = localFile, hojaDatos = 'MedidasHorarias', fileEncoding = 'UTF-8')
 estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
@@ -130,8 +130,8 @@ max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, con
 
 
 # 3 - Definición de la grilla de interpolación
-source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
-shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'UTF-8')
+source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
+shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
 pathsGSMaP <- descargaGSMaP(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
   shpBase = shpBase)
@@ -178,7 +178,7 @@ coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsOb
 
 # Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = 'UTF-8')
+                                              encoding = 'UTF-8NoBOM')
 shpBase = shpMask$shp
 # Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
 # mapas independientemente de los datos que tenga
@@ -186,6 +186,8 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
+if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obtaining Río Negro polygon') }
+
 shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
 coordsQC <- grillaRegresor[i, ]
@@ -194,6 +196,4 @@ i <- !is.na(over(coordsAInterpolar, geometry(shpRioNegro)))
 coordsAInterpolar <- coordsAInterpolar[i, ]
 
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = 'UTF-8')
-
-
+                                              encoding = 'UTF-8NoBOM')

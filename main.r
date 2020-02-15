@@ -12,7 +12,7 @@ dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 
-source('cargaDatos.r')
+source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
 # 5 - Preparación de Parámetros
 # La función que tenemos implementada para hacer la interpolación se llama interpolarYMapear en 
@@ -34,12 +34,12 @@ source('cargaDatos.r')
 
 # Estos fuentes tienen varias funciones necesarias para la interpolación. 
 # Tiene las funciones para hacer kriging, universal kriging, la CV, SRT, etc...
-source(paste(pathSTInterp, 'interpolar/interpolarEx.r', sep=''))
-source(paste(pathSTInterp, 'interpolar/interpolarYMapearEx.r', sep=''))
-source(paste(pathSTInterp, 'interpolar/funcionesAuxiliares.r', sep=''))
+source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
 
 # Este tiene una función de ayuda que crea el objeto de parámetros para universalGridding
-source(paste(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r', sep=''))
+source(paste0(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r'), encoding = 'WINDOWS-1252')
 params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemplo/',
                                         proj4StringObservaciones=proj4string(coordsObservaciones),
                                         proj4StringAInterpolar=proj4string(coordsAInterpolar),
@@ -80,7 +80,7 @@ params <- createParamsInterpolarYMapear(baseNomArchResultados = 'ResultadosEjemp
 GPM = extraerValoresRegresorSobreSP(objSP = coordsQC, pathsRegresor = pathsRegresores[, 1])
 GSMaP = extraerValoresRegresorSobreSP(objSP = coordsQC, pathsRegresor = pathsRegresores[, 2])
 
-source(paste(pathSTInterp, 'qc/qcTests.r', sep=''))
+source(paste0(pathSTInterp, 'qc/qcTests.r'), encoding = 'WINDOWS-1252')
 test <- testEspacialPrecipitacion(
   coordsObservaciones = coordsQC, fechasObservaciones = rownames(pathsRegresores),
   valoresObservaciones = GPM, maxDistKm=11 * sqrt(2),
@@ -112,7 +112,7 @@ mapearResultadosDeteccionOutliersV2(
   tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
   carpetaSalida = 'Resultados/2-QC/mapas/GSMaP/', shpBase = shpBase)
 
-source('graficosParticulares.r')
+source('graficosParticulares.r', encoding = 'WINDOWS-1252')
 plotObservacionesYRegresores(coordsObservaciones, fechasObservaciones, valoresObservaciones, 
                              pathsRegresoresAEvaluar = pathsRegresores, shpBase = shpBase, 
                              nColsPlots = 3, carpetaSalida = 'Resultados/1-Exploracion/mapas', 

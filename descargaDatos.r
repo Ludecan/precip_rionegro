@@ -1,11 +1,11 @@
 script.dir.descargaDatos <- dirname((function() { attr(body(sys.function()), "srcfile") })()$filename)
 
-source(paste(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r', sep=''))
+source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate'))
 
-source(paste(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r', sep=''))
-source(paste(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r', sep=''))
-source(paste(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r', sep=''))
+source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
 
 descargaPluviosADME <- function(dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/') {
   url <- paste('***REMOVED***?dtIni=', dt_ini, '&dtFin=', dt_fin, 
@@ -27,7 +27,7 @@ descargaGSMaP <- function(
   
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion + 1)
-  dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion)
+  dt_fin <- sprintf('%s %02d:00', date(dt_fin)+1, horaUTCInicioAcumulacion)
   
   # Descargo y parseo el CTL
   nomArchCTL <- paste('GSMaP_NRT.', producto, '.rain.ctl', sep = '')
@@ -88,7 +88,7 @@ descargaGPM <- function(
   
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
-  dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion-1)
+  dt_fin <- sprintf('%s %02d:30', date(dt_fin)+1, horaUTCInicioAcumulacion-1)
   
   formatoPrefijo <- paste(urlBase, producto, '/%Y/%m/3B-HHR-L.MS.MRG.3IMERG.%Y%m%d-S%H%M%S', sep='')
   formatoE <- '-E%H%M%S.'
@@ -96,16 +96,15 @@ descargaGPM <- function(
   
   # Armo urls y pathsLocales horarios
   mediasHoras <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin) + 30 * 60, by="30 mins")
-  urls <- paste(strftime(x = head(mediasHoras, -1), format = formatoPrefijo),
-                strftime(x=tail(mediasHoras, -1) - 1, format = formatoE),
-                sprintf(fmt = formatoPostfijo, 
-                        (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30), sep='')
-  
-  pathsLocales <- paste(pathSalida, 'originales/', basename(urls), sep='')
+  urls <- paste0(strftime(x = head(mediasHoras, -1), format = formatoPrefijo),
+                 strftime(x=tail(mediasHoras, -1) - 1, format = formatoE),
+                 sprintf(fmt = formatoPostfijo, 
+                         (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30))
+  pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
   
   # Armo paths locales diarios para la agregación
   dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
-  pathsLocalesDiarios <- strftime(x = dias, format = paste(pathSalida, '%Y%m%d.tif', sep=''))
+  pathsLocalesDiarios <- strftime(x = dias, format = paste0(pathSalida, '%Y%m%d.tif'))
   
   # Busco los paths locales diarios que no existan
   iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)

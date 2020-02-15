@@ -5,10 +5,10 @@ dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 
-source('cargaDatos.r')
+source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
 ##### 1 - Correlación VS Distancia
-source(paste(pathSTInterp, 'Graficas/graficas.r', sep=''))
+source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
 dist <- rdist(coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
@@ -87,7 +87,7 @@ mapaEstacionesConDistMax <- mapaEstaciones +
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
        dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
 
-source('aplicaQC.r')
+source('aplicaQC.r', encoding = 'WINDOWS-1252')
 
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
