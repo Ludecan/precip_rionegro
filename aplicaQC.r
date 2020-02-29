@@ -60,7 +60,7 @@ applyQCTests <- function(
     coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
     valoresObservaciones = valoresObservaciones, maxValAbs = 450)
   
-  # test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,]
+  # test[test$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   # test[test$fecha == '2019-01-08',]
   
   if (plotMaps) {
@@ -74,94 +74,90 @@ applyQCTests <- function(
   test$reemplazar[test$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
   
-  test <- testEspacialPrecipitacion(
+  test2 <- testEspacialPrecipitacion(
     coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
     valoresObservaciones = valoresObservaciones, minNCuadrantes=3, fInf = 1.4, amplitudMin = 1, 
     amplitudMinRatio = 0.15)
   
-  # test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,]
-  # test[test$fecha == '2019-01-08',]
+  # test2[test2$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
+  # test2[test2$fecha == '2019-01-08',]
   
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
-      test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
+      test = test2[test2$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/2/', shpBase = shpBase, replot=replot)
   }
   
-  test$reemplazar[test$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
-  valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  test2$reemplazar[test2$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
+  valoresObservaciones <- ejecutarReemplazosSRT(test2, valoresObservaciones)
   
   # Plus another round of testing with the satellites. If for a given observation both satellites
   # agree it's an extreme value, we discard it
   listaMapas <- createDefaultListaMapas(
     paramsInterpolacion, fechasObservaciones = fechasObservaciones, dibujarEscalaFija = FALSE)
   
-  test <- deteccionOutliersRLM(
+  test3 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
     pathsRegresores = pathsRegresores[, 'GPM', drop=F], listaMapas = listaMapas, 
     factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
   
-  # test[test$fecha == '2019-01-08',]
+  # test3[test3$fecha == '2019-01-08',]
   
-  test2 <- deteccionOutliersRLM(
+  test4 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
     pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], listaMapas = listaMapas, 
     factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
   
-  iTest <- test$tipoOutlier %in% tiposOutliersValoresSospechosos & 
-    test$tipoOutlier == test2$tipoOutlier & 
-    (test$estimado + test2$estimado)*0.5 > 10
-  # test[iTest, ]
+  iTest <- test3$tipoOutlier %in% tiposOutliersValoresSospechosos & 
+    test3$tipoOutlier == test4$tipoOutlier & 
+    (test3$estimado + test4$estimado)*0.5 > 10
+  # test3[iTest, ]
   
-  # test[test$fecha == '2019-07-14',]
-  # test2[test2$fecha == '2019-07-14',]
-  # test3[test3$fecha == '2019-07-14', ]
-  # test2[test2$fecha == '2019-08-27',]
-  # test2[test2$fecha == '2019-08-28',]
-  # test[test$fecha == '2019-09-25',]
-  # plotMaps <- T
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
-      test = test[iTest, ], 
+      test = test3[iTest, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/3/', shpBase = shpBase, replot=replot)
   }
   
-  test[iTest, ]$reemplazar <- 1
-  valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  test3[iTest, ]$reemplazar <- 1
+  valoresObservaciones <- ejecutarReemplazosSRT(test3, valoresObservaciones)
   
-  test <- deteccionOutliersMediaSD(x = valoresObservaciones, factorSDHaciaAbajo = 3, sdMin = 1)
-  # test3 <- deteccionOutliersMedianaMAD(x = valoresObservaciones, factorMADHaciaAbajo = 3, desvMedAbsMin = 1)
-  # test3[test3$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
+  test5 <- deteccionOutliersMediaSD(x = valoresObservaciones, factorSDHaciaAbajo = 3, sdMin = 1)
+  # test5[test3$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   
-  iTest <- test$tipoOutlier %in% tiposOutliersValoresSospechosos & test$estimado >= 3 & test$estimado <= 15
-  # test3[iTest, ]
+  iTest <- test5$tipoOutlier %in% tiposOutliersValoresSospechosos & 
+           test5$estimado >= 3 & 
+           test5$estimado <= 15
+  # test5[iTest, ]
   
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
-      test = test[iTest, ], 
+      test = test5[iTest, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/4/', shpBase = shpBase, replot=replot)
   }
   
-  test[iTest, ]$reemplazar <- 1
-  valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  test5[iTest, ]$reemplazar <- 1
+  valoresObservaciones <- ejecutarReemplazosSRT(test5, valoresObservaciones)
   
-  test <- testMaxToMeanRatios(valoresObservaciones)
+  test6 <- testMaxToMeanRatios(valoresObservaciones)
+  test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
+  
   if (plotMaps) {
     mapearResultadosDeteccionOutliersV2(
-      test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
+      test = test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/5/', shpBase = shpBase, replot=replot)
   }
   
-  test[test$tipoOutlier %in% tiposOutliersValoresSospechosos, ]$reemplazar <- 1
-  valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
+  test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ]$reemplazar <- 1
+  valoresObservaciones <- ejecutarReemplazosSRT(test6, valoresObservaciones)
   
   return(valoresObservaciones)
 }

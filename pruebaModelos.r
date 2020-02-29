@@ -14,9 +14,9 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # 6 - Interpolación de los datos
 # 7 - Cross Validation
 
+#dt_ini='2009-09-16'
 #dt_ini='2017-02-01'
-#dt_ini='2018-01-01'
-#dt_fin = '2019-12-31'
+#dt_fin = '2020-01-31'
 dt_ini='2018-10-21'
 dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
@@ -28,9 +28,14 @@ runCV <- FALSE
 runValidation <- FALSE
 runPlots <- TRUE
 
-nombreExperimento <- '_mascara03'
+nombreExperimento <- '_mascara03_CorreccionExtrapolacion'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
+
+localFileNonQCed <- changeFileExt(appendToFileName(localFile, '_non_qced'), '.tsv')
+grabarSeriesArchivoUnico(
+  pathArchivoDatos = localFileNonQCed, estaciones=estaciones, fechas = fechasObservaciones, 
+  datos = valoresObservaciones)
 
 localFileQCed <- changeFileExt(appendToFileName(localFile, '_qced'), '.tsv')
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
@@ -38,7 +43,8 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
-    plotMaps = FALSE)
+    plotMaps = TRUE)
+  
   grabarSeriesArchivoUnico(
     pathArchivoDatos = localFileQCed, estaciones=estaciones, fechas = fechasObservaciones, 
     datos = valoresObservaciones)
@@ -359,6 +365,8 @@ if (FALSE) {
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[7]] <- paramsI
   listaRegresores[[7]] <- pathsRegresores[, 'Combinado', drop=FALSE]
+  paramsI$signosValidosRegresores <- 1
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[7]])
   
   # 8 - Kriging Universal Espacial + Regresion Generalizada en Combinado0.5
   paramsI <- paramsBase
