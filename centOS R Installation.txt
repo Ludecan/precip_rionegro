@@ -19,10 +19,8 @@ cd ..
 
 tar zxvf bzip2-1.0.6.tar.gz &&
 cd bzip2-1.0.6
-
-# Modify the Makefile (original: CC=gcc after modification: CC=gcc -fPIC) as suggested
+# Modify the Makefile (original: CC=gcc after modification: CC=gcc -fPIC)
 nano makefile
-
 make && make install PREFIX=$HOME/dependencies/libs/bzip2-1.0.6 &&
 cd ..
 
@@ -44,9 +42,13 @@ cd curl-7.68.0 &&
 make && make install &&
 cd ..
 
-Add the lines below to my .cshrc file
+# Create a writable and executable directory for R package installation
+mkdir $HOME/tmp_dir
+
+Add the lines below to .cshrc file
 nano $HOME/.cshrc
 export LD_LIBRARY_PATH="$HOME/dependencies/libs/pcre-8.44/lib:$HOME/dependencies/libs/xz-5.2.4/lib:$LD_LIBRARY_PATH"
+export TMPDIR=$HOME/tmp_dir
 And source .cshrc
 source $HOME/.cshrc
 
@@ -56,3 +58,11 @@ cd R-3.6.2 &&
 ./configure --prefix=$HOME/R-3.6.2 --enable-R-shlib LDFLAGS="-L/$HOME/dependencies/libs/zlib-1.2.11/lib -L/$HOME/dependencies/libs/bzip2-1.0.6/lib -L/$HOME/dependencies/libs/xz-5.2.4/lib -L/$HOME/dependencies/libs/pcre-8.44/lib -L/$HOME/dependencies/libs/curl-7.68.0/lib" CPPFLAGS="-I/$HOME/dependencies/libs/zlib-1.2.11/include -I/$HOME/dependencies/libs/bzip2-1.0.6/include -I/$HOME/dependencies/libs/xz-5.2.4/include -I/$HOME/dependencies/libs/pcre-8.44/include -I/$HOME/dependencies/libs/curl-7.68.0/include" &&
 make && make install &&
 cd ..
+
+
+curl -LO https://mirrors.kernel.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.gz
+tar xf gcc-9.2.0.tar.gz
+mkdir build && cd build
+../gcc-9.2.0/configure --build=x86_64-linux-gnu --prefix=/home/dependencies/libs/gcc_9_2 \
+                        --enable-checking=release --enable-languages=c,c++,fortran \
+                        --disable-multilib --program-suffix=-9.2

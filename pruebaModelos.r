@@ -21,6 +21,7 @@ dt_ini='2018-10-21'
 dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
+forzarReDescarga = FALSE
 plotDatos <- FALSE
 runTestsRegresores <- FALSE
 runGridding <- TRUE

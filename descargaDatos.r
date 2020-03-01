@@ -7,12 +7,14 @@ source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'
 source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
 
-descargaPluviosADME <- function(dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/') {
+descargaPluviosADME <- function(
+    dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
+    forzarReDescarga=FALSE) {
   url <- paste('***REMOVED***?dtIni=', dt_ini, '&dtFin=', dt_fin, 
                sep = '')
   localFile <- paste(pathSalida, 
                      gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx', sep = '')
-  if (!file.exists(localFile) || file.info(localFile)$size == 0) {
+  if (forzarReDescarga || !file.exists(localFile) || file.info(localFile)$size == 0) {
     descargarArchivos(urls = url, nombresArchivosDestino = localFile, forzarReDescarga = T)
   }
   return(localFile)

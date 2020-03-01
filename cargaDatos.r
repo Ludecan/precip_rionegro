@@ -14,12 +14,12 @@ proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_
 # pixel de la grilla de los regresores
 factorEscaladoGrillaInterpolacion <- 2
 
+
+# Descarga de datos de pluviometros
 source('descargaDatos.r', encoding = 'WINDOWS-1252')
-localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin=dt_fin, 
-                                 pathSalida = paste(pathDatos, 'pluviometros/', sep=''))
-# 0 - Comentarios iniciales
-# Este script sirve como plantilla base para llevar a cabo todos los pasos del pipeline de 
-# interpolación.
+localFile <- descargaPluviosADME(
+  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida = paste(pathDatos, 'pluviometros/', sep=''), 
+  forzarReDescarga=forzarReDescarga)
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
@@ -42,6 +42,7 @@ estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
 
+# Agregacion diaria
 triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
                       PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
                       PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
@@ -50,13 +51,21 @@ triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fech
                       VILLA.SORIANO.RHT=NA)
 
 colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
+x <- triHourlyUpTo[[1]]
 rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
   if (!is.na(x)) { iDatesToConsider <- which(fechasObservaciones <= x)
   } else { iDatesToConsider <- seq_along(fechasObservaciones) }
   
-  return(iDatesToConsider[seq(1, length(iDatesToConsider), 3)])
+  if (length(iDatesToConsider) > 0) {
+    return(iDatesToConsider[seq(1, length(iDatesToConsider), 3)])
+  } else {
+    return(NULL)
+  }
 }, fechasObservaciones=fechasObservaciones)
 
+idx <- sapply(rowsToSplit, function(x) !is.null(x))
+colsToSplit <- colsToSplit[idx]
+rowsToSplit <- rowsToSplit[idx]
 
 splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
   splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
@@ -93,7 +102,7 @@ valoresObservaciones <- splitAccumulated(
 iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
                     x = rownames(valoresObservaciones), fixed = T)
 iStartHour <- iStartHours[1]
-if (iStartHours[length(iStartHours)] + 23 < nrow(valoresObservaciones)) {
+if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
   iEndHour <- iStartHours[length(iStartHours)] + 23
 } else {
   iEndHour <- iStartHours[length(iStartHours) - 1] + 23
@@ -112,8 +121,10 @@ valoresObservaciones <- as.matrix(aggregate(valoresObservaciones, by=list(day=cl
 fechasObservaciones <- unique(clases)
 row.names(valoresObservaciones) <- as.character(fechasObservaciones)
 
-valoresObservaciones[nNoNa <= 21] <- NA
-valoresObservaciones[nNoNa > 21] <- valoresObservaciones[nNoNa > 21] * 24 / nNoNa[nNoNa > 21]
+maxNHorasParaRechazarDia <- 21
+iAceptados <- nNoNa > maxNHorasParaRechazarDia
+valoresObservaciones[!iAceptados] <- NA
+valoresObservaciones[iAceptados] <- valoresObservaciones[iAceptados] * 24 / nNoNa[iAceptados]
 
 max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
   enc <- rle(conditionFunc(x))
@@ -128,7 +139,7 @@ max_dry_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, con
 max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x > 0 })
 
 
-# 3 - Definición de la grilla de interpolación
+# Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
 shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
 pathsGSMaP <- descargaGSMaP(
@@ -153,13 +164,16 @@ pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'sateli
                                     fechasRegresando = fechasObservaciones)
 pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
 
+# Definición de la grilla de interpolación.
+# Igual a la del primer regresor con factorEscaladoGrillaInterpolacion celdas en la nueva grilla por
+# cleda del satelite
 grillaRegresor <- geometry(readGDAL(pathsRegresores[1, 1]))
 newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
 coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, p4string = proj4stringAInterpolar, nCeldasX = newNCeldasX)
 # mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
 
 
-# 4 - Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
+# Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
 coordsObservaciones <- estaciones
@@ -183,10 +197,10 @@ shpBase = shpMask$shp
 # mapas independientemente de los datos que tenga
 xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 
+# Grilla para QC de los satelites
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
 if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obtaining Río Negro polygon') }
-
 shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
 coordsQC <- grillaRegresor[i, ]

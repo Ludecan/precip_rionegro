@@ -8,12 +8,13 @@ params <- commandArgs(trailingOnly=T)
 if (!is.null(params)) {
   print(paste('ParamsStr="', params, '"', sep = ''))   
 } else {
-  dt_ini=today()
+  dt_ini=today()-1
   dt_fin=dt_ini
 }
 
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
+forzarReDescarga = TRUE
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 source('aplicaQC.r', encoding = 'WINDOWS-1252')
