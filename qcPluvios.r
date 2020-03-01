@@ -22,8 +22,7 @@ clasesEstaciones <- rep('General', nrow(estaciones))
 for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
 
 graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
-                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png'
-                       )
+                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
 
 estacionesRaras
 

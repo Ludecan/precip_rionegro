@@ -28,7 +28,7 @@ runCV <- FALSE
 runValidation <- FALSE
 runPlots <- TRUE
 
-nombreExperimento <- '_mascara03_CorreccionExtrapolacion'
+nombreExperimento <- '_mascara03_CorreccionExtrapolacion_sateliteEnMascara'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
@@ -403,11 +403,22 @@ if (FALSE) {
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[11]] <- paramsI
   listaRegresores[[11]] <- pathsRegresores[, 'Combinado0.8', drop=FALSE]
+  
+  # 12 - Regresion Generalizada en Combinado
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'none'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'ninguno'
+  listaParams[[12]] <- paramsI
+  listaRegresores[[12]] <- pathsRegresores[, 'Combinado', drop=FALSE]
+  paramsI$signosValidosRegresores <- 1
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GRK-Combinado', 'GRK-Combinado0.6')
-modelosACorrer <- c(1, 2, 3, 7, 9)
+modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado')
+modelosACorrer <- c(1, 2, 3, 12, 7)
 
 source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
 
@@ -420,7 +431,7 @@ if (runTestsRegresores) {
 
 ############# Gridding #############
 if (runGridding) {
-  i <- 7
+  i <- 12
   pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
   for (i in modelosACorrer) {
     try({
@@ -466,6 +477,9 @@ if (runGridding) {
 
 ############# Cross Validation #############
 if (runCV) {
+  # La función universalGriddingCV retorna una matriz de las mismas dimensiones que 
+  # valoresObservaciones, con cv[i, j] el valor de la LOOCV de la estacion j en la fecha i. 
+  # Es decir el valor de cv[i, j] es la estimación LOOCV de valoresObservaciones[i, j]
   pathResultadosValidacion <- paste0('Resultados/4-Validacion', nombreExperimento, '/')
   cvs <- st_interpCrossValidations(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores,
@@ -528,7 +542,7 @@ if (runPlots) {
   plotComparacionModelos(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     pathsModelos=cargarRegresores(carpetaRegresores = pathResultadosGrillado, fechasRegresando = fechasObservaciones), 
-    modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
+    modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GR-Combinado', 'GRK-Combinado'), 
     especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=3, 
     carpetaSalida=dirPlots, replot=FALSE)
 }
