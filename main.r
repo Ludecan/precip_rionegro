@@ -1,12 +1,17 @@
-setwd('F:/ADME/precip_rionegro')
+if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
+} else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
+} else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 params <- commandArgs(trailingOnly=T)
-print(paste('ParamsStr="', params, '"', sep = '')) 
 
+if (!is.null(params)) {
+  print(paste('ParamsStr="', params, '"', sep = ''))   
+} else {
+  dt_ini=today()
+  dt_fin=dt_ini
+}
 
-dt_ini='2018-10-21'
-dt_fin = '2019-12-07'
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 

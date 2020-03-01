@@ -1,6 +1,6 @@
 if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
-} else { setwd('D:/ADME/precip_rionegro') }
+} else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 # Linux installations need to run these to have rgdal available
 # sudo apt-get update
 # sudo apt-get install libgdal-dev libproj-dev

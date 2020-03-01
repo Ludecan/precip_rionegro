@@ -35,7 +35,6 @@ localFile <- descargaPluviosADME(dt_ini=dt_ini, dt_fin=dt_fin,
 source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
 
-
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
 source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding = 'WINDOWS-1252')
 datos <- leerSeriesXLSX(pathArchivoDatos = localFile, hojaDatos = 'MedidasHorarias', fileEncoding = 'UTF-8')
