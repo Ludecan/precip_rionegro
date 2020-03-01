@@ -59,10 +59,20 @@ cd R-3.6.2 &&
 make && make install &&
 cd ..
 
-
+# Install gcc/g++ taken from  https://superuser.com/a/987861/441724
 curl -LO https://mirrors.kernel.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.gz
 tar xf gcc-9.2.0.tar.gz
+cd gcc-9.2.0
+./contrib/download_prerequisites
+cd ..
 mkdir build && cd build
-../gcc-9.2.0/configure --build=x86_64-linux-gnu --prefix=/home/dependencies/libs/gcc_9_2 \
+../gcc-9.2.0/configure --build=x86_64-linux-gnu --prefix=$HOME/dependencies/libs/gcc_9_2 \
                         --enable-checking=release --enable-languages=c,c++,fortran \
                         --disable-multilib --program-suffix=-9.2
+make -j 9 && make install
+cd ..
+
+# Add these two lines to $HOME/.R/Makevars to tell R to use the newly installed gcc/g++ compilers
+nano $HOME/.R/Makevars
+CC=gcc-9.2
+CXX=g++-9.2

@@ -82,35 +82,6 @@ if (FALSE) {
   })
 }
 
-getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
-  valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)
-  
-  if (logTransforms) {
-    valoresObservaciones <- log1p(valoresObservaciones)
-    valoresRegresores <- lapply(valoresRegresores, log1p)
-  }
-  
-  j <- 3
-  i <- 1
-  corrs <- sapply(1:ncol(pathsRegresores), function(j) {
-    return(
-      sapply(1:nrow(valoresObservaciones), FUN = function(i) {
-        idx <- !is.na(valoresObservaciones[i, ]) & !is.na(valoresRegresores[[j]][i, ])
-        if (any(idx)) {
-          if (max(abs(valoresObservaciones[i, idx] - valoresRegresores[[j]][i, idx])) <= 1e-3) {
-            return(1)
-          } else {
-            return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], use = "pairwise.complete.obs"))
-          }        
-        } else {
-          return(NA)
-        }})
-    )
-  })
-  colnames(corrs) <- colnames(pathsRegresores)
-  rownames(corrs) <- rownames(pathsRegresores)
-  return(corrs)
-}
 corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)
 apply(valoresObservaciones, MARGIN = 1, FUN = mean, na.rm=T)
 
@@ -127,19 +98,20 @@ p <- ggplot(data=dfCorrs, aes(x=fecha, y=corr, colour=satelite, group=satelite))
 
 ggsave(filename = 'Resultados/1-Exploracion/CorrelacionDiaria.png', plot = p)
 
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-colnames(pathsRegresores)[3:7] <- c('Combinado', 'Combinado0.5', 'Combinado0.6', 'Combinado0.7', 'Combinado0.8')
+
+corr_thresholds <- c(0.5, 0.6, 0.7, 0.8)
+for (i in seq.int(0, length(corr_thresholds))) {
+  pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
+}
+idx <- (ncol(pathsRegresores) - (length(corr_thresholds))):ncol(pathsRegresores)
+colnames(pathsRegresores)[idx] <- c('Combinado', paste0('Combinado', corr_thresholds))
 # pathsRegresores[, 'Combinado0.6'] <- NA_character_
 
-idx <- apply(corrs, MARGIN = 1, which.max)
-iRow <- 12
+iRow <- 1
 for (iRow in 1:nrow(pathsRegresores)) {
-  if (length(idx[[iRow]]) > 0) {
-    corr <- corrs[iRow, idx[[iRow]]]
+  idx <- which.max(corrs[iRow, ])
+  if (length(idx) > 0) {
+    corr <- corrs[iRow, idx]
     if (!is.na(corr)) {
       if (corr >= 0.8) {
         pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx[[iRow]]]

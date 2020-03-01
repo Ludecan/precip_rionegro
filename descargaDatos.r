@@ -84,7 +84,7 @@ descargaGSMaP <- function(
 descargaGPM <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
-    productVersion='V06B') {
+    productVersion='V06B', forzarReDescarga=FALSE) {
   urlBase <- 'ftp://jsimpson.pps.eosdis.nasa.gov/data/imerg/'
   producto <- 'gis'
   
@@ -120,8 +120,9 @@ descargaGPM <- function(
     }
     
     res <- descargarArchivos(
-      urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], curlOpts = curlOptions(netrc=1),
-      nConexionesSimultaneas = 10)
+      urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], 
+      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = 10, 
+      forzarReDescarga=forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
       iPeriodosADescargar <- iPeriodosADescargar[res != 0]

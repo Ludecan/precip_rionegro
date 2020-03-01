@@ -17,6 +17,7 @@ factorEscaladoGrillaInterpolacion <- 2
 
 # Descarga de datos de pluviometros
 source('descargaDatos.r', encoding = 'WINDOWS-1252')
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros del ', dt_ini, ' al ', dt_fin))
 localFile <- descargaPluviosADME(
   dt_ini=dt_ini, dt_fin=dt_fin, pathSalida = paste(pathDatos, 'pluviometros/', sep=''), 
   forzarReDescarga=forzarReDescarga)
@@ -43,6 +44,7 @@ fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
 
 # Agregacion diaria
+print(paste0(Sys.time(), ' - Agregando valores diarios...'))
 triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
                       PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
                       PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
@@ -141,13 +143,16 @@ max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, con
 
 # Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
+print(paste0(Sys.time(), ' - Cargando shapefile con mapa base...'))
 shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
+print(paste0(Sys.time(), ' - Descargando datos de GSMaP del ', dt_ini, ' al ', dt_fin))
 pathsGSMaP <- descargaGSMaP(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase)
+  shpBase = shpBase, forzarReDescarga=forzarReDescarga)
+print(paste0(Sys.time(), ' - Descargando datos de GPM del ', dt_ini, ' al ', dt_fin))
 pathsGPM <- descargaGPM(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase)
+  shpBase = shpBase, forzarReDescarga=forzarReDescarga)
 
 # La otra parte de la función F a definir son los valores de U1, U2, ... Un.
 # Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
@@ -160,6 +165,7 @@ pathsGPM <- descargaGPM(
 # saber de cual se trata
 # La función cargarRegresor(es) se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
+print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
 pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
                                     fechasRegresando = fechasObservaciones)
 pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
@@ -210,3 +216,38 @@ coordsAInterpolar <- coordsAInterpolar[i, ]
 
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
                                               encoding = 'UTF-8NoBOM')
+
+getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
+  valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)
+  
+  if (logTransforms) {
+    valoresObservaciones <- log1p(valoresObservaciones)
+    valoresRegresores <- lapply(valoresRegresores, log1p)
+  }
+  
+  j <- 1
+  i <- 1
+  corrs <- sapply(1:ncol(pathsRegresores), function(j) {
+    return(
+      sapply(1:nrow(valoresObservaciones), FUN = function(i) {
+        idx <- !is.na(valoresObservaciones[i, ]) & !is.na(valoresRegresores[[j]][i, ])
+        if (any(idx)) {
+          if (max(abs(valoresObservaciones[i, idx] - valoresRegresores[[j]][i, idx])) <= 1e-3) {
+            return(1)
+          } else {
+            return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], use = "pairwise.complete.obs"))
+          }        
+        } else {
+          return(NA)
+        }})
+    )
+  })
+  if (!is.matrix(corrs)) {
+    corrs <- matrix(corrs, nrow = nrow(pathsRegresores), ncol=ncol(pathsRegresores), 
+                    dimnames=dimnames(pathsRegresores))
+  } else {
+    dimnames(corrs) <- dimnames(pathsRegresores)
+  }
+  
+  return(corrs)
+}

@@ -5,19 +5,21 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 params <- commandArgs(trailingOnly=T)
 
-if (!is.null(params)) {
+if (length(params) > 0) {
   print(paste('ParamsStr="', params, '"', sep = ''))   
 } else {
-  dt_ini=today()-1
+  dt_ini=Sys.Date()-2
   dt_fin=dt_ini
 }
 
 horaUTCInicioAcumulacion = 10
 horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
 forzarReDescarga = TRUE
+pathResultadosOperativos = 'Resultados/Operativo/'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 source('aplicaQC.r', encoding = 'WINDOWS-1252')
+print(paste0(Sys.time(), ' - Aplicando Tests de QC...'))
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
@@ -28,6 +30,7 @@ source('graficosParticulares.r', encoding = 'WINDOWS-1252')
 source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
 especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
   nDigitos = 1, continuo = T)
+print(paste0(Sys.time(), ' - Mapeando observaciones de pluviometros y satelites...'))
 plotObservacionesYRegresores(
   coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
   valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = TRUE,
@@ -60,7 +63,9 @@ source(paste0(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r'), enco
 
 # Los valores de interpolationMethod que venimos manejando en la tesis son:
 # 1-'automap' Kriging. Según lo que se haya elegido en metodoIgualacionDistribuciones será KO, RK, RRK, etc.
+print(paste0(Sys.time(), ' - Preparando parametros de interpolacion...'))
 params <- createParamsInterpolarYMapear(
+  baseNomArchResultados=pathResultadosOperativos,
   proj4StringObservaciones=proj4string(coordsObservaciones),
   proj4StringAInterpolar=proj4string(coordsAInterpolar),
   coordsAInterpolarSonGrilla=TRUE, 
@@ -113,17 +118,23 @@ params <- createParamsInterpolarYMapear(
   preECDFMatching=FALSE)
 params$modoDiagnostico <- TRUE
 params$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos = 2, continuo = T)
-params$signosValidosRegresores <- 1
-names(params$signosValidosRegresores) <- colnames(listaRegresores[[7]])
 
-# Otros valores que determinan los regresores a usar son estos 3. Para precipitación en principio
-# ninguno de ellos es relevante asi que los desactivamos
-params$incorporarCoordenadas <- FALSE
-params$incorporarAltitud <- FALSE
-params$incorporarDistanciaAlAgua <- FALSE
-# Y estos determinan como se usan los de arriba, el valor por defecto es un plano pero con 
-# otras formulas se pueden usar polinomios, etc
-params$formulaCoordenadas <- 'x + y'
+print(paste0(Sys.time(), ' - Obteniendo regresor de maxima correlacion...'))
+corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)
+
+pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
+colnames(pathsRegresores)[ncol(pathsRegresores)] <- 'Combinado'
+for (iRow in 1:nrow(pathsRegresores)) {
+  idx <- which.max(corrs[iRow, ])
+  if (length(idx) > 0) {
+    pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, idx]
+  } else {
+    pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, 1]
+  }
+}
+pathsRegresores <- pathsRegresores[, 'Combinado', drop=F]
+params$signosValidosRegresores <- rep(1, ncol(pathsRegresores))
+names(params$signosValidosRegresores) <- colnames(pathsRegresores)
 
 
 # Otros parámetros adicionales. listaMapas dice como se deben llamar los archivos de salida y que
@@ -134,9 +145,11 @@ listaMapas <- createDefaultListaMapas(paramsIyM = params, fechasObservaciones = 
 
 # Una vez que está todo armado, la función nombreModelo sirve para ver que el modelo que
 # especificamos sea efectivamente el que queremos
-nombreModelo(params = params, pathsRegresores = pathsRegresores)
+print(paste0(Sys.time(), ' - Interpolando modelo ', 
+             nombreModelo(params = params, pathsRegresores = pathsRegresores), '...'))
 
-# 6 - Interpolación de los datos
+
+# Interpolación de los datos
 # Cambiando tsAinterpolar se puede elegir la fecha que se quiera
 # tsAinterpolar <- which(fechasObservaciones == as.POSIXct('2012-01-20', tz=tz(fechasObservaciones[1])))
 tsAInterpolar=1:nrow(valoresObservaciones)
@@ -156,4 +169,5 @@ interpolarYMapear(coordsObservaciones=coordsObservaciones,
                   espEscalaAdaptada=NULL,
                   tsAInterpolar=tsAInterpolar)
 
+print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/', pathResultadosOperativos))
 

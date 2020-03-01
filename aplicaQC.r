@@ -123,7 +123,7 @@ applyQCTests <- function(
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/3/', shpBase = shpBase, replot=replot)
   }
   
-  test3[iTest, ]$reemplazar <- 1
+  test3$reemplazar[iTest] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test3, valoresObservaciones)
   
   test5 <- deteccionOutliersMediaSD(x = valoresObservaciones, factorSDHaciaAbajo = 3, sdMin = 1)
@@ -142,7 +142,7 @@ applyQCTests <- function(
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/4/', shpBase = shpBase, replot=replot)
   }
   
-  test5[iTest, ]$reemplazar <- 1
+  test5$reemplazar[iTest] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test5, valoresObservaciones)
   
   test6 <- testMaxToMeanRatios(valoresObservaciones)
@@ -156,7 +156,7 @@ applyQCTests <- function(
       carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/5/', shpBase = shpBase, replot=replot)
   }
   
-  test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ]$reemplazar <- 1
+  test6$reemplazar[test6$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test6, valoresObservaciones)
   
   return(valoresObservaciones)
