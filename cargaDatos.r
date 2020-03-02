@@ -49,30 +49,39 @@ triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fech
                       PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
                       PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
                       PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
-                      BARRA.DE.PORONGOS.RHT=NA,
-                      VILLA.SORIANO.RHT=NA)
+                      BARRA.DE.PORONGOS.RHT=ymd_hm("2019-12-10 09:00", tz = tz(fechasObservaciones[1])),
+                      VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
 
 colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
-x <- triHourlyUpTo[[1]]
+x <- triHourlyUpTo[[2]]
 rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
   if (!is.na(x)) { iDatesToConsider <- which(fechasObservaciones <= x)
   } else { iDatesToConsider <- seq_along(fechasObservaciones) }
   
   if (length(iDatesToConsider) > 0) {
-    return(iDatesToConsider[seq(1, length(iDatesToConsider), 3)])
+    res <- iDatesToConsider[seq(from = 2, to = length(iDatesToConsider), by = 3)]
+    if (fechasObservaciones[res[length(res)]] != x) stop('Error en la desagregación de valores trihorarios')
+    return(res)
   } else {
     return(NULL)
   }
 }, fechasObservaciones=fechasObservaciones)
 
+
 idx <- sapply(rowsToSplit, function(x) !is.null(x))
 colsToSplit <- colsToSplit[idx]
 rowsToSplit <- rowsToSplit[idx]
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
 
 splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
   splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
     # i <- colsToSplit[1]
     rowsToSplit_i <- rowsToSplit[[i]]
+    rowsPerPeriod <- getmode(diff(rowsToSplit_i))
     idx_i <- colsToSplit[i]
     j <- 2
     for (j in seq_along(rowsToSplit_i)) {
@@ -80,17 +89,17 @@ splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, row
       if (j > 1) { startRow <- rowsToSplit_i[j - 1] + 1
       } else { startRow <- 1 }
       
-      n <- endRow - startRow + 1
-      
       if (!is.null(rowWeights)) { rowWeightsJ <- rowWeights[j]
-      } else { rowWeightsJ <- rep(1 / n, n)  }
+      } else {
+        n <- endRow - startRow + 1
+        rowWeightsJ <- rep(1 / rowsPerPeriod, n)
+      }
       
       valoresObservaciones[startRow:endRow, idx_i] <- valoresObservaciones[endRow, idx_i] * rowWeightsJ
     }
     
     return(valoresObservaciones[, idx_i])
   }
-  
   
   valoresObservaciones[, colsToSplit] <- sapply(
     seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
