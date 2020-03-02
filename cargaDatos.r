@@ -53,14 +53,21 @@ triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fech
                       VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
 
 colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
-x <- triHourlyUpTo[[2]]
+x <- triHourlyUpTo[[5]]
 rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
+  print(x)
   if (!is.na(x)) { iDatesToConsider <- which(fechasObservaciones <= x)
   } else { iDatesToConsider <- seq_along(fechasObservaciones) }
   
   if (length(iDatesToConsider) > 0) {
     res <- iDatesToConsider[seq(from = 2, to = length(iDatesToConsider), by = 3)]
-    if (fechasObservaciones[res[length(res)]] != x) stop('Error en la desagregación de valores trihorarios')
+    
+    hora <- as.integer(substr(fechasObservaciones[res[length(res)]], 12, 13))
+    if (hora %% 3) stop('Error en la desagregación de valores trihorarios')
+    if (fechasObservaciones[length(fechasObservaciones)] >= x && 
+        fechasObservaciones[res[length(res)]] != x) {
+      stop('Error en la desagregación de valores trihorarios')
+    }
     return(res)
   } else {
     return(NULL)
