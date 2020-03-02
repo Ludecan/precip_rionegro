@@ -55,7 +55,6 @@ triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fech
 colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
 x <- triHourlyUpTo[[5]]
 rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
-  print(x)
   if (!is.na(x)) { iDatesToConsider <- which(fechasObservaciones <= x)
   } else { iDatesToConsider <- seq_along(fechasObservaciones) }
   

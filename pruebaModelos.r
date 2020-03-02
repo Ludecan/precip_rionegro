@@ -107,28 +107,28 @@ idx <- (ncol(pathsRegresores) - (length(corr_thresholds))):ncol(pathsRegresores)
 colnames(pathsRegresores)[idx] <- c('Combinado', paste0('Combinado', corr_thresholds))
 # pathsRegresores[, 'Combinado0.6'] <- NA_character_
 
-iRow <- 1
+iRow <- 2
 for (iRow in 1:nrow(pathsRegresores)) {
   idx <- which.max(corrs[iRow, ])
   if (length(idx) > 0) {
     corr <- corrs[iRow, idx]
     if (!is.na(corr)) {
       if (corr >= 0.8) {
-        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.7'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.8'] <- pathsRegresores[iRow, idx[[iRow]]]
+        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.7'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.8'] <- pathsRegresores[iRow, idx]
       } else if (corr >= 0.7) {
-        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.7'] <- pathsRegresores[iRow, idx[[iRow]]]
+        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.7'] <- pathsRegresores[iRow, idx]
       } else if (corr >= 0.6) {
-        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx[[iRow]]]
-        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx[[iRow]]]
+        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx]
+        pathsRegresores[iRow, 'Combinado0.6'] <- pathsRegresores[iRow, idx]
       } else if (corr >= 0.5) {
-        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx[[iRow]]]
+        pathsRegresores[iRow, 'Combinado0.5'] <- pathsRegresores[iRow, idx]
       }
-      pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, idx[[iRow]]]
+      pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, idx]
     }
   } else {
     pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, 1]
