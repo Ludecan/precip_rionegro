@@ -74,5 +74,7 @@ cd ..
 
 # Add these two lines to $HOME/.R/Makevars to tell R to use the newly installed gcc/g++ compilers
 nano $HOME/.R/Makevars
-CC=gcc-9.2
-CXX=g++-9.2
+
+CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2 -fPIC
+CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
