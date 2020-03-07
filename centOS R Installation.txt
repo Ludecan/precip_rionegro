@@ -76,5 +76,5 @@ cd ..
 nano $HOME/.R/Makevars
 
 CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2 -fPIC
-CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
-CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC -static-libstdc++
+CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC -static-libstdc++
