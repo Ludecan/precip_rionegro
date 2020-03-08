@@ -42,23 +42,6 @@ cd curl-7.68.0 &&
 make && make install &&
 cd ..
 
-# Create a writable and executable directory for R package installation
-mkdir $HOME/tmp_dir
-
-Add the lines below to .cshrc file
-nano $HOME/.cshrc
-export LD_LIBRARY_PATH="$HOME/dependencies/libs/pcre-8.44/lib:$HOME/dependencies/libs/xz-5.2.4/lib:$LD_LIBRARY_PATH"
-export TMPDIR=$HOME/tmp_dir
-And source .cshrc
-source $HOME/.cshrc
-
-# Install R. Installation path will be $HOME/R-3.6.2
-tar xvf R-3.6.2.tar.gz &&
-cd R-3.6.2 &&
-./configure --prefix=$HOME/R-3.6.2 --enable-R-shlib LDFLAGS="-L/$HOME/dependencies/libs/zlib-1.2.11/lib -L/$HOME/dependencies/libs/bzip2-1.0.6/lib -L/$HOME/dependencies/libs/xz-5.2.4/lib -L/$HOME/dependencies/libs/pcre-8.44/lib -L/$HOME/dependencies/libs/curl-7.68.0/lib" CPPFLAGS="-I/$HOME/dependencies/libs/zlib-1.2.11/include -I/$HOME/dependencies/libs/bzip2-1.0.6/include -I/$HOME/dependencies/libs/xz-5.2.4/include -I/$HOME/dependencies/libs/pcre-8.44/include -I/$HOME/dependencies/libs/curl-7.68.0/include" &&
-make && make install &&
-cd ..
-
 # Install gcc/g++ taken from  https://superuser.com/a/987861/441724
 curl -LO https://mirrors.kernel.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.gz
 tar xf gcc-9.2.0.tar.gz
@@ -72,9 +55,77 @@ mkdir build && cd build
 make -j 9 && make install
 cd ..
 
+# Create a writable and executable directory for R package installation
+mkdir $HOME/tmp_dir
+
+Add the lines below to .bashrc file
+nano $HOME/.bashrc
+export LD_LIBRARY_PATH="$HOME/dependencies/libs/pcre-8.44/lib:$HOME/dependencies/libs/xz-5.2.4/lib:/home/usathi/dependencies/libs/gcc_9_2/lib64:$LD_LIBRARY_PATH"
+export TMPDIR=$HOME/tmp_dir
+And source .bashrc
+source $HOME/.bashrc
+
+# Install R. Installation path will be $HOME/R-3.6.2
+tar xvf R-3.6.2.tar.gz &&
+cd R-3.6.2 &&
+./configure --prefix=$HOME/R-3.6.2 --enable-R-shlib LDFLAGS="-L/$HOME/dependencies/libs/zlib-1.2.11/lib -L/$HOME/dependencies/libs/bzip2-1.0.6/lib -L/$HOME/dependencies/libs/xz-5.2.4/lib -L/$HOME/dependencies/libs/pcre-8.44/lib -L/$HOME/dependencies/libs/curl-7.68.0/lib" CPPFLAGS="-I/$HOME/dependencies/libs/zlib-1.2.11/include -I/$HOME/dependencies/libs/bzip2-1.0.6/include -I/$HOME/dependencies/libs/xz-5.2.4/include -I/$HOME/dependencies/libs/pcre-8.44/include -I/$HOME/dependencies/libs/curl-7.68.0/include" &&
+make && make install &&
+cd ..
+
 # Add these two lines to $HOME/.R/Makevars to tell R to use the newly installed gcc/g++ compilers
 nano $HOME/.R/Makevars
 
 CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2 -fPIC
-CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC -static-libstdc++
-CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC -static-libstdc++
+CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+
+
+
+
+
+export CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2 -fPIC
+export CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+export CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
+
+wget https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+tar xvf sqlite-autoconf-3310100.tar.gz &&
+cd sqlite-autoconf-3310100 &&
+./configure --prefix=$HOME/dependencies/libs/sqlite-autoconf-3310100 &&
+make && make install &&
+cd ..
+
+wget http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz
+tar xvf tiff-4.1.0.tar.gz &&
+cd tiff-4.1.0 &&
+./configure --prefix=$HOME/dependencies/libs/tiff-4.1.0 &&
+make && make install &&
+cd ..
+
+export PKG_CONFIG_PATH=/home/usathi/dependencies/libs/sqlite-autoconf-3310100/lib/pkgconfig/:/home/usathi/dependencies/libs/tiff-4.1.0/lib/pkgconfig/
+wget https://download.osgeo.org/proj/proj-7.0.0.tar.gz
+tar xvf proj-7.0.0.tar.gz &&
+cd proj-7.0.0 &&
+./configure --prefix=$HOME/dependencies/libs/proj-7.0.0 &&
+make && make install &&
+cd ..
+
+wget http://download.osgeo.org/gdal/3.0.4/gdal-3.0.4.tar.gz
+tar xvf gdal-3.0.4.tar.gz &&
+cd gdal-3.0.4 &&
+./configure --prefix=$HOME/dependencies/libs/gdal-3.0.4 &&
+make && make install &&
+cd ..
+
+
+
+# Add these lines to $HOME/.netrc to configure authentication for the GPM and GSMaP products
+nano $HOME/.netrc
+
+machine jsimpson.pps.eosdis.nasa.gov
+login pabloalfaropineyro@gmail.com
+password pabloalfaropineyro@gmail.com
+
+machine hokusai.eorc.jaxa.jp
+login rainmap
+password Niskur+1404
+

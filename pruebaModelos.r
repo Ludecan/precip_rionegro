@@ -29,7 +29,7 @@ runCV <- FALSE
 runValidation <- FALSE
 runPlots <- TRUE
 
-nombreExperimento <- '_mascara03_CorreccionExtrapolacion_sateliteEnMascara'
+nombreExperimento <- '_mascara03_CorreccionExtrapolacion'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
@@ -403,9 +403,9 @@ if (runTestsRegresores) {
 }
 
 ############# Gridding #############
+pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
 if (runGridding) {
   i <- 12
-  pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
   for (i in modelosACorrer) {
     try({
       paramsI <- listaParams[[i]]
