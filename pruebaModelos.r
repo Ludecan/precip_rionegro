@@ -14,22 +14,26 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # 6 - Interpolación de los datos
 # 7 - Cross Validation
 
-#dt_ini='2009-09-16'
-#dt_ini='2017-02-01'
-#dt_fin = '2020-01-31'
-dt_ini='2018-10-21'
-dt_fin = '2019-12-07'
-horaUTCInicioAcumulacion = 10
-horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
-forzarReDescarga = FALSE
+#dt_ini <- '2009-09-16'
+#dt_ini <- '2017-02-01'
+#dt_fin <- '2020-01-31'
+#dt_ini <- '2018-10-21'
+#dt_fin <- '2019-12-07'
+dt_ini <- '2020-02-01'
+dt_fin <- '2020-02-29'
+horaUTCInicioAcumulacion <- 10
+horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
+forzarReDescarga <- FALSE
+borrarDatosOriginales <- TRUE
 plotDatos <- FALSE
+
 runTestsRegresores <- FALSE
 runGridding <- TRUE
 runCV <- FALSE
 runValidation <- FALSE
 runPlots <- TRUE
 
-nombreExperimento <- '_mascara03_CorreccionExtrapolacion'
+nombreExperimento <- '_mascara03_CorreccionExtrapolacion_sateliteEnMascara'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
@@ -520,3 +524,4 @@ if (runPlots) {
     carpetaSalida=dirPlots, replot=FALSE)
 }
 
+i

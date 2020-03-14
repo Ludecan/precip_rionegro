@@ -23,7 +23,7 @@ descargaPluviosADME <- function(
 descargaGSMaP <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
-    forzarReDescarga=FALSE) {
+    forzarReDescarga=FALSE, borrarDatosOriginales=FALSE) {
   urlBase <- 'ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/'
   producto <- 'hourly_G'
   
@@ -76,7 +76,10 @@ descargaGSMaP <- function(
         nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
         overlap = FALSE)
     }
-    # unlink(pathsLocales)
+    if (borrarDatosOriginales) {
+      unlink(pathsLocales)
+      unlink(pathsLocalesDescomprimidos)
+    }
   }
   return(pathsLocalesDiarios)
 }
@@ -84,7 +87,7 @@ descargaGSMaP <- function(
 descargaGPM <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
-    productVersion='V06B', forzarReDescarga=FALSE) {
+    productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE) {
   urlBase <- 'ftp://jsimpson.pps.eosdis.nasa.gov/data/imerg/'
   producto <- 'gis'
   
@@ -137,7 +140,10 @@ descargaGPM <- function(
         funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
         funcEscalado = function(x) { x / 20})
     }
-    # unlink(pathsLocales)
+    if (borrarDatosOriginales) {
+      unlink(pathsLocales)
+      unlink(pathsLocalesDescomprimidos)
+    }
   }
   return(pathsLocalesDiarios)
 }
