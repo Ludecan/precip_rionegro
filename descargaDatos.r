@@ -1,7 +1,7 @@
 script.dir.descargaDatos <- dirname((function() { attr(body(sys.function()), "srcfile") })()$filename)
 
 source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
-instant_pkgs(c('jsonlite', 'R.utils', 'lubridate'))
+instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
 
 source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
@@ -60,9 +60,17 @@ descargaGSMaP <- function(
       iHorasADescargar[(24*(i-1) + 1):(24*i)] <- iHorasADescargar[(24*(i-1) + 1):(24*i)] + (iNoExisten[i]-1)*24
     }
     
+    if (.Platform$OS.type == "windows") {
+      memtot_gb <- memory.size(max=NA) / 1024
+    } else {
+      memtot_gb <- as.numeric(system("awk '/MemTot/ {print $2}' /proc/meminfo", intern=TRUE)) / 1024**2  
+    }
+    # Limit number of processes to no more than either 10 or 1 per GB of RAM
+    nConexionesSimultaneas <- min(10, round(memtot_gb))
+    
     res <- descargarArchivos(
       urls = urls[iHorasADescargar], nombresArchivosDestino = pathsLocales[iHorasADescargar], 
-      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = 10, 
+      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
       forzarReDescarga = forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
@@ -122,9 +130,17 @@ descargaGPM <- function(
       iPeriodosADescargar[idx] <- iPeriodosADescargar[idx] + (iNoExisten[i]-1)*numPeriodos
     }
     
+    if (.Platform$OS.type == "windows") {
+      memtot_gb <- memory.size(max=NA) / 1024
+    } else {
+      memtot_gb <- as.numeric(system("awk '/MemTot/ {print $2}' /proc/meminfo", intern=TRUE)) / 1024**2  
+    }
+    # Limit number of processes to no more than either 10 or 1 per GB of RAM
+    nConexionesSimultaneas <- min(10, round(memtot_gb))
+    
     res <- descargarArchivos(
       urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], 
-      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = 10, 
+      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas, 
       forzarReDescarga=forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))

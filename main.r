@@ -5,13 +5,15 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 
-paramsStr <- "dt_fin=2020-03-13"
-if (length(params) > 0) {
+if (length(paramsStr) > 0) {
   source('st_interp/parsearParams/parsearParamsUtils.r')
   print(paste('ParamsStr="', paramsStr, '"', sep = ''))
   
   createParamsPrecipRioNegro <- function(
-      dt_ini=as.Date(dt_fin)-1, dt_fin=as.character(Sys.Date()-1)) {
+      dt_ini=NA_character_, dt_fin=as.character(Sys.Date()-1)) {
+    if (is.na(dt_ini)) {
+      dt_ini <- as.Date(dt_fin)-1
+    }
     res <- list(dt_ini=dt_ini,
                 dt_fin=dt_fin)
     return(res)
