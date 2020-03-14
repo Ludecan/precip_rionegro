@@ -1,0 +1,26 @@
+# Install notes here: https://cran.r-project.org/bin/linux/ubuntu/README.html
+
+# Add these lines to /etc/apt/sources.list
+sudo nano /etc/apt/sources.list
+
+# Repository for R base install and packages
+deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/
+
+# Backports repositories as suggested in R install notes.
+# These two were already listed in /etc/apt/sources.list
+deb http://uy.archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe
+deb-src http://uy.archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe
+
+# Add the R repository public key
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+
+# Install r-base and r-base-dev packages to have R and dev tools for package installation from sources
+sudo apt-get update
+sudo apt-get install r-base r-base-dev 
+
+
+# Install gdal and proj libs required for manipulation of spatial data (for package rgdal)
+sudo apt-get install libgdal1-dev libproj-dev
+
+# Install units lib required for package sf
+sudo apt-get install libudunits2-dev

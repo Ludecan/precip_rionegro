@@ -1,46 +1,7 @@
 # Based on this SO post: https://unix.stackexchange.com/questions/343452/how-to-install-r-3-3-1-in-my-own-directory
 
-# Get R 3.6.2
-wget http://cran.rstudio.com/src/base/R-3/R-3.6.2.tar.gz
 
-# Get required libraries
-wget https://www.zlib.net/zlib-1.2.11.tar.gz && 
-wget http://anduin.linuxfromscratch.org/LFS/bzip2-1.0.6.tar.gz &&
-wget https://tukaani.org/xz/xz-5.2.4.tar.gz &&
-wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz &&
-wget https://curl.haxx.se/download/curl-7.68.0.tar.gz
 
-# Install required libraries. Installation paths will be in $HOME/dependencies/libs
-tar xvf zlib-1.2.11.tar.gz &&
-cd zlib-1.2.11 &&
-./configure --prefix=$HOME/dependencies/libs/zlib-1.2.11 &&
-make && make install &&
-cd ..
-
-tar zxvf bzip2-1.0.6.tar.gz &&
-cd bzip2-1.0.6
-# Modify the Makefile (original: CC=gcc after modification: CC=gcc -fPIC)
-nano makefile
-make && make install PREFIX=$HOME/dependencies/libs/bzip2-1.0.6 &&
-cd ..
-
-tar zxvf xz-5.2.4.tar.gz &&
-cd xz-5.2.4 &&
-./configure --prefix=$HOME/dependencies/libs/xz-5.2.4 &&
-make -j3 && make install &&
-cd ..
-
-tar zxvf pcre-8.44.tar.gz &&
-cd pcre-8.44 &&
-./configure  --prefix=$HOME/dependencies/libs/pcre-8.44  --enable-utf8 &&
-make -j3 && make install &&
-cd ..
-
-tar zxvf curl-7.68.0.tar.gz &&
-cd curl-7.68.0 &&
-./configure  --prefix=$HOME/dependencies/libs/curl-7.68.0 --with-ssl &&
-make && make install &&
-cd ..
 
 # Install gcc/g++ taken from  https://superuser.com/a/987861/441724
 curl -LO https://mirrors.kernel.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.gz
@@ -58,12 +19,88 @@ cd ..
 # Create a writable and executable directory for R package installation
 mkdir $HOME/tmp_dir
 
-Add the lines below to .bashrc file
+# Add these lines to $HOME/.bashrc to use the new gcc/g++
 nano $HOME/.bashrc
 export LD_LIBRARY_PATH="$HOME/dependencies/libs/pcre-8.44/lib:$HOME/dependencies/libs/xz-5.2.4/lib:/home/usathi/dependencies/libs/gcc_9_2/lib64:$LD_LIBRARY_PATH"
 export TMPDIR=$HOME/tmp_dir
 And source .bashrc
 source $HOME/.bashrc
+export CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2
+export CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2
+export CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2
+
+
+wget https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+tar xvf sqlite-autoconf-3310100.tar.gz &&
+cd sqlite-autoconf-3310100 &&
+./configure --prefix=$HOME/dependencies/libs/sqlite-autoconf-3310100 &&
+make && make install &&
+cd ..
+
+wget http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz
+tar xvf tiff-4.1.0.tar.gz &&
+cd tiff-4.1.0 &&
+./configure --prefix=$HOME/dependencies/libs/tiff-4.1.0 &&
+make && make install &&
+cd ..
+
+export PKG_CONFIG_PATH=/home/usathi/dependencies/libs/sqlite-autoconf-3310100/lib/pkgconfig/:/home/usathi/dependencies/libs/tiff-4.1.0/lib/pkgconfig/
+export PATH=/home/usathi/dependencies/libs/sqlite-autoconf-3310100/bin:$PATH
+wget https://download.osgeo.org/proj/proj-7.0.0.tar.gz
+tar xvf proj-7.0.0.tar.gz &&
+cd proj-7.0.0 &&
+./configure --prefix=$HOME/dependencies/libs/proj-7.0.0 &&
+make && make install &&
+cd ..
+
+wget http://download.osgeo.org/gdal/3.0.4/gdal-3.0.4.tar.gz
+tar xvf gdal-3.0.4.tar.gz &&
+cd gdal-3.0.4 &&
+./configure --prefix=$HOME/dependencies/libs/gdal-3.0.4 --with-proj=$HOME/dependencies/libs/proj-7.0.0 --with-libtiff=$HOME/dependencies/libs/tiff-4.1.0 &&
+make && make install &&
+cd ..
+
+# Get R 3.6.2
+wget http://cran.rstudio.com/src/base/R-3/R-3.6.2.tar.gz
+
+# Get required libraries
+# Install required libraries. Installation paths will be in $HOME/dependencies/libs
+wget https://www.zlib.net/zlib-1.2.11.tar.gz && 
+tar xvf zlib-1.2.11.tar.gz &&
+cd zlib-1.2.11 &&
+./configure --prefix=$HOME/dependencies/libs/zlib-1.2.11 &&
+make && make install &&
+cd ..
+
+wget http://anduin.linuxfromscratch.org/LFS/bzip2-1.0.6.tar.gz &&
+tar zxvf bzip2-1.0.6.tar.gz &&
+cd bzip2-1.0.6
+# Modify the Makefile (original: CC=gcc after modification: CC=gcc -fPIC)
+nano makefile
+make && make install PREFIX=$HOME/dependencies/libs/bzip2-1.0.6 &&
+cd ..
+
+wget https://tukaani.org/xz/xz-5.2.4.tar.gz &&
+tar zxvf xz-5.2.4.tar.gz &&
+cd xz-5.2.4 &&
+./configure --prefix=$HOME/dependencies/libs/xz-5.2.4 &&
+make -j3 && make install &&
+cd ..
+
+wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz &&
+tar zxvf pcre-8.44.tar.gz &&
+cd pcre-8.44 &&
+./configure  --prefix=$HOME/dependencies/libs/pcre-8.44  --enable-utf8 &&
+make -j3 && make install &&
+cd ..
+
+wget https://curl.haxx.se/download/curl-7.68.0.tar.gz
+tar zxvf curl-7.68.0.tar.gz &&
+cd curl-7.68.0 &&
+./configure  --prefix=$HOME/dependencies/libs/curl-7.68.0 --with-ssl &&
+make && make install &&
+cd ..
+
 
 # Install R. Installation path will be $HOME/R-3.6.2
 tar xvf R-3.6.2.tar.gz &&
@@ -81,40 +118,6 @@ CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
 
 
 
-
-
-export CC=/home/usathi/dependencies/libs/gcc_9_2/bin/gcc-9.2 -fPIC
-export CXX=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
-export CXX11=/home/usathi/dependencies/libs/gcc_9_2/bin/g++-9.2 -fPIC
-
-wget https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
-tar xvf sqlite-autoconf-3310100.tar.gz &&
-cd sqlite-autoconf-3310100 &&
-./configure --prefix=$HOME/dependencies/libs/sqlite-autoconf-3310100 &&
-make && make install &&
-cd ..
-
-wget http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz
-tar xvf tiff-4.1.0.tar.gz &&
-cd tiff-4.1.0 &&
-./configure --prefix=$HOME/dependencies/libs/tiff-4.1.0 &&
-make && make install &&
-cd ..
-
-export PKG_CONFIG_PATH=/home/usathi/dependencies/libs/sqlite-autoconf-3310100/lib/pkgconfig/:/home/usathi/dependencies/libs/tiff-4.1.0/lib/pkgconfig/
-wget https://download.osgeo.org/proj/proj-7.0.0.tar.gz
-tar xvf proj-7.0.0.tar.gz &&
-cd proj-7.0.0 &&
-./configure --prefix=$HOME/dependencies/libs/proj-7.0.0 &&
-make && make install &&
-cd ..
-
-wget http://download.osgeo.org/gdal/3.0.4/gdal-3.0.4.tar.gz
-tar xvf gdal-3.0.4.tar.gz &&
-cd gdal-3.0.4 &&
-./configure --prefix=$HOME/dependencies/libs/gdal-3.0.4 &&
-make && make install &&
-cd ..
 
 
 
