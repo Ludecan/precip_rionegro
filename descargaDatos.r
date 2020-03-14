@@ -28,8 +28,8 @@ descargaGSMaP <- function(
   producto <- 'hourly_G'
   
   # fijo la hora inicial
-  dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion + 1)
-  dt_fin <- sprintf('%s %02d:00', date(dt_fin)+1, horaUTCInicioAcumulacion)
+  dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
+  dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
   
   # Descargo y parseo el CTL
   nomArchCTL <- paste('GSMaP_NRT.', producto, '.rain.ctl', sep = '')
@@ -93,7 +93,7 @@ descargaGPM <- function(
   
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
-  dt_fin <- sprintf('%s %02d:30', date(dt_fin)+1, horaUTCInicioAcumulacion-1)
+  dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
   
   formatoPrefijo <- paste(urlBase, producto, '/%Y/%m/3B-HHR-L.MS.MRG.3IMERG.%Y%m%d-S%H%M%S', sep='')
   formatoE <- '-E%H%M%S.'

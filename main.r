@@ -3,18 +3,36 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
-params <- commandArgs(trailingOnly=T)
+paramsStr <- commandArgs(trailingOnly=T)
 
+paramsStr <- "dt_fin=2020-03-13"
 if (length(params) > 0) {
-  print(paste('ParamsStr="', params, '"', sep = ''))   
+  source('st_interp/parsearParams/parsearParamsUtils.r')
+  print(paste('ParamsStr="', paramsStr, '"', sep = ''))
+  
+  createParamsPrecipRioNegro <- function(
+      dt_ini=as.Date(dt_fin)-1, dt_fin=as.character(Sys.Date()-1)) {
+    res <- list(dt_ini=dt_ini,
+                dt_fin=dt_fin)
+    return(res)
+  }
+  
+  parsearParamsPrecipRioNegro <- function(params) {
+    return(getParamValuesFromConstructorParams(params, funcCrearParams=createParamsPrecipRioNegro))
+  }
+  
+  params <- parsearParamsPrecipRioNegro(paramsStr)
+  dt_ini=params$dt_ini
+  dt_fin=params$dt_fin
 } else {
-  dt_ini=Sys.Date()-2
+  dt_ini=Sys.Date()-1
   dt_fin=dt_ini
 }
 
-horaUTCInicioAcumulacion = 10
-horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
-forzarReDescarga = TRUE
+horaUTCInicioAcumulacion <- 10
+horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
+forzarReDescarga <- TRUE
+borrarDatosOriginales <- TRUE
 pathResultadosOperativos = 'Resultados/Operativo/'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')

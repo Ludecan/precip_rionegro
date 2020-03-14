@@ -144,7 +144,6 @@ max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
 max_dry_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x == 0 })
 max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x > 0 })
 
-
 # Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
 print(paste0(Sys.time(), ' - Cargando shapefile con mapa base...'))
@@ -152,11 +151,11 @@ shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
 print(paste0(Sys.time(), ' - Descargando datos de GSMaP del ', dt_ini, ' al ', dt_fin))
 pathsGSMaP <- descargaGSMaP(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase, forzarReDescarga=forzarReDescarga)
+  shpBase = shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
 print(paste0(Sys.time(), ' - Descargando datos de GPM del ', dt_ini, ' al ', dt_fin))
 pathsGPM <- descargaGPM(
   dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase, forzarReDescarga=forzarReDescarga)
+  shpBase = shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
 
 # La otra parte de la función F a definir son los valores de U1, U2, ... Un.
 # Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por

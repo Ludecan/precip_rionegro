@@ -16,16 +16,16 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 
 #dt_ini <- '2009-09-16'
 #dt_ini <- '2017-02-01'
-#dt_fin <- '2020-01-31'
+#dt_fin <- '2020-03-01'
 #dt_ini <- '2018-10-21'
 #dt_fin <- '2019-12-07'
-dt_ini <- '2020-02-01'
-dt_fin <- '2020-02-29'
+dt_ini <- '2020-03-01'
+dt_fin <- '2020-03-05'
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- FALSE
-borrarDatosOriginales <- TRUE
-plotDatos <- FALSE
+borrarDatosOriginales <- FALSE
+plotDatos <- TRUE
 
 runTestsRegresores <- FALSE
 runGridding <- TRUE
