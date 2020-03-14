@@ -82,7 +82,7 @@ descargaGSMaP <- function(
         fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
         formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
         nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
-        overlap = FALSE)
+        overlap = FALSE, nCoresAUsar = nConexionesSimultaneas)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
@@ -154,11 +154,10 @@ descargaGPM <- function(
         formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
         minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
         funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
-        funcEscalado = function(x) { x / 20})
+        funcEscalado = function(x) { x / 20}, nCoresAUsar = nConexionesSimultaneas)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
-      unlink(pathsLocalesDescomprimidos)
     }
   }
   return(pathsLocalesDiarios)
