@@ -198,9 +198,16 @@ coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
 iValue <- which(colnames(coordsObservaciones@data) == 'value')
 coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]
 
+# TODO: esto funcion pero el encoding debería ser uno solo
+if (.Platform$OS.type == "windows") {
+  shpEncoding <- 'UTF-8NoBOM'
+} else {
+  shpEncoding <- 'WINDOWS-1252'
+}
+
 # Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = 'UTF-8NoBOM')
+                                              encoding = shpEncoding)
 shpBase = shpMask$shp
 # Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
 # mapas independientemente de los datos que tenga
@@ -209,7 +216,7 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 # Grilla para QC de los satelites
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
-if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obtaining Río Negro polygon') }
+if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obteniendo polígono del Río Negro') }
 shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
 coordsQC <- grillaRegresor[i, ]
@@ -218,7 +225,7 @@ i <- !is.na(over(coordsAInterpolar, geometry(shpRioNegro)))
 coordsAInterpolar <- coordsAInterpolar[i, ]
 
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = 'UTF-8NoBOM')
+                                              encoding = shpEncoding)
 
 getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
   valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)

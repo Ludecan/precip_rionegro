@@ -31,6 +31,7 @@ horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- TRUE
 borrarDatosOriginales <- TRUE
+#borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
