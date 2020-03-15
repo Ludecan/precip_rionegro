@@ -1,4 +1,12 @@
-script.dir.descargaDatos <- dirname((function() { attr(body(sys.function()), "srcfile") })()$filename)
+iFrame <- sys.nframe()
+if (iFrame >= 3) { script.dir.descargaDatos <- sys.frame(iFrame - 3)$ofile
+} else { script.dir.descargaDatos <- NULL }
+while ((is.null(script.dir.descargaDatos) || is.na(regexpr('descargaDatos.r', script.dir.descargaDatos, fixed=T)[1])) && iFrame >= 0) {
+  script.dir.descargaDatos <- sys.frame(iFrame)$ofile
+  iFrame <- iFrame - 1
+}
+if (is.null(script.dir.descargaDatos)) { script.dir.descargaDatos <- ''
+} else { script.dir.descargaDatos <- paste0(dirname(script.dir.descargaDatos), '/') }
 
 source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
