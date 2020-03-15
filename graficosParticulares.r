@@ -381,7 +381,7 @@ plotObservacionesYRegresores <- function(
   }
   
   dir.create(carpetaSalida, showWarnings = FALSE, recursive = TRUE)
-  nCoresAUsar <- detectCores(T, T)
+  nCoresAUsar <- min(getAvailableCores(maxCoresPerGB = 1), length(fechasObservaciones))
   if (nCoresAUsar > 1) {
     cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
     clusterExport(cl, varlist = c('script.dir.funcionesAuxiliares'))

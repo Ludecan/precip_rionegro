@@ -10,7 +10,7 @@ if (length(paramsStr) == 0) { paramsStr <- '' }
 source('st_interp/parsearParams/parsearParamsUtils.r')
 print(paste('ParamsStr="', paramsStr, '"', sep = ''))
 
-createParamsPrecipRioNegro <- function(dt_ini=NA_character_, dt_fin=as.character(Sys.Date()-1)) {
+createParamsPrecipRioNegro <- function(dt_ini=NA_character_, dt_fin=as.character(Sys.Date())) {
   res <- list(dt_ini=dt_ini,
               dt_fin=dt_fin)
   return(res)
