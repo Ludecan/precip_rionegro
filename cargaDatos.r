@@ -8,7 +8,8 @@
 pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 pathResultados <- 'Resultados/'
-pathSHPMapaBase=paste(pathDatos, 'CartografiaBase/CuencasPrincipales.shp', sep='')
+pathSHPMapaBase <- paste(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp', sep='')
+
 proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
 # La grilla resultante tendrá factorEscaladoGrillaInterpolacion píxeles en cada dirección por cada
 # pixel de la grilla de los regresores
@@ -198,7 +199,7 @@ coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
 iValue <- which(colnames(coordsObservaciones@data) == 'value')
 coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]
 
-# TODO: esto funcion pero el encoding debería ser uno solo
+# TODO: esto funciona pero el encoding debería ser uno solo
 if (.Platform$OS.type == "windows") {
   shpEncoding <- 'UTF-8NoBOM'
 } else {
@@ -215,7 +216,7 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 
 # Grilla para QC de los satelites
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
-shpRioNegro <- shpBase[shpBase$CUENCA == 'RÍO NEGRO', ]
+shpRioNegro <- shpBase[shpBase$NOMBRE == 'CuencaRioNegro', ]
 if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obteniendo polígono del Río Negro') }
 shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))

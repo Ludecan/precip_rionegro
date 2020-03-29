@@ -1,9 +1,11 @@
 ##### 0 - Descarga y preparación de los datos
-dt_ini='2017-09-01'
-dt_ini='2018-10-21'
-dt_fin = '2019-12-07'
-horaUTCInicioAcumulacion = 10
-horaLocalInicioAcumulacion = horaUTCInicioAcumulacion - 3
+dt_ini <- '2017-02-01'
+dt_fin <- '2020-03-01'
+horaUTCInicioAcumulacion <- 10
+horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
+forzarReDescarga <- FALSE
+borrarDatosOriginales <- FALSE
+plotDatos <- FALSE
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
@@ -34,20 +36,25 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase, coordsObservaciones),
 
 distanciaAObservaciones <- gDistance(coordsObservaciones, as(coordsAInterpolar, 'SpatialPoints'), byid = T)
 distanciasAObservaciones <- rowMins(distanciaAObservaciones)
-mapaDistancias <- SpatialPixelsDataFrame(points = coordsAInterpolar, data = data.frame(value=distanciasAObservaciones))
+mapaDistancias <- SpatialPixelsDataFrame(points=coordsAInterpolar, data=data.frame(value=distanciasAObservaciones))
 sobreUy <- over(geometry(mapaDistancias), geometry(shpBase))
 mapaDistancias$value[is.na(sobreUy)] <- NA  
 
 png('Resultados/1-Exploracion/histDistanciaEstaciones.png', height=500, width=800, type='cairo')
-tryCatch(expr = print(hist(mapaDistancias$value, main='Distribución de Distancias a la Estación Más Cercana', xlab='Distancia[Km]', 
-                           ylab='Proporción [p.u.]', freq=FALSE)), finally = dev.off())
+tryCatch(expr=print(
+  hist(mapaDistancias$value, main='Distribución de Distancias a la Estación Más Cercana', 
+       xlab='Distancia[Km]', ylab='Proporción [p.u.]', freq=FALSE)
+  ), finally = dev.off())
 coordsObservaciones$value <- coordsObservaciones$Nombre
 
 widthPx <- 800
 heightPx <- widthPx
 DPI <- 90
 
-escala <- crearEscalaEquiespaciada(datos = mapaDistancias$value, nDigitos = 0, nIntervalos = 10, brewerPal = 'RdYlGn', continuo = T)
+coloresEscala <- c("#1A9641", "#A6D96A", "#FFFFBF", "#f46d43", "#D7191C")
+escala <- crearEscala(
+  escala=c(0, 10, 25, 50, ceiling(max(mapaDistancias$value))), 
+  colores=coloresEscala, brewerPal='RdYlGn', continuo=T)
 mapearGrillaGGPlot(grilla = mapaDistancias, shpBase = shpBase, xyLims = xyLims, escala = escala, 
                    titulo = 'Distancias a la Observación Más Cercana [Km]',
                    # dibujarPuntosObservaciones = T, coordsObservaciones = coordsObservaciones,
@@ -56,10 +63,31 @@ mapearGrillaGGPlot(grilla = mapaDistancias, shpBase = shpBase, xyLims = xyLims, 
                    nomArchResultados = 'Resultados/1-Exploracion/mapaDistanciaAEstaciones.png',
                    widthPx = widthPx, heightPx = heightPx, DPI = DPI)
 
-coordsObservaciones$etiqueta <- paste(
-  coordsObservaciones$Nombre, ' (',
-  apply(valoresObservaciones, MARGIN = 2, function(x) sum(!is.na(x)))
-  , ')', sep='')
+firstCharsToUpper <- function(
+    x, wordDelimiter='[^[:alnum:]]', minLengthForUpperCase=0, noUpperFirstWords=NULL, noLowerWords=NULL) {
+  wordsInX <- unlist(strsplit(x=x, split = wordDelimiter))
+  
+  i <- 3
+  for (i in seq_along(wordsInX)) {
+    word_i <- wordsInX[i]
+    if (!word_i %in% noLowerWords) {
+      word_i <- tolower(word_i)  
+    }
+    
+    if (nchar(word_i) >= minLengthForUpperCase && (!word_i %in% noUpperFirstWords)) {
+      wordsInX[i] <- paste0(toupper(substr(word_i, 1, 1)), substr(word_i, 2, nchar(word_i)))
+    } else {
+      wordsInX[i] <- word_i
+    }
+  }
+  return(paste(wordsInX, collapse = ' '))
+}
+
+coordsObservaciones$etiqueta <- paste0(
+  sapply(sub('RHT', '', coordsObservaciones$Nombre), FUN = firstCharsToUpper, 
+         noUpperFirstWords=c("las", "del", "de", "los"), noLowerWords=c("I", "II"), 
+         USE.NAMES = F), ' (',
+  apply(valoresObservaciones, MARGIN = 2, function(x) sum(!is.na(x))), ')')
  
 mapaEstaciones <- mapearPuntosConEtiquetasGGPlot(
   puntos = coordsObservaciones, shpBase = shpBase, xyLims = xyLims, coloresPuntos = colores, 
