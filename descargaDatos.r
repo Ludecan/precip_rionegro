@@ -81,7 +81,9 @@ descargaGSMaP <- function(
       curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
       forzarReDescarga = forzarReDescarga)
     if (any(res == 0)) {
-      warning(paste('Error downloading GSMaP files:', paste(urls[res == 0], collapse = ', ')))
+      warning(paste('Error downloading GSMaP files:', 
+                    paste(urls[iHorasADescargar[res == 0]], collapse = '\n'), 
+                    sep='\n'))
       iHorasADescargar <- iHorasADescargar[res != 0]
     }
     
@@ -151,7 +153,9 @@ descargaGPM <- function(
       curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas, 
       forzarReDescarga=forzarReDescarga)
     if (any(res == 0)) {
-      warning(paste('Error downloading GSMaP files:', paste(urls[idx][res == 0], collapse = ', ')))
+      warning(paste('Error downloading GSMaP files:', 
+                    paste(urls[iPeriodosADescargar[res == 0]], collapse = '\n'), 
+                    sep='\n'))
       iPeriodosADescargar <- iPeriodosADescargar[res != 0]
     }
     

@@ -1,6 +1,7 @@
 ##### 0 - Descarga y preparación de los datos
 dt_ini <- '2017-02-01'
 dt_fin <- '2020-03-01'
+estacionesADescartar <- NA
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- FALSE
@@ -28,7 +29,83 @@ graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones,
 
 estacionesRaras
 
-##### 2 - Ubicación Estaciones
+##### 2 - Tablas estadísticas
+iFechas <- rownames(valoresObservaciones) >= '2017-02-01' & rownames(valoresObservaciones) <= '2020-01-31'
+valoresObservaciones <- valoresObservaciones[iFechas,]
+
+d2 <- rownames(valoresObservaciones)
+d1 <- rownames(valoresObservaciones)[1]
+d2 <- rownames(valoresObservaciones)[nrow(valoresObservaciones)-1]
+diff_meses <- function(d1, d2) {
+  a1 <- as.integer(substr(d1, 1, 4))
+  a2 <- as.integer(substr(d2, 1, 4))
+  m1 <- as.integer(substr(d1, 6, 7))
+  m2 <- as.integer(substr(d2, 6, 7))
+  
+  return ((a2 - a1) * 12 + (m2 - m1))
+}
+
+clases <- diff_meses(rownames(valoresObservaciones)[1], rownames(valoresObservaciones)) %/% 12
+
+
+max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
+  enc <- rle(conditionFunc(x))
+  if (any(enc$values, na.rm = T)) {
+    return(max(enc$lengths[enc$values], na.rm = T))
+  } else {
+    return(0)
+  }
+}
+
+x <- valoresObservaciones[clases == 0, 1]
+my_agg <- function(x, umbral0=0.2) {
+  xNoNa <- na.omit(x)
+  
+  n <- length(x)
+  nNoNa <- length(xNoNa)
+  
+  pctFaltantes <- (1 - (nNoNa / n)) * 100
+  pctPrecip <- sum(xNoNa > umbral0) / nNoNa * 100
+  if (nNoNa >= (n * 0.8)) {
+    acumulado <- sum(xNoNa) * n / nNoNa
+  } else {
+    acumulado <-NA_real_
+  }
+  
+  maximo <- max(xNoNa)
+  
+  rachaLluviosa <- max_run_length(x, conditionFunc=function(x) { x >= umbral0 })
+  rachaSeca <- max_run_length(x, conditionFunc=function(x) { x < umbral0 })
+  
+  return(c(pctFaltantes=pctFaltantes, pctPrecip=pctPrecip, acumulado=acumulado, 
+           maximo=maximo, rachaLluviosa=rachaLluviosa, rachaSeca=rachaSeca))
+}
+
+t(aggregate(x = valoresObservaciones, by=list(anio=clases), FUN=my_agg))
+
+obsStats <- apply(valoresObservaciones, MARGIN = 2, 
+                  FUN = function(x) {
+                    return(aggregate(x = x, by=list(anio=clases), FUN=my_agg))
+                  })
+
+obsStatsOverall <- t(sapply(X = obsStats, FUN = function(x) { 
+  return(c(colMeans(x[,2][,1:3], na.rm=T), apply(x[,2][,4:6], MARGIN = 2, FUN = max)))
+}))
+
+obsStatsOverall[, 'rachaLluviosa'] <- apply(
+  valoresObservaciones, MARGIN = 2, FUN = function(x) {
+    return(max_run_length(x, conditionFunc=function(x) { x >= umbral0 }))
+  })
+obsStatsOverall[, 'rachaSeca'] <- apply(
+  valoresObservaciones, MARGIN = 2, FUN = function(x) {
+    return(max_run_length(x, conditionFunc=function(x) { x < umbral0 }))
+  })
+obsStatsOverall[, 1:4] <- round(obsStatsOverall[, 1:4], 1)
+obsStatsOverall
+
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctPrecip'))
+
+##### 3 - Ubicación Estaciones
 colores <- rep('red', nrow(estaciones))
 colores[clasesEstaciones != 'General'] <- 'green'
 
@@ -120,3 +197,7 @@ valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
   plotMaps = TRUE)
+
+
+
+

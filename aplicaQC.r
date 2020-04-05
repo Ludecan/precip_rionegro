@@ -52,7 +52,7 @@ paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
 
 applyQCTests <- function(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, paramsInterpolacion, 
-    pathsRegresores, plotMaps=FALSE) {
+    pathsRegresores, plotMaps=FALSE, pathResultadosQC='Resultados/2-QC/') {
   replot <- FALSE
   
   # Two rounds of QC tests
@@ -68,7 +68,8 @@ applyQCTests <- function(
       test = test[test$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/1/', shpBase = shpBase, replot=replot)
+      carpetaSalida = paste0(pathResultadosQC, 'mapas/Pluviómetros/1/'), shpBase = shpBase, 
+      replot=replot)
   }
   
   test$reemplazar[test$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
@@ -87,7 +88,8 @@ applyQCTests <- function(
       test = test2[test2$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/2/', shpBase = shpBase, replot=replot)
+      carpetaSalida = paste0(pathResultadosQC, 'mapas/Pluviómetros/2/'), shpBase = shpBase, 
+      replot=replot)
   }
   
   test2$reemplazar[test2$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
@@ -120,7 +122,8 @@ applyQCTests <- function(
       test = test3[iTest, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/3/', shpBase = shpBase, replot=replot)
+      carpetaSalida = paste0(pathResultadosQC, 'mapas/Pluviómetros/3/'), shpBase = shpBase, 
+      replot=replot)
   }
   
   test3$reemplazar[iTest] <- 1
@@ -139,7 +142,8 @@ applyQCTests <- function(
       test = test5[iTest, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/4/', shpBase = shpBase, replot=replot)
+      carpetaSalida = paste0(pathResultadosQC, 'mapas/Pluviómetros/4/'), shpBase = shpBase, 
+      replot=replot)
   }
   
   test5$reemplazar[iTest] <- 1
@@ -153,7 +157,8 @@ applyQCTests <- function(
       test = test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones = coordsObservaciones, valoresObservaciones = valoresObservaciones,
       tiposOutliersDeInteres = tiposOutliersValoresSospechosos,
-      carpetaSalida = 'Resultados/2-QC/mapas/Pluviómetros/5/', shpBase = shpBase, replot=replot)
+      carpetaSalida = paste0(pathResultadosQC, 'mapas/Pluviómetros/5/'), shpBase = shpBase, 
+      replot=replot)
   }
   
   test6$reemplazar[test6$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1

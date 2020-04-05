@@ -11,8 +11,7 @@ source('st_interp/parsearParams/parsearParamsUtils.r')
 print(paste('ParamsStr="', paramsStr, '"', sep = ''))
 
 createParamsPrecipRioNegro <- function(dt_ini=NA_character_, dt_fin=as.character(Sys.Date())) {
-  res <- list(dt_ini=dt_ini,
-              dt_fin=dt_fin)
+  res <- list(dt_ini=dt_ini, dt_fin=dt_fin)
   return(res)
 }
 
@@ -26,7 +25,9 @@ dt_fin=params$dt_fin
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }
-
+estacionesADescartar <- c(
+  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- TRUE

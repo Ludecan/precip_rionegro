@@ -10,3 +10,4 @@ datos/mapas/
 RCache/
 RCache_windows/
 *.rej
+RCache_unix/

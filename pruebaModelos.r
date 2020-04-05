@@ -15,40 +15,50 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # 7 - Cross Validation
 
 #dt_ini <- '2009-09-16'
-#dt_ini <- '2017-02-01'
-#dt_fin <- '2020-03-01'
+dt_ini <- '2017-02-01'
+dt_fin <- '2020-03-01'
 #dt_ini <- '2018-10-21'
 #dt_fin <- '2019-12-07'
-dt_ini <- '2020-03-01'
-dt_fin <- '2020-03-05'
+#dt_ini <- '2020-03-01'
+#dt_fin <- '2020-03-05'
+estacionesADescartar <- c(
+  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+#estacionesADescartar <- NA
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- FALSE
 borrarDatosOriginales <- FALSE
-plotDatos <- TRUE
+plotDatos <- FALSE
 
-runTestsRegresores <- FALSE
+runTestsRegresores <- TRUE
 runGridding <- TRUE
 runCV <- FALSE
 runValidation <- FALSE
 runPlots <- TRUE
+runVerif <- TRUE
 
-nombreExperimento <- '_mascara03_CorreccionExtrapolacion_sateliteEnMascara'
+postFijoPluvios <- '_seleccionPluvios'
+#postFijoPluvios <- ''
+nombreExperimento <- paste0('_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca', 
+                            postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
-localFileNonQCed <- changeFileExt(appendToFileName(localFile, '_non_qced'), '.tsv')
+localFileNonQCed <- changeFileExt(
+  appendToFileName(localFile, paste0('_non_qced', postFijoPluvios)), '.tsv')
 grabarSeriesArchivoUnico(
   pathArchivoDatos = localFileNonQCed, estaciones=estaciones, fechas = fechasObservaciones, 
   datos = valoresObservaciones)
 
-localFileQCed <- changeFileExt(appendToFileName(localFile, '_qced'), '.tsv')
+localFileQCed <- changeFileExt(
+  appendToFileName(localFile, paste0('_qced', postFijoPluvios)), '.tsv')
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   source('aplicaQC.r', encoding = 'WINDOWS-1252')
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
-    plotMaps = TRUE)
+    plotMaps = TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/'))
   
   grabarSeriesArchivoUnico(
     pathArchivoDatos = localFileQCed, estaciones=estaciones, fechas = fechasObservaciones, 
@@ -419,18 +429,18 @@ if (runGridding) {
       nomModelo <- nombreModelo(params = paramsI, pathsRegresores=pr)
       print(paste(Sys.time(), ': Gridding ', nomModelo, sep=''))
       
-      pathModelo <- paste(pathResultadosGrillado, nomModelo ,'/', sep='')
-      dir.create(pathModelo, showWarnings = F, recursive = T)
-      
       # paramsI$nCoresAUsar <- 1
       listaMapas <- createDefaultListaMapas(
         paramsI, fechasObservaciones, dibujarEscalaFija = FALSE, salvarGeoTiff = TRUE, 
         recalcularSiYaExiste = FALSE, incluirSubtitulo = FALSE)
+      
       nomModeloFormateadoParaArchivos <- gsub(pattern = '*', replacement = '', x = nomModelo, fixed = T)
+      pathModelo <- paste0(pathResultadosGrillado, nomModeloFormateadoParaArchivos, '/')
+      dir.create(pathModelo, showWarnings = F, recursive = T)      
       listaMapas$nombreArchivo <- 
-        paste(pathResultadosGrillado, nomModeloFormateadoParaArchivos,'/', 
-              appendToFileName(filename=listaMapas$nombreArchivo, 
-                               postFijo=paste('_', nomModeloFormateadoParaArchivos, sep='')), sep='')
+        paste0(pathModelo, 
+               appendToFileName(filename=listaMapas$nombreArchivo, 
+                                postFijo=paste('_', nomModeloFormateadoParaArchivos, sep='')))
       
       #pathsRegresores = pr
       #paramsIyM = paramsI
@@ -480,10 +490,8 @@ if (runCV) {
     
     validationStats$validationStatsOverall
     
-    validationStats$validationStatsTemporales
-    
+    # validationStats$validationStatsTemporales
     rmses <- sapply(validationStats$validationStatsTemporales, FUN = function(x) {return(x[, 'RMSE'])} )
-    
     
     mejores <- unlist(apply(rmses, MARGIN = 1, which.min))
     uMejores <- unique(mejores)
@@ -492,11 +500,8 @@ if (runCV) {
       print(sum(!is.na(mejores) & mejores==i))
     }
     
-    
     linePlot(x=fechasObservaciones, y=rmses)
-    
-    
-    lapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)})
+    sapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)})
     
     ordenModelosPorColumnas <- names(cvs)
     ordenModelosPorColumnas <- c('K', 'GRK-Combinado', 'GRK-Combinado0.6')

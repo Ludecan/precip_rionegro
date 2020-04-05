@@ -44,6 +44,13 @@ estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
 
+if (!is.na(estacionesADescartar)) {
+  iAConservar <- !estaciones$Nombre %in% estacionesADescartar
+  estaciones <- estaciones[iAConservar,]
+  valoresObservaciones <- valoresObservaciones[, iAConservar]
+  rm(iAConservar)
+}
+
 # Agregacion diaria
 print(paste0(Sys.time(), ' - Agregando valores diarios...'))
 triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
@@ -52,9 +59,10 @@ triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fech
                       PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
                       BARRA.DE.PORONGOS.RHT=ymd_hm("2019-12-10 09:00", tz = tz(fechasObservaciones[1])),
                       VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
+triHourlyUpTo <- triHourlyUpTo[names(triHourlyUpTo) %in% estaciones$Nombre]
 
 colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
-x <- triHourlyUpTo[[5]]
+# x <- triHourlyUpTo[[5]]
 rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
   hora <- as.integer(substr(fechasObservaciones, 12, 13))
   if (!is.na(x)) { 
@@ -67,6 +75,7 @@ rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
 idx <- sapply(rowsToSplit, function(x) !is.null(x))
 colsToSplit <- colsToSplit[idx]
 rowsToSplit <- rowsToSplit[idx]
+rm(idx)
 
 getmode <- function(v) {
   uniqv <- unique(v)
@@ -106,6 +115,8 @@ splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, row
 valoresObservaciones <- splitAccumulated(
   valoresObservaciones, colsToSplit, rowsToSplit, rowWeights = NULL)
 
+rm(rowsToSplit, colsToSplit)
+
 iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
                     x = rownames(valoresObservaciones), fixed = T)
 iStartHour <- iStartHours[1]
@@ -114,7 +125,10 @@ if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
 } else {
   iEndHour <- iStartHours[length(iStartHours) - 1] + 23
 }
+
 idx <- iStartHour:iEndHour
+rm(iStartHours, iStartHour, iEndHour)
+
 fechasObservaciones <- fechasObservaciones[idx]
 valoresObservaciones <- valoresObservaciones[idx, ]
 clases <- (seq_along(fechasObservaciones) - 1) %/% 24L
@@ -132,18 +146,6 @@ maxNHorasParaRechazarDia <- 21
 iAceptados <- nNoNa > maxNHorasParaRechazarDia
 valoresObservaciones[!iAceptados] <- NA
 valoresObservaciones[iAceptados] <- valoresObservaciones[iAceptados] * 24 / nNoNa[iAceptados]
-
-max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
-  enc <- rle(conditionFunc(x))
-  if (any(enc$values, na.rm = T)) {
-    return(max(enc$lengths[enc$values], na.rm = T))
-  } else {
-    return(0)
-  }
-}
-
-max_dry_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x == 0 })
-max_wet_spell <- apply(valoresObservaciones, MARGIN = 2, FUN=max_run_length, conditionFunc=function(x) { x > 0 })
 
 # Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
@@ -262,3 +264,4 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   
   return(corrs)
 }
+
