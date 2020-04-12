@@ -302,7 +302,7 @@ plotObservacionesYRegresores <- function(
       iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones, 
       pathsRegresoresAEvaluar, shpBase, nColsPlots, carpetaSalida, replot, 
       grillaAlternativaRegresores, especificacionEscala) {
-    # iFecha <- 253
+    # iFecha <- 481
     print(iFecha)
     
     nomArchMapa <- paste(carpetaSalida, format(fechasObservaciones[iFecha], format='%Y%m%d'), '.png', sep='')
@@ -361,11 +361,19 @@ plotObservacionesYRegresores <- function(
           titulo = paste('Observaciones - ', fechasObservaciones[iFecha], sep=''), dibujar = F,
           alturaEscalaContinua = alturaEscalaContinua)
         
+        iModelo <- 1
         for (iModelo in seq_along(rastersI)) {
+          valoresRegresorSobreObservaciones <- over(coordsObservaciones, rastersI[[iModelo]])
+          correlation <- cor(coordsObservaciones$value, valoresRegresorSobreObservaciones,
+                             use = "pairwise.complete.obs")
+          titulo = paste0(
+            colnames(pathsRegresoresAEvaluar)[iModelo], ' - ', fechasObservaciones[iFecha], 
+            '. Corr=', round(correlation, 2))
+          
           gs[[iModelo+1]] <- mapearGrillaGGPlot(
             grilla = rastersI[[iModelo]], shpBase = shpBase, escala = escala, xyLims = xyLims, 
-            titulo = paste(colnames(pathsRegresoresAEvaluar)[iModelo], ' - ', fechasObservaciones[iFecha], sep=''), 
-            dibujarPuntosObservaciones = T, coordsObservaciones = coordsObservaciones, dibujar = F,
+            titulo = titulo, dibujarPuntosObservaciones = T, 
+            coordsObservaciones = coordsObservaciones, dibujar = F,
             alturaEscalaContinua = alturaEscalaContinua)
         }
         

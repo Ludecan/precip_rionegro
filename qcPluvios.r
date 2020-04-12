@@ -10,32 +10,10 @@ plotDatos <- FALSE
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
-##### 1 - Correlación VS Distancia
-source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
-dist <- rdist(coordinates(coordsObservaciones))
-corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
-# Cuantas veces la estación es la menos correlacionada con otra
-bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
-corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
-estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 3], names(corrNA[corrNA])))
-  
-# estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
-
-clasesEstaciones <- rep('General', nrow(estaciones))
-for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
-
-graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
-                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
-
-estacionesRaras
-
-##### 2 - Tablas estadísticas
+##### 1 - Tablas estadísticas
 iFechas <- rownames(valoresObservaciones) >= '2017-02-01' & rownames(valoresObservaciones) <= '2020-01-31'
 valoresObservaciones <- valoresObservaciones[iFechas,]
 
-d2 <- rownames(valoresObservaciones)
-d1 <- rownames(valoresObservaciones)[1]
-d2 <- rownames(valoresObservaciones)[nrow(valoresObservaciones)-1]
 diff_meses <- function(d1, d2) {
   a1 <- as.integer(substr(d1, 1, 4))
   a2 <- as.integer(substr(d2, 1, 4))
@@ -47,7 +25,6 @@ diff_meses <- function(d1, d2) {
 
 clases <- diff_meses(rownames(valoresObservaciones)[1], rownames(valoresObservaciones)) %/% 12
 
-
 max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
   enc <- rle(conditionFunc(x))
   if (any(enc$values, na.rm = T)) {
@@ -57,6 +34,7 @@ max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
   }
 }
 
+umbral0 <- 0.2
 x <- valoresObservaciones[clases == 0, 1]
 my_agg <- function(x, umbral0=0.2) {
   xNoNa <- na.omit(x)
@@ -103,11 +81,55 @@ obsStatsOverall[, 'rachaSeca'] <- apply(
 obsStatsOverall[, 1:4] <- round(obsStatsOverall[, 1:4], 1)
 obsStatsOverall
 
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctFaltantes'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctPrecip'))
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='acumulado'))
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='maximo'))
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaLluviosa'))
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaSeca'))
+
+iRaras <- obsStatsOverall[, 'pctFaltantes'] > 40 |
+          obsStatsOverall[, 'pctPrecip'] < 23 | obsStatsOverall[, 'pctPrecip'] > 40 |
+          obsStatsOverall[, 'acumulado'] < 1000 | obsStatsOverall[, 'acumulado'] > 1800 |
+          obsStatsOverall[, 'maximo'] > 450 |
+          obsStatsOverall[, 'rachaLluviosa'] > 15 |
+          obsStatsOverall[, 'rachaSeca'] > 45
+
+##### 2 - Correlación VS Distancia
+source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
+dist <- rdist(coordinates(coordsObservaciones))
+corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
+# Cuantas veces la estación es la menos correlacionada con otra
+bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
+corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
+estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 3], names(corrNA[corrNA])))
+
+# estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
+
+clasesEstaciones <- rep('General', nrow(estaciones))
+for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
+
+graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
+                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
+
+estacionesRaras
+
 
 ##### 3 - Ubicación Estaciones
-colores <- rep('red', nrow(estaciones))
-colores[clasesEstaciones != 'General'] <- 'green'
+iRaras <- iRaras | estaciones$Nombre %in% estacionesRaras
+estacionesRaras <- estaciones$Nombre[iRaras]
+
+#estacionesRaras <- c('ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT',
+#                     'PASO.LAGUNA.II.RHT', 'PASO.AGUIAR.RHT', 'PASO.PEREIRA.RHT', 
+#                     'BARRA.DE.PORONGOS.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+#estacionesRaras <- c('ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 
+#                     'PASO.AGUIAR.RHT', 'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+
+clasesEstaciones <- rep('General', nrow(estaciones))
+for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
+
+colores <- rep('#4FA9FF', nrow(estaciones))
+colores[clasesEstaciones != 'General'] <- '#FFCF23'
 
 xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase, coordsObservaciones), ejesXYLatLong = T)
 
@@ -159,6 +181,7 @@ firstCharsToUpper <- function(
   }
   return(paste(wordsInX, collapse = ' '))
 }
+
 
 coordsObservaciones$etiqueta <- paste0(
   sapply(sub('RHT', '', coordsObservaciones$Nombre), FUN = firstCharsToUpper, 
