@@ -1,7 +1,7 @@
 ##### 0 - Descarga y preparación de los datos
 dt_ini <- '2017-02-01'
 dt_fin <- '2020-03-01'
-estacionesADescartar <- NA
+estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- FALSE

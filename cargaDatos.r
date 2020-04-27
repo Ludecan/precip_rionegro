@@ -44,7 +44,7 @@ estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
 
-if (!is.na(estacionesADescartar)) {
+if (!is.null(estacionesADescartar)) {
   iAConservar <- !estaciones$Nombre %in% estacionesADescartar
   estaciones <- estaciones[iAConservar,]
   valoresObservaciones <- valoresObservaciones[, iAConservar]

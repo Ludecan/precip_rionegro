@@ -33,14 +33,14 @@ plotDatos <- FALSE
 
 runTestsRegresores <- TRUE
 runGridding <- TRUE
-runCV <- FALSE
-runValidation <- FALSE
+runCV <- TRUE
+runValidation <- TRUE
 runPlots <- TRUE
 runVerif <- TRUE
 
 postFijoPluvios <- '_seleccionPluvios'
 #postFijoPluvios <- ''
-nombreExperimento <- paste0('_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca', 
+nombreExperimento <- paste0('_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca_v2', 
                             postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
@@ -97,7 +97,6 @@ if (FALSE) {
 }
 
 corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)
-apply(valoresObservaciones, MARGIN = 1, FUN = mean, na.rm=T)
 
 dfCorrs <- data.frame(satelite=c(rep('GPM', nrow(pathsRegresores)), rep('GSMaP', nrow(pathsRegresores))), 
                       fecha=as.Date(rep(fechasObservaciones, 2)),
@@ -325,6 +324,8 @@ if (FALSE) {
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[4]] <- paramsI
   listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
+  paramsI$signosValidosRegresores <- 1
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])  
   
   # 5 - Kriging Universal Espacial + Regresion Generalizada en GSMaP
   paramsI <- paramsBase
@@ -334,6 +335,8 @@ if (FALSE) {
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[5]] <- paramsI
   listaRegresores[[5]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
+  paramsI$signosValidosRegresores <- 1
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])  
   
   # 6 - Kriging Universal Espacial + Regresion Generalizada en GPM y GSMaP
   paramsI <- paramsBase
@@ -401,6 +404,29 @@ if (FALSE) {
   listaRegresores[[12]] <- pathsRegresores[, 'Combinado', drop=FALSE]
   paramsI$signosValidosRegresores <- 1
   names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])
+  
+  
+  # 13 - Kriging Ordinario Espacial sin máscara
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'ninguna'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  paramsI$umbralMascaraCeros <- 0
+  listaParams[[13]] <- paramsI
+  listaRegresores[[13]] <- NA
+  
+  # 14 - Kriging Universal Espacial + Regresion Generalizada en Combinado
+  paramsI <- paramsBase
+  paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
+  paramsI$interpolationMethod <- 'automap'
+  paramsI$metodoIgualacionDistribuciones <- 'GLS'
+  paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
+  paramsI$umbralMascaraCeros <- 0
+  listaParams[[14]] <- paramsI
+  listaRegresores[[14]] <- pathsRegresores[, 'Combinado', drop=FALSE]
+  paramsI$signosValidosRegresores <- 1
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[7]])
 }
 
 modelosACorrer <- 1:length(listaParams)
@@ -411,15 +437,16 @@ source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 
 
 ############# Tests Regresores #############
 if (runTestsRegresores) {
-  testRegressors(valoresObservaciones, pathsRegresores, pathSHPNotNUll=pathSHPMapaBase, 
-                 pathResultados='Resultados/1-Exploracion/', seriesName='Rainfall', 
-                 outputTableFilename='testRegresores.csv')
+  testRegressors(valoresObservaciones = valoresObservaciones, pathsRegresores = pathsRegresores, 
+                 pathSHPNotNUll=pathSHPMapaBase, pathResultados='Resultados/1-Exploracion/', 
+                 seriesName='Rainfall', outputTableFilename='testRegresores.csv')
 }
 
 ############# Gridding #############
 pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
 if (runGridding) {
-  i <- 12
+  i <- 7
+  i <- 14
   for (i in modelosACorrer) {
     try({
       paramsI <- listaParams[[i]]
@@ -451,6 +478,7 @@ if (runGridding) {
       #tsAInterpolar <- 48
       #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
       tsAInterpolar <- 1:nrow(valoresObservaciones)
+      tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2019-12-27', tz=tz(fechasObservaciones[1])))
       interpolarYMapear(
         coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones, 
         valoresObservaciones = valoresObservaciones, pathsRegresores = pr, 
@@ -501,7 +529,7 @@ if (runCV) {
     }
     
     linePlot(x=fechasObservaciones, y=rmses)
-    sapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)})
+    t(sapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)}))
     
     ordenModelosPorColumnas <- names(cvs)
     ordenModelosPorColumnas <- c('K', 'GRK-Combinado', 'GRK-Combinado0.6')
@@ -514,6 +542,7 @@ if (runCV) {
       carpetaSalida=pathResultadosValidacion)    
   }
 }
+
 
 ############# Plots #############
 if (runPlots) {
