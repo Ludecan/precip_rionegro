@@ -4,7 +4,7 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
-paramsStr <- 'dt_fin=2020-05-02'
+# paramsStr <- 'dt_fin=2020-05-03'
 
 if (length(paramsStr) == 0) { paramsStr <- '' }
 source('st_interp/parsearParams/parsearParamsUtils.r')
@@ -43,6 +43,10 @@ valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
   plotMaps = TRUE)
+
+if (all(is.na(valoresObservaciones))) {
+  stop('main.r: las observaciones de todas las estaciones son nulas')
+}
 
 # Guardamos el mapa de pluviómetros y satélites en datos/mapas/
 source('graficosParticulares.r', encoding = 'WINDOWS-1252')
