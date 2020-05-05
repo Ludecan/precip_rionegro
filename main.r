@@ -4,7 +4,7 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
-# paramsStr <- 'dt_fin=2020-03-13'
+paramsStr <- 'dt_fin=2020-05-02'
 
 if (length(paramsStr) == 0) { paramsStr <- '' }
 source('st_interp/parsearParams/parsearParamsUtils.r')
@@ -25,6 +25,7 @@ dt_fin=params$dt_fin
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }
+
 estacionesADescartar <- c(
   'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
   'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
@@ -187,5 +188,5 @@ interpolarYMapear(coordsObservaciones=coordsObservaciones,
                   espEscalaAdaptada=NULL,
                   tsAInterpolar=tsAInterpolar)
 
-print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/', pathResultadosOperativos))
-
+print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/', 
+             gsub(listaMapas$nombreArchivo, pattern = 'png', replacement = 'tif')))

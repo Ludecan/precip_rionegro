@@ -9,6 +9,7 @@ pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 pathResultados <- 'Resultados/'
 pathSHPMapaBase <- paste(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp', sep='')
+pathSHPSubCuencas <- paste(pathDatos, 'CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp', sep='')
 
 proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
 # La grilla resultante tendrá factorEscaladoGrillaInterpolacion píxeles en cada dirección por cada
@@ -229,6 +230,9 @@ coordsAInterpolar <- coordsAInterpolar[i, ]
 
 shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
                                               encoding = shpEncoding)
+
+print(paste0(Sys.time(), ' - Cargando shapefile con subcuencas...'))
+shpSubCuencas <- cargarSHP(pathSHP = pathSHPSubCuencas)
 
 getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
   valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)
