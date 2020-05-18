@@ -233,9 +233,13 @@ shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=co
 
 print(paste0(Sys.time(), ' - Cargando shapefile con subcuencas...'))
 shpSubCuencas <- cargarSHP(pathSHP = pathSHPSubCuencas)
+if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
+  shpSubCuencas <- spTransform(shpSubCuencas, proj4string(coordsAInterpolar))
+}
 
 getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
-  valoresRegresores <- extraerValoresRegresoresSobreSP(coordsObservaciones, pathsRegresores = pathsRegresores)
+  valoresRegresores <- extraerValoresRegresoresSobreSP(
+    objSP = coordsObservaciones, pathsRegresores = pathsRegresores)
   
   if (logTransforms) {
     valoresObservaciones <- log1p(valoresObservaciones)
@@ -243,7 +247,7 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   }
   
   j <- 1
-  i <- 1
+  i <- 2
   corrs <- sapply(1:ncol(pathsRegresores), function(j) {
     return(
       sapply(1:nrow(valoresObservaciones), FUN = function(i) {
@@ -252,7 +256,8 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
           if (max(abs(valoresObservaciones[i, idx] - valoresRegresores[[j]][i, idx])) <= 1e-3) {
             return(1)
           } else {
-            return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], use = "pairwise.complete.obs"))
+            return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], 
+                       use = "pairwise.complete.obs"))
           }        
         } else {
           return(NA)
