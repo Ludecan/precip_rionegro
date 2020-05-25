@@ -1,6 +1,9 @@
 ##### 0 - Descarga y preparación de los datos
 dt_ini <- '2017-02-01'
 dt_fin <- '2020-03-01'
+#estacionesADescartar <- c(
+#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3

@@ -22,6 +22,14 @@ parsearParamsPrecipRioNegro <- function(params) {
 params <- parsearParamsPrecipRioNegro(paramsStr)
 dt_ini=params$dt_ini
 dt_fin=params$dt_fin
+if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
+  dt_fin <- as.character(as.Date(params$dt_fin) - 1)
+}
+
+# Descomentar estas fechas para setearlas manualmente
+#dt_fin="2020-05-24"
+#dt_ini=NA
+#dt_ini="2017-02-01"
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }
@@ -43,10 +51,6 @@ valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
   plotMaps = TRUE)
-
-if (all(is.na(valoresObservaciones))) {
-  stop('main.r: las observaciones de todas las estaciones son nulas')
-}
 
 # Guardamos el mapa de pluviómetros y satélites en datos/mapas/
 source('graficosParticulares.r', encoding = 'WINDOWS-1252')
@@ -194,3 +198,26 @@ interpolarYMapear(coordsObservaciones=coordsObservaciones,
 
 print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/', 
              gsub(listaMapas$nombreArchivo, pattern = 'png', replacement = 'tif')))
+
+# Calcular y guardar acumulados por sub cuencas
+acumuladosPorSubCuencas <- t(agregacionEspacialAPoligonosDesdeArchivos(
+  pathsSpObjs=listaMapas$nombreArchivo, shpPoligonos=shpSubCuencas, funcionAgregacion=base::sum,
+  zcol=1, na.rm=T, nCoresAUsar=0, guardarCSV=FALSE, retornarResultados=TRUE, useRaster=TRUE))
+
+rownames(acumuladosPorSubCuencas) <- gsub(
+  pattern='_', replacement='-', x=nombreArchSinPathNiExtension(listaMapas$nombreArchivo), fixed=T)
+
+archAcumuladosHoy <- changeFileExt(
+  agregarCarpetaAlFinal(listaMapas$nombreArchivo[length(listaMapas$nombreArchivo)], 'acumuladosSubcuencas'), '.tsv')
+nomArchHoy <- gsub(pattern = '-', replacement = '_', x = nombreArchSinPathNiExtension(archAcumuladosHoy))
+
+nomArchAyer <- gsub(pattern = '-', replacement = '_', as.character((as.Date(dt_ini)-1)))
+archAcumuladosAyer <- gsub(pattern = nomArchHoy, replacement = nomArchAyer, x = archAcumuladosHoy)
+
+if (file.exists(archAcumuladosAyer)) {
+  copyFile(archAcumuladosAyer, archAcumuladosHoy, overwrite = TRUE)
+} else {
+  dir.create(dirname(archAcumuladosHoy), showWarnings = F, recursive = T)
+}
+write.table(x = acumuladosPorSubCuencas, file = archAcumuladosHoy, append=TRUE, quote = FALSE,
+            sep = '\t', na = '-1111', dec = '.', row.names = TRUE, col.names = FALSE)
