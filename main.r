@@ -27,7 +27,7 @@ if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
 }
 
 # Descomentar estas fechas para setearlas manualmente
-#dt_fin="2020-05-24"
+#dt_fin="2020-05-25"
 #dt_ini=NA
 #dt_ini="2017-02-01"
 if (is.na(dt_ini)) {
@@ -201,7 +201,7 @@ print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/'
 
 # Calcular y guardar acumulados por sub cuencas
 acumuladosPorSubCuencas <- t(agregacionEspacialAPoligonosDesdeArchivos(
-  pathsSpObjs=listaMapas$nombreArchivo, shpPoligonos=shpSubCuencas, funcionAgregacion=base::sum,
+  pathsSpObjs=listaMapas$nombreArchivo, shpPoligonos=shpSubCuencas, funcionAgregacion=base::mean,
   zcol=1, na.rm=T, nCoresAUsar=0, guardarCSV=FALSE, retornarResultados=TRUE, useRaster=TRUE))
 
 rownames(acumuladosPorSubCuencas) <- gsub(

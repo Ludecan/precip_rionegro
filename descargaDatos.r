@@ -18,13 +18,11 @@ source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), e
 descargaPluviosADME <- function(
     dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
     forzarReDescarga=FALSE) {
-  url <- paste('***REMOVED***?dtIni=', dt_ini, '&dtFin=', dt_fin, 
-               sep = '')
-  localFile <- paste(pathSalida, 
-                     gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx', sep = '')
-  if (forzarReDescarga || !file.exists(localFile) || file.info(localFile)$size == 0) {
-    descargarArchivos(urls = url, nombresArchivosDestino = localFile, forzarReDescarga = T)
-  }
+  
+  url <- paste0(Sys.getenv(x='URL_MEDIDAS_PLUVIOS'), '?dtIni=', dt_ini, '&dtFin=', dt_fin)
+  localFile <- paste0(pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), 
+                      '_rainfall.xlsx')
+  descargarArchivos(urls = url, nombresArchivosDestino = localFile, forzarReDescarga = T)
   return(localFile)
 }
 
@@ -44,7 +42,7 @@ descargaGSMaP <- function(
   pathLocalCTL <- paste(pathSalida, nomArchCTL, sep = '')
   descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
                     nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga, 
-                    curlOpts = curlOptions(netrc=1))
+                    curlOpts = list(netrc=1))
   ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
 
   # Armo urls y pathsLocales horarios
@@ -75,10 +73,11 @@ descargaGSMaP <- function(
     }
     # Limit number of processes to no more than either 10 or 1 per GB of RAM
     nConexionesSimultaneas <- min(10, round(memtot_gb))
+    nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
     
     res <- descargarArchivos(
       urls = urls[iHorasADescargar], nombresArchivosDestino = pathsLocales[iHorasADescargar], 
-      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
+      curlOpts = list(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
       forzarReDescarga = forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
@@ -92,7 +91,7 @@ descargaGSMaP <- function(
         fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
         formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
         nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
-        overlap = FALSE, nCoresAUsar=nConexionesSimultaneas)
+        overlap = FALSE, nCoresAUsar=nCoresAUsar)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
@@ -106,7 +105,7 @@ descargaGPM <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
     productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE) {
-  urlBase <- 'ftp://jsimpson.pps.eosdis.nasa.gov/data/imerg/'
+  urlBase <- 'ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/'
   producto <- 'gis'
   
   # fijo la hora inicial
@@ -147,10 +146,13 @@ descargaGPM <- function(
     }
     # Limit number of processes to no more than either 10 or 1 per GB of RAM
     nConexionesSimultaneas <- min(10, round(memtot_gb))
+    nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
     
+    curlOpts <- list(use_ssl = 3, netrc = 1, timeout = 600L, connecttimeout = 600L)
+
     res <- descargarArchivos(
       urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], 
-      curlOpts = curlOptions(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas, 
+      curlOpts = curlOpts, nConexionesSimultaneas = nConexionesSimultaneas, 
       forzarReDescarga=forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
@@ -166,7 +168,7 @@ descargaGPM <- function(
         formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
         minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
         funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
-        funcEscalado = function(x) { x / 20}, nCoresAUsar=nConexionesSimultaneas)
+        funcEscalado = function(x) { x / 20}, nCoresAUsar=nCoresAUsar)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
