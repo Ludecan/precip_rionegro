@@ -27,9 +27,9 @@ if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
 }
 
 # Descomentar estas fechas para setearlas manualmente
-#dt_fin="2020-05-25"
-#dt_ini=NA
-#dt_ini="2017-02-01"
+dt_fin="2020-06-28"
+dt_ini=NA
+dt_ini="2017-02-01"
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }
@@ -39,8 +39,8 @@ estacionesADescartar <- c(
   'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
-forzarReDescarga <- TRUE
-borrarDatosOriginales <- TRUE
+forzarReDescarga <- !interactive()
+borrarDatosOriginales <- forzarReDescarga
 #borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
 
@@ -162,7 +162,8 @@ for (iRow in 1:nrow(pathsRegresores)) {
 pathsRegresores <- pathsRegresores[, 'Combinado', drop=F]
 params$signosValidosRegresores <- rep(1, ncol(pathsRegresores))
 names(params$signosValidosRegresores) <- colnames(pathsRegresores)
-
+# Descomentar esto para usar Kriging Ordinario
+# pathsRegresores <- NULL
 
 # Otros parámetros adicionales. listaMapas dice como se deben llamar los archivos de salida y que
 # guardar. geoTiff, png con escala fija/ajustada, etc. Los valores por defecto están bien
@@ -178,7 +179,7 @@ print(paste0(Sys.time(), ' - Interpolando modelo ',
 
 # Interpolación de los datos
 # Cambiando tsAinterpolar se puede elegir la fecha que se quiera
-# tsAinterpolar <- which(fechasObservaciones == as.POSIXct('2012-01-20', tz=tz(fechasObservaciones[1])))
+# tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2018-02-03', tz=tz(fechasObservaciones[1])))
 tsAInterpolar=1:nrow(valoresObservaciones)
 interpolarYMapear(coordsObservaciones=coordsObservaciones, 
                   fechasObservaciones=fechasObservaciones, 

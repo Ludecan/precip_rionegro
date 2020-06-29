@@ -29,10 +29,8 @@ descargaPluviosADME <- function(
 descargaGSMaP <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
-    forzarReDescarga=FALSE, borrarDatosOriginales=FALSE) {
-  urlBase <- 'ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/'
-  producto <- 'hourly_G'
-  
+    forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
+    urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/', producto='hourly_G') {
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
@@ -104,10 +102,8 @@ descargaGSMaP <- function(
 descargaGPM <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
-    productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE) {
-  urlBase <- 'ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/'
-  producto <- 'gis'
-  
+    productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
+    urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis') {
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
