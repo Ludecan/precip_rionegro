@@ -27,9 +27,11 @@ if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
 }
 
 # Descomentar estas fechas para setearlas manualmente
-dt_fin="2020-06-28"
-dt_ini=NA
-dt_ini="2017-02-01"
+#if (interactive()) {
+  #dt_fin="2020-06-29"
+  #dt_ini=NA
+  #dt_ini="2017-02-01"
+#}
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }
@@ -60,7 +62,7 @@ especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistingu
 print(paste0(Sys.time(), ' - Mapeando observaciones de pluviometros y satelites...'))
 plotObservacionesYRegresores(
   coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
-  valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = TRUE,
+  valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = forzarReDescarga,
   grillaAlternativaRegresores=coordsAInterpolar, carpetaSalida='datos/mapas/',
   especificacionEscala=especificacionEscala)
 
@@ -222,3 +224,4 @@ if (file.exists(archAcumuladosAyer)) {
 }
 write.table(x = acumuladosPorSubCuencas, file = archAcumuladosHoy, append=TRUE, quote = FALSE,
             sep = '\t', na = '-1111', dec = '.', row.names = TRUE, col.names = FALSE)
+
