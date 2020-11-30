@@ -27,11 +27,11 @@ if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
 }
 
 # Descomentar estas fechas para setearlas manualmente
-#if (interactive()) {
-  #dt_fin="2020-06-29"
-  #dt_ini=NA
-  #dt_ini="2017-02-01"
-#}
+if (interactive() && length(paramsStr) == 0) {
+  dt_fin=as.character(Sys.Date())
+  dt_ini=NA
+  dt_ini="2017-02-01"
+}
 if (is.na(dt_ini)) {
   dt_ini <- as.Date(dt_fin)-1
 }

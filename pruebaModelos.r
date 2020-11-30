@@ -16,9 +16,9 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 
 #dt_ini <- '2009-09-16'
 dt_ini <- '2017-02-01'
-dt_fin <- '2020-03-01'
-#dt_ini <- '2018-10-21'
-#dt_fin <- '2019-12-07'
+#dt_fin <- '2020-03-01'
+dt_fin <- '2020-05-31'
+#dt_fin <- '2020-09-05'
 #dt_ini <- '2020-03-01'
 #dt_fin <- '2020-03-05'
 estacionesADescartar <- c(
@@ -77,7 +77,7 @@ if (plotDatos) {
     nDigitos = 1, continuo = T)
   plotObservacionesYRegresores(
     coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
-    valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = TRUE,
+    valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = forzarReDescarga,
     grillaAlternativaRegresores=coordsAInterpolar, especificacionEscala=especificacionEscala)
 }
 
@@ -120,7 +120,7 @@ idx <- (ncol(pathsRegresores) - (length(corr_thresholds))):ncol(pathsRegresores)
 colnames(pathsRegresores)[idx] <- c('Combinado', paste0('Combinado', corr_thresholds))
 # pathsRegresores[, 'Combinado0.6'] <- NA_character_
 
-iRow <- 2
+iRow <- 7
 for (iRow in 1:nrow(pathsRegresores)) {
   idx <- which.max(corrs[iRow, ])
   if (length(idx) > 0) {
@@ -325,7 +325,7 @@ if (FALSE) {
   listaParams[[4]] <- paramsI
   listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
   paramsI$signosValidosRegresores <- 1
-  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])  
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[4]])
   
   # 5 - Kriging Universal Espacial + Regresion Generalizada en GSMaP
   paramsI <- paramsBase
@@ -336,7 +336,7 @@ if (FALSE) {
   listaParams[[5]] <- paramsI
   listaRegresores[[5]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
   paramsI$signosValidosRegresores <- 1
-  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])  
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[5]])
   
   # 6 - Kriging Universal Espacial + Regresion Generalizada en GPM y GSMaP
   paramsI <- paramsBase
@@ -426,7 +426,7 @@ if (FALSE) {
   listaParams[[14]] <- paramsI
   listaRegresores[[14]] <- pathsRegresores[, 'Combinado', drop=FALSE]
   paramsI$signosValidosRegresores <- 1
-  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[7]])
+  names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[14]])
 }
 
 modelosACorrer <- 1:length(listaParams)
@@ -439,7 +439,8 @@ source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 
 if (runTestsRegresores) {
   testRegressors(valoresObservaciones = valoresObservaciones, pathsRegresores = pathsRegresores, 
                  pathSHPNotNUll=pathSHPMapaBase, pathResultados='Resultados/1-Exploracion/', 
-                 seriesName='Rainfall', outputTableFilename='testRegresores.csv')
+                 seriesName='Rainfall', outputTableFilename='testRegresores.csv',
+                 rainfallDetectionThresholds=c(1e-3, 1, 2, 5, 10))
 }
 
 ############# Gridding #############

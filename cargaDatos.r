@@ -11,7 +11,12 @@ pathResultados <- 'Resultados/'
 pathSHPMapaBase <- paste(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp', sep='')
 pathSHPSubCuencas <- paste(pathDatos, 'CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp', sep='')
 
-proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
+# Actualizo la definición de CRS de los objetos espaciales para ser compatible con PROJ6/GDAL3
+proj4stringLatLong <- "+proj=longlat +datum=WGS84 +no_defs"
+proj4stringAInterpolar <- "+proj=utm +zone=21 +south +datum=WGS84 +units=km +no_defs"
+wktLatLong <- "EPSG:4326"
+wktAInterpolar <- readLines(paste0(pathDatos, 'CRS/utm21s_km.wkt'))
+  
 # La grilla resultante tendrá factorEscaladoGrillaInterpolacion píxeles en cada dirección por cada
 # pixel de la grilla de los regresores
 factorEscaladoGrillaInterpolacion <- 2
@@ -182,7 +187,7 @@ pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN 
 # cleda del satelite
 grillaRegresor <- geometry(readGDAL(pathsRegresores[1, 1]))
 newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
-coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, p4string = proj4stringAInterpolar, nCeldasX = newNCeldasX)
+coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, nCeldasX = newNCeldasX)
 # mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
 
 
@@ -194,10 +199,11 @@ coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
 class(coordsObservaciones)
 # Las coordenadas de las estaciones están sin proyectar, es decir directamente en latitud/longitud. 
 # Le asignamos al objeto una proyección que represente esto
-proj4string(coordsObservaciones) <- "+proj=longlat +datum=WGS84"
+proj4string(coordsObservaciones) <- CRS(projargs = proj4stringLatLong, SRS_string = wktLatLong)
 
 # Reproyectamos las estaciones a la misma proyección que la grilla a interpolar
-coordsObservaciones <- spTransform(x = coordsObservaciones, CRS(proj4string(coordsAInterpolar)))
+coordsObservaciones <- spTransform(
+  x = coordsObservaciones, CRS(SRS_string = wkt(coordsAInterpolar)))
 coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
 iValue <- which(colnames(coordsObservaciones@data) == 'value')
 coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]
@@ -247,7 +253,7 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   }
   
   j <- 1
-  i <- 2
+  i <- 7
   corrs <- sapply(1:ncol(pathsRegresores), function(j) {
     return(
       sapply(1:nrow(valoresObservaciones), FUN = function(i) {

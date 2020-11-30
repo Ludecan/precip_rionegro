@@ -22,7 +22,9 @@ descargaPluviosADME <- function(
   url <- paste0(Sys.getenv(x='URL_MEDIDAS_PLUVIOS'), '?dtIni=', dt_ini, '&dtFin=', dt_fin)
   localFile <- paste0(pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), 
                       '_rainfall.xlsx')
-  descargarArchivos(urls = url, nombresArchivosDestino = localFile, forzarReDescarga = T)
+  
+  descargarArchivos(
+    urls = url, nombresArchivosDestino = localFile, forzarReDescarga = forzarReDescarga)
   return(localFile)
 }
 
@@ -30,7 +32,8 @@ descargaGSMaP <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
     forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
-    urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/', producto='hourly_G') {
+    urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/', producto='hourly_G',
+    verbose=TRUE) {
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
@@ -73,6 +76,11 @@ descargaGSMaP <- function(
     nConexionesSimultaneas <- min(10, round(memtot_gb))
     nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
     
+    if (verbose) {
+      print(paste0(
+        "Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), " days."))
+    }
+    
     res <- descargarArchivos(
       urls = urls[iHorasADescargar], nombresArchivosDestino = pathsLocales[iHorasADescargar], 
       curlOpts = list(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
@@ -82,6 +90,12 @@ descargaGSMaP <- function(
                     paste(urls[iHorasADescargar[res == 0]], collapse = '\n'), 
                     sep='\n'))
       iHorasADescargar <- iHorasADescargar[res != 0]
+    }
+    
+    if (verbose) {
+      print(paste0(
+        sum(res == 1), " new files downloaded, ", sum(res == 2), " already existed, ", 
+        sum(res == 0), " could not be downloaded."))
     }
     
     if (length(iHorasADescargar) > 0) {
@@ -103,7 +117,8 @@ descargaGPM <- function(
     dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
     horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
     productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
-    urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis') {
+    urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis',
+    verbose=TRUE) {
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
@@ -119,6 +134,7 @@ descargaGPM <- function(
                  sprintf(fmt = formatoPostfijo, 
                          (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30))
   pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
+  do_unzip = rep(FALSE, length(urls))
   
   # Armo paths locales diarios para la agregación
   dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
@@ -143,18 +159,28 @@ descargaGPM <- function(
     # Limit number of processes to no more than either 10 or 1 per GB of RAM
     nConexionesSimultaneas <- min(10, round(memtot_gb))
     nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
-    
-    curlOpts <- list(use_ssl = 3, netrc = 1, timeout = 600L, connecttimeout = 600L)
 
+    if (verbose) {
+      print(paste0(
+        "Downloading ", length(iPeriodosADescargar), " files for ", length(iNoExisten), " days."))
+    }
+
+    curlOpts <- list(use_ssl = 3, netrc = 1, timeout = 600L, connecttimeout = 600L)    
     res <- descargarArchivos(
       urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], 
       curlOpts = curlOpts, nConexionesSimultaneas = nConexionesSimultaneas, 
-      forzarReDescarga=forzarReDescarga)
+      forzarReDescarga=forzarReDescarga, do_unzip = do_unzip[iPeriodosADescargar])
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
                     paste(urls[iPeriodosADescargar[res == 0]], collapse = '\n'), 
                     sep='\n'))
       iPeriodosADescargar <- iPeriodosADescargar[res != 0]
+    }
+    
+    if (verbose) {
+      print(paste0(
+        sum(res == 1), " new files downloaded, ", sum(res == 2), " already existed, ", 
+        sum(res == 0), " could not be downloaded."))
     }
     
     if (length(iPeriodosADescargar) > 0) {
@@ -164,7 +190,7 @@ descargaGPM <- function(
         formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
         minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
         funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
-        funcEscalado = function(x) { x / 20}, nCoresAUsar=nCoresAUsar)
+        funcEscalado = function(x) { x / 20 }, nCoresAUsar=nCoresAUsar)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
