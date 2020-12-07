@@ -479,7 +479,6 @@ if (runGridding) {
       #tsAInterpolar <- 48
       #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
       tsAInterpolar <- 1:nrow(valoresObservaciones)
-      tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2019-12-27', tz=tz(fechasObservaciones[1])))
       interpolarYMapear(
         coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones, 
         valoresObservaciones = valoresObservaciones, pathsRegresores = pr, 
