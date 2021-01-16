@@ -8,8 +8,8 @@
 pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 pathResultados <- 'Resultados/'
-pathSHPMapaBase <- paste(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp', sep='')
-pathSHPSubCuencas <- paste(pathDatos, 'CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp', sep='')
+pathSHPMapaBase <- paste0(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp')
+pathSHPSubCuencas <- paste0(pathDatos, 'CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp')
 
 # Actualizo la definición de CRS de los objetos espaciales para ser compatible con PROJ6/GDAL3
 proj4stringLatLong <- "+proj=longlat +datum=WGS84 +no_defs"
@@ -26,7 +26,7 @@ factorEscaladoGrillaInterpolacion <- 2
 source('descargaDatos.r', encoding = 'WINDOWS-1252')
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros del ', dt_ini, ' al ', dt_fin))
 localFile <- descargaPluviosADME(
-  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida = paste(pathDatos, 'pluviometros/', sep=''), 
+  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida = paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
@@ -42,6 +42,12 @@ localFile <- descargaPluviosADME(
 # seguramente se instale alguno más
 source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
+library(sp)
+library(gstat)
+library(Cairo)
+library(rgdal)
+library(devEMF)
+library(ncdf4)
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
 source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding = 'WINDOWS-1252')
@@ -178,7 +184,7 @@ pathsGPM <- descargaGPM(
 # La función cargarRegresor(es) se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
 print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
-pathsRegresores <- cargarRegresores(carpetaRegresores = paste(pathDatos, 'satelites', sep=''), 
+pathsRegresores <- cargarRegresores(carpetaRegresores = paste0(pathDatos, 'satelites'), 
                                     fechasRegresando = fechasObservaciones)
 pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
 

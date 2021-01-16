@@ -10,6 +10,10 @@ if (is.null(script.dir.descargaDatos)) { script.dir.descargaDatos <- ''
 
 source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
+library(jsonlite)
+library(R.utils)
+library(lubridate)
+library(benchmarkme)
 
 source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
@@ -18,13 +22,11 @@ source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), e
 descargaPluviosADME <- function(
     dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
     forzarReDescarga=FALSE) {
-  
   url <- paste0(Sys.getenv(x='URL_MEDIDAS_PLUVIOS'), '?dtIni=', dt_ini, '&dtFin=', dt_fin)
-  localFile <- paste0(pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), 
-                      '_rainfall.xlsx')
+  localFile <- paste0(
+    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
   
-  descargarArchivos(
-    urls = url, nombresArchivosDestino = localFile, forzarReDescarga = forzarReDescarga)
+  descargarArchivos(urls=url, nombresArchivosDestino=localFile, forzarReDescarga=forzarReDescarga)
   return(localFile)
 }
 
@@ -39,9 +41,9 @@ descargaGSMaP <- function(
   dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
   
   # Descargo y parseo el CTL
-  nomArchCTL <- paste('GSMaP_NRT.', producto, '.rain.ctl', sep = '')
-  pathLocalCTL <- paste(pathSalida, nomArchCTL, sep = '')
-  descargarArchivos(urls = paste(urlBase, 'sample/', nomArchCTL, sep = ''), 
+  nomArchCTL <- paste0('GSMaP_NRT.', producto, '.rain.ctl')
+  pathLocalCTL <- paste0(pathSalida, nomArchCTL)
+  descargarArchivos(urls = paste0(urlBase, 'sample/', nomArchCTL), 
                     nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga, 
                     curlOpts = list(netrc=1))
   ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
@@ -49,14 +51,14 @@ descargaGSMaP <- function(
   # Armo urls y pathsLocales horarios
   horas <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="hour")
   urls <- strftime(x = horas, 
-                   format = paste(urlBase, producto, '/%Y/%m/%d/gsmap_gauge.%Y%m%d.%H%M.dat.gz', sep=''))
-  pathsLocales <- paste(pathSalida, 'originales/', basename(urls), sep='')
+                   format = paste0(urlBase, producto, '/%Y/%m/%d/gsmap_gauge.%Y%m%d.%H%M.dat.gz'))
+  pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
   pathsLocalesDescomprimidos <- substr(pathsLocales, start = 1, stop = nchar(pathsLocales) - 3)
   # write(toJSON(authInfo), 'GSMaP_authInfo.json')
   
   # Armo paths locales diarios para la agregación
   dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
-  pathsLocalesDiarios <- strftime(x = dias, format = paste(pathSalida, '%Y%m%d.tif', sep=''))
+  pathsLocalesDiarios <- strftime(x = dias, format = paste0(pathSalida, '%Y%m%d.tif'))
   
   # Busco los paths locales diarios que no existan
   iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)
