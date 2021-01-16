@@ -184,9 +184,10 @@ pathsGPM <- descargaGPM(
 # La función cargarRegresor(es) se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
 print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
-pathsRegresores <- cargarRegresores(carpetaRegresores = paste0(pathDatos, 'satelites'), 
-                                    fechasRegresando = fechasObservaciones)
-pathsRegresores <- pathsRegresores[, apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
+pathsRegresores <- cargarRegresores(
+  carpetaRegresores = paste0(pathDatos, 'satelites'), fechasRegresando = fechasObservaciones)
+pathsRegresores <- pathsRegresores[
+  , apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
 
 # Definición de la grilla de interpolación.
 # Igual a la del primer regresor con factorEscaladoGrillaInterpolacion celdas en la nueva grilla por
@@ -201,7 +202,7 @@ coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, nCeld
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
 coordsObservaciones <- estaciones
-coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
+sp::coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
 class(coordsObservaciones)
 # Las coordenadas de las estaciones están sin proyectar, es decir directamente en latitud/longitud. 
 # Le asignamos al objeto una proyección que represente esto
@@ -209,7 +210,7 @@ proj4string(coordsObservaciones) <- CRS(projargs = proj4stringLatLong, SRS_strin
 
 # Reproyectamos las estaciones a la misma proyección que la grilla a interpolar
 coordsObservaciones <- spTransform(
-  x = coordsObservaciones, CRS(SRS_string = wkt(coordsAInterpolar)))
+  x = coordsObservaciones, CRS(projargs=proj4stringAInterpolar, SRS_string = wkt(coordsAInterpolar)))
 coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
 iValue <- which(colnames(coordsObservaciones@data) == 'value')
 coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]
