@@ -304,7 +304,7 @@ if (FALSE) {
   paramsI$umbralMascaraCeros <- 0
   paramsI$metodoRemocionDeSesgo <- 'ninguno'
   listaParams[[2]] <- paramsI
-  listaRegresores[[2]] <- pathsRegresores[,c('GPM'), drop=FALSE]
+  listaRegresores[[2]] <- pathsRegresores[, c('GPM'), drop=FALSE]
   
   # 3 - GSMaP sin calibrar
   paramsI <- paramsBase
@@ -314,7 +314,7 @@ if (FALSE) {
   paramsI$umbralMascaraCeros <- 0
   paramsI$metodoRemocionDeSesgo <- 'ninguno'
   listaParams[[3]] <- paramsI
-  listaRegresores[[3]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
+  listaRegresores[[3]] <- pathsRegresores[, c('GSMaP'), drop=FALSE]
   
   # 4 - Kriging Universal Espacial + Regresion Generalizada en GPM
   paramsI <- paramsBase
@@ -430,8 +430,8 @@ if (FALSE) {
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado')
-modelosACorrer <- c(1, 2, 3, 12, 7)
+modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado', 'GRK-GPM', 'GRK-Combinado0.5', 'GRK-Combinado0.8')
+modelosACorrer <- c(1, 2, 3, 12, 7, 4, 8, 11)
 
 source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
 
@@ -440,14 +440,14 @@ if (runTestsRegresores) {
   testRegressors(valoresObservaciones = valoresObservaciones, pathsRegresores = pathsRegresores, 
                  pathSHPNotNUll=pathSHPMapaBase, pathResultados='Resultados/1-Exploracion/', 
                  seriesName='Rainfall', outputTableFilename='testRegresores.csv',
-                 rainfallDetectionThresholds=c(1e-3, 1, 2, 5, 10))
+                 rainfallDetectionThresholds=c(0, 1, 2, 5, 10))
 }
 
 ############# Gridding #############
 pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
 if (runGridding) {
-  i <- 7
-  i <- 14
+  i <- 4
+  i <- 1
   for (i in modelosACorrer) {
     try({
       paramsI <- listaParams[[i]]

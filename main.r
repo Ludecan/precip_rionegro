@@ -2,14 +2,23 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
+
+# Línea de comandos de ejemplo: 
+# - Rscript main.r dt_fin=2021-01-16
+# Esto producirá el mapa con los acumulados del período (2020-01-15 10:00 UTC, 2020-01-16 10:00 UTC]
+# El archivo de sálida se guarda en Resultados/Operativo/2021_01_15.tif.
+# El archivo se guarda con el nombre de la fecha de inicio para usar el mismo criterio de registro
+# utilizado por INUMET, donde se guarda en la fecha de inicio pues el período tiene más horas (14)
+# el día 15 que las que tiene el día 16.
+
+
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
-# paramsStr <- 'dt_fin=2020-05-03'
-
+# paramsStr <- 'dt_fin=2021-01-15'
 if (length(paramsStr) == 0) { paramsStr <- '' }
-source('st_interp/parsearParams/parsearParamsUtils.r')
 print(paste('ParamsStr="', paramsStr, '"', sep = ''))
 
+source('st_interp/parsearParams/parsearParamsUtils.r')
 createParamsPrecipRioNegro <- function(dt_ini=NA_character_, dt_fin=as.character(Sys.Date())) {
   res <- list(dt_ini=dt_ini, dt_fin=dt_fin)
   return(res)

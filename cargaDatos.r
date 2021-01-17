@@ -42,12 +42,6 @@ localFile <- descargaPluviosADME(
 # seguramente se instale alguno más
 source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
-library(sp)
-library(gstat)
-library(Cairo)
-library(rgdal)
-library(devEMF)
-library(ncdf4)
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
 source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding = 'WINDOWS-1252')

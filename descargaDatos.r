@@ -10,10 +10,6 @@ if (is.null(script.dir.descargaDatos)) { script.dir.descargaDatos <- ''
 
 source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
-library(jsonlite)
-library(R.utils)
-library(lubridate)
-library(benchmarkme)
 
 source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')

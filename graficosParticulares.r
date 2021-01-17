@@ -96,7 +96,7 @@ graficarClimatologiasPuntuales <- function() {
 
   estacionesAConsiderar <- estaciones[estaciones$Nombre %in% c('Aeropuerto.Carrasco', 'Prado'),]
   
-  coords <- coordinates(estacionesAConsiderar)
+  coords <- sp::coordinates(estacionesAConsiderar)
   aux <- estacionesAConsiderar[order(coords[, 2], coords[, 1], decreasing = c(T, F)),]
   clims <- extraerValoresRegresoresSobreSP(objSP = aux, pathsRegresores = paths, silent = T)
   
