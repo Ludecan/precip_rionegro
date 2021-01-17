@@ -100,7 +100,7 @@ iRaras <- obsStatsOverall[, 'pctFaltantes'] > 40 |
 
 ##### 2 - Correlación VS Distancia
 source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
-dist <- rdist(coordinates(coordsObservaciones))
+dist <- rdist(sp::coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
 bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
@@ -200,11 +200,12 @@ mapaEstaciones <- mapearPuntosConEtiquetasGGPlot(
 
 iMasLejano <- which.max(mapaDistancias$value)
 distMax <- achicarToNDigitos(mapaDistancias$value[iMasLejano], 0) 
-puntoMasLejano <- SpatialPoints(coordinates(coordsAInterpolar)[iMasLejano,,drop=F], proj4string = CRS(proj4string(coordsAInterpolar)))
+puntoMasLejano <- SpatialPoints(
+  sp::coordinates(coordsAInterpolar)[iMasLejano,,drop=F], proj4string=coordsAInterpolar@proj4string)
 circuloPuntoMasLejano <- gBuffer(puntoMasLejano, width = distMax, quadsegs = 32)
 
-dfRadio <- data.frame(x1=coordinates(puntoMasLejano)[,1], y1=coordinates(puntoMasLejano)[,2],
-                      x2=coordinates(puntoMasLejano)[,1]+distMax, y2=coordinates(puntoMasLejano)[,2], value=paste(distMax, 'Km'))
+dfRadio <- data.frame(x1=sp::coordinates(puntoMasLejano)[,1], y1=sp::coordinates(puntoMasLejano)[,2],
+                      x2=sp::coordinates(puntoMasLejano)[,1]+distMax, y2=sp::coordinates(puntoMasLejano)[,2], value=paste(distMax, 'Km'))
 
 #circuloPuntoMasLejano <- SpatialPolygonsDataFrame(Sr = circuloPuntoMasLejano, data = data.frame(id=1:length(circuloPuntoMasLejano)))
 shpF <- fortify(circuloPuntoMasLejano, region="id")

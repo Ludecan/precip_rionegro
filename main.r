@@ -60,8 +60,6 @@ source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-125
 especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
   nDigitos = 1, continuo = T)
 print(paste0(Sys.time(), ' - Mapeando observaciones de pluviometros y satelites...'))
-print(proj4string(coordsObservaciones))
-print(proj4string(coordsAInterpolar))
 plotObservacionesYRegresores(
   coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones,
   pathsRegresoresAEvaluar=pathsRegresores, valoresObservaciones=valoresObservaciones, 

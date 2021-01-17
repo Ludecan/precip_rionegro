@@ -37,7 +37,7 @@ mapearClimatologias <- function() {
     primavera <- readGDAL(paths[4], silent = T)
     
     shpBase <- cargarSHP(paste(pathDatos, 'MapaUruguay/uruguay_departamentos.shp', sep=''))
-    shpBase <- spTransform(shpBase, CRSobj = CRS(proj4string(verano)))
+    shpBase <- spTransform(shpBase, CRSobj = verano@proj4string)
     
     for (iEscala in 1:2) {
       escalas <- list()
@@ -331,7 +331,7 @@ plotObservacionesYRegresores <- function(
         if (!is.null(grillaAlternativaRegresores)) {
           rastersI <- sapply(rastersI, FUN = function(x, grillaAlternativaRegresores) {
             if (!identicalCRS(x, grillaAlternativaRegresores)) {
-              grillaAux <- spTransform(geometry(grillaAlternativaRegresores), proj4string(x))
+              grillaAux <- spTransform(geometry(grillaAlternativaRegresores), x@proj4string)
               grillaAux <- SpatialPixelsDataFrame(
                 grillaAlternativaRegresores, data = data.frame(value=over(grillaAux, x)))
               
@@ -385,7 +385,7 @@ plotObservacionesYRegresores <- function(
   }
   
   if (!identicalCRS(shpBase, coordsObservaciones)) {
-    shpBase <- spTransform(shpBase, CRS(proj4string(coordsObservaciones)))
+    shpBase <- spTransform(shpBase, coordsObservaciones@proj4string)
   }
   
   dir.create(carpetaSalida, showWarnings = FALSE, recursive = TRUE)

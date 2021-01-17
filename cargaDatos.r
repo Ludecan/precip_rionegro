@@ -234,7 +234,7 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$NOMBRE == 'CuencaRioNegro', ]
 if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obteniendo polígono del Río Negro') }
-shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), proj4string(grillaRegresor))
+shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), grillaRegresor@proj4string)
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
 coordsQC <- grillaRegresor[i, ]
 
@@ -247,7 +247,7 @@ shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=co
 print(paste0(Sys.time(), ' - Cargando shapefile con subcuencas...'))
 shpSubCuencas <- cargarSHP(pathSHP = pathSHPSubCuencas)
 if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
-  shpSubCuencas <- spTransform(shpSubCuencas, proj4string(coordsAInterpolar))
+  shpSubCuencas <- spTransform(shpSubCuencas, coordsAInterpolar@proj4string)
 }
 
 getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
