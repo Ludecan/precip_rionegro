@@ -194,7 +194,8 @@ pathsRegresores <- pathsRegresores[
 # cleda del satelite
 grillaRegresor <- geometry(readGDAL(pathsRegresores[1, 1]))
 newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
-coordsAInterpolar <- grillaPixelesSobreBoundingBox(objSP = grillaRegresor, nCeldasX = newNCeldasX)
+coordsAInterpolar <- grillaPixelesSobreBoundingBox(
+  objSP=grillaRegresor, outputCRS=CRS(proj4stringAInterpolar), nCeldasX=newNCeldasX)
 # mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
 
 

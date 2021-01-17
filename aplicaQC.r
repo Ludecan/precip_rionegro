@@ -42,7 +42,7 @@ paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
   modelosVariogramaST=c('Separable', 'ProductSum', 'Metric', 'SimpleSumMetric'),
   fit.methodST=6,
   verbose=FALSE,
-  pathSHPMapaBase=paste(pathDatos, 'MapaUruguay/uruguay_departamentos.shp', sep=''),
+  pathSHPMapaBase=paste0(pathDatos, 'MapaUruguay/uruguay_departamentos.shp'),
   nCoresAUsar=0, 
   radioReduccionSeriesKm=0,
   funcionReduccionSeries='mean',
