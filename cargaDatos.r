@@ -209,8 +209,7 @@ class(coordsObservaciones)
 proj4string(coordsObservaciones) <- CRS(projargs = proj4stringLatLong, SRS_string = wktLatLong)
 
 # Reproyectamos las estaciones a la misma proyección que la grilla a interpolar
-coordsObservaciones <- spTransform(
-  x = coordsObservaciones, CRS(projargs=proj4stringAInterpolar, SRS_string = wkt(coordsAInterpolar)))
+coordsObservaciones <- spTransform(x = coordsObservaciones, CRS(projargs=proj4stringAInterpolar))
 coordsObservaciones$value <- rep(NA_real_, nrow(coordsObservaciones))
 iValue <- which(colnames(coordsObservaciones@data) == 'value')
 coordsObservaciones@data = coordsObservaciones@data[, c(iValue, (1:ncol(coordsObservaciones@data))[-iValue])]

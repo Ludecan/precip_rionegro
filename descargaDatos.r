@@ -26,7 +26,9 @@ descargaPluviosADME <- function(
   localFile <- paste0(
     pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
   
-  descargarArchivos(urls=url, nombresArchivosDestino=localFile, forzarReDescarga=forzarReDescarga)
+  descargarArchivos(
+    urls=url, nombresArchivosDestino=localFile, curlOpts=list(use_ssl = 3), 
+    forzarReDescarga=forzarReDescarga)
   return(localFile)
 }
 
