@@ -14,9 +14,12 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
-# paramsStr <- 'dt_fin=2021-01-15'
+if (interactive()) {
+  paramsStr <- 'dt_fin=2021-02-01'
+  # paramsStr <- 'dt_fin=2021-01-05;dt_ini=2020-11-30'
+}
 if (length(paramsStr) == 0) { paramsStr <- '' }
-print(paste('ParamsStr="', paramsStr, '"', sep = ''))
+print(paste0('ParamsStr="', paramsStr, '"'))
 
 source('st_interp/parsearParams/parsearParamsUtils.r')
 createParamsPrecipRioNegro <- function(dt_ini=NA_character_, dt_fin=as.character(Sys.Date())) {
@@ -50,7 +53,8 @@ estacionesADescartar <- c(
   'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
-forzarReDescarga <- !interactive()
+#forzarReDescarga <- !interactive()
+forzarReDescarga <- FALSE
 borrarDatosOriginales <- forzarReDescarga
 #borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
@@ -104,8 +108,8 @@ source(paste0(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r'), enco
 print(paste0(Sys.time(), ' - Preparando parametros de interpolacion...'))
 params <- createParamsInterpolarYMapear(
   baseNomArchResultados=pathResultadosOperativos,
-  proj4StringObservaciones=proj4string(coordsObservaciones),
-  proj4StringAInterpolar=proj4string(coordsAInterpolar),
+  proj4StringObservaciones=wkt(coordsObservaciones),
+  proj4StringAInterpolar=wkt(coordsAInterpolar),
   coordsAInterpolarSonGrilla=TRUE, 
   interpolationMethod='automap',
   mLimitarValoresInterpolados='LimitarMinimoyMaximo',
@@ -155,7 +159,8 @@ params <- createParamsInterpolarYMapear(
   simpleKrigingEnRK=FALSE,
   preECDFMatching=FALSE)
 params$modoDiagnostico <- TRUE
-params$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos = 2, continuo = T)
+params$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
+  nDigitos = 2, continuo = T)
 
 print(paste0(Sys.time(), ' - Obteniendo regresor de maxima correlacion...'))
 corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)

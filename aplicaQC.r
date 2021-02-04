@@ -2,8 +2,8 @@ source(paste0(pathSTInterp, 'qc/qcTests.r'), encoding = 'WINDOWS-1252')
 source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
 
 paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
-  proj4StringObservaciones=proj4string(coordsObservaciones),
-  proj4StringAInterpolar=proj4string(coordsObservaciones),
+  proj4StringObservaciones=wkt(coordsObservaciones),
+  proj4StringAInterpolar=wkt(coordsObservaciones),
   coordsAInterpolarSonGrilla=FALSE,
   interpolationMethod='none',
   mLimitarValoresInterpolados='NoLimitar',
@@ -163,6 +163,11 @@ applyQCTests <- function(
   
   test6$reemplazar[test6$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test6, valoresObservaciones)
+  
+  #lala <- deteccionOutliersUniversalGriddingCV(
+  #  coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion,
+  #  pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], maxOutlyingness = 3.5, maxNIters = 5)
+                                       
   
   return(valoresObservaciones)
 }
