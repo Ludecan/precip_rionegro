@@ -42,8 +42,8 @@ descargaGSMaP <- function(
   nomArchCTL <- paste0('GSMaP_NRT.', producto, '.rain.ctl')
   pathLocalCTL <- paste0(pathSalida, nomArchCTL)
   descargarArchivos(urls = paste0(urlBase, 'sample/', nomArchCTL), 
-                    nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga, 
-                    curlOpts = list(netrc=1))
+                    nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga,
+                    maxRetries=1, segundosEntreIntentos=3, curlOpts = list(netrc=1))
   ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
 
   # Armo urls y pathsLocales horarios
@@ -79,12 +79,16 @@ descargaGSMaP <- function(
     if (verbose) {
       print(paste0(
         "Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), " days."))
+      if (length(pathsLocalesDiarios) == 1) {
+        print(paste0(
+          "Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
+      }
     }
     
     res <- descargarArchivos(
-      urls = urls[iHorasADescargar], nombresArchivosDestino = pathsLocales[iHorasADescargar], 
-      curlOpts = list(netrc=1), nConexionesSimultaneas = nConexionesSimultaneas,
-      forzarReDescarga = forzarReDescarga)
+      urls=urls[iHorasADescargar], nombresArchivosDestino=pathsLocales[iHorasADescargar],
+      maxRetries=1, segundosEntreIntentos=3, curlOpts=list(netrc=1), 
+      nConexionesSimultaneas=nConexionesSimultaneas, forzarReDescarga=forzarReDescarga)
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
                     paste(urls[iHorasADescargar[res == 0]], collapse = '\n'), 
@@ -163,13 +167,18 @@ descargaGPM <- function(
     if (verbose) {
       print(paste0(
         "Downloading ", length(iPeriodosADescargar), " files for ", length(iNoExisten), " days."))
+      if (length(pathsLocalesDiarios) == 1) {
+        print(paste0(
+          "Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
+      }
     }
 
     curlOpts <- list(use_ssl = 3, netrc = 1, timeout = 600L, connecttimeout = 600L)    
     res <- descargarArchivos(
-      urls = urls[iPeriodosADescargar], nombresArchivosDestino = pathsLocales[iPeriodosADescargar], 
-      curlOpts = curlOpts, nConexionesSimultaneas = nConexionesSimultaneas, 
-      forzarReDescarga=forzarReDescarga, do_unzip = do_unzip[iPeriodosADescargar])
+      urls=urls[iPeriodosADescargar], nombresArchivosDestino=pathsLocales[iPeriodosADescargar],
+      forzarReDescarga=forzarReDescarga, maxRetries=1, segundosEntreIntentos=3, 
+      curlOpts=curlOpts, nConexionesSimultaneas=nConexionesSimultaneas, 
+      do_unzip=do_unzip[iPeriodosADescargar])
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
                     paste(urls[iPeriodosADescargar[res == 0]], collapse = '\n'), 
