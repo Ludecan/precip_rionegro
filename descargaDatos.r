@@ -78,10 +78,11 @@ descargaGSMaP <- function(
     
     if (verbose) {
       print(paste0(
-        "Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), " days."))
+        Sys.time(), " - Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), 
+        " days."))
       if (length(pathsLocalesDiarios) == 1) {
         print(paste0(
-          "Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
+          Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
       }
     }
     
@@ -166,10 +167,11 @@ descargaGPM <- function(
 
     if (verbose) {
       print(paste0(
-        "Downloading ", length(iPeriodosADescargar), " files for ", length(iNoExisten), " days."))
+        Sys.time(), " - Downloading ", length(iPeriodosADescargar), " files for ", 
+        length(iNoExisten), " days."))
       if (length(pathsLocalesDiarios) == 1) {
         print(paste0(
-          "Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
+          Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
       }
     }
 
