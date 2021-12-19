@@ -26,7 +26,7 @@ factorEscaladoGrillaInterpolacion <- 2
 source('descargaDatos.r', encoding = 'WINDOWS-1252')
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros del ', dt_ini, ' al ', dt_fin))
 localFile <- descargaPluviosADME(
-  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida = paste0(pathDatos, 'pluviometros/'), 
+  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
@@ -44,114 +44,132 @@ source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WIND
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
 
 # 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
-source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding = 'WINDOWS-1252')
-datos <- leerSeriesXLSX(pathArchivoDatos = localFile, hojaDatos = 'MedidasHorarias', fileEncoding = 'UTF-8')
+source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding='WINDOWS-1252')
+url_medidas_pluvios <- Sys.getenv(x='URL_MEDIDAS_PLUVIOS')
+sonEstacionesConvencionales <- endsWith(url_medidas_pluvios, 'Convencionales.php')
+
+if (sonEstacionesConvencionales) {
+  datos <- leerSeriesXLSX(
+    pathArchivoDatos=localFile, colsEstaciones=1:6, colId=3, hojaDatos='Medidas', 
+    fileEncoding='UTF-8', na.strings=c('-1111', '-1,79769313486E+308'))
+  # TODO: -1,79769313486E+308 no se está interpretando bien como una string NA
+  datos$datos[datos$datos < 0] <- NA
+} else {
+  datos <- leerSeriesXLSX(pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8')  
+}
 estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 valoresObservaciones <- datos$datos
 
 if (!is.null(estacionesADescartar)) {
-  iAConservar <- !estaciones$Nombre %in% estacionesADescartar
-  estaciones <- estaciones[iAConservar,]
-  valoresObservaciones <- valoresObservaciones[, iAConservar]
+  if (sonEstacionesConvencionales) {
+    iAConservar <- !estaciones$cod_pluv %in% estacionesADescartar  
+  } else {
+    iAConservar <- !estaciones$Nombre %in% estacionesADescartar  
+  }
+  estaciones <- estaciones[iAConservar, ]
+  valoresObservaciones <- valoresObservaciones[, iAConservar, drop=F]
   rm(iAConservar)
 }
 
-# Agregacion diaria
-print(paste0(Sys.time(), ' - Agregando valores diarios...'))
-triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
-                      PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
-                      PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
-                      PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
-                      BARRA.DE.PORONGOS.RHT=ymd_hm("2019-12-10 09:00", tz = tz(fechasObservaciones[1])),
-                      VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
-triHourlyUpTo <- triHourlyUpTo[names(triHourlyUpTo) %in% estaciones$Nombre]
-
-colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
-# x <- triHourlyUpTo[[5]]
-rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
-  hora <- as.integer(substr(fechasObservaciones, 12, 13))
-  if (!is.na(x)) { 
-    return(seq_along(fechasObservaciones)[hora %% 3 == 0 & fechasObservaciones <= x])
-  } else { 
-    return(seq_along(fechasObservaciones)[hora %% 3])
-  }
-}, fechasObservaciones=fechasObservaciones)
-
-idx <- sapply(rowsToSplit, function(x) !is.null(x))
-colsToSplit <- colsToSplit[idx]
-rowsToSplit <- rowsToSplit[idx]
-rm(idx)
-
-getmode <- function(v) {
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-
-splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
-  splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
-    # i <- colsToSplit[1]
-    rowsToSplit_i <- rowsToSplit[[i]]
-    rowsPerPeriod <- getmode(diff(rowsToSplit_i))
-    idx_i <- colsToSplit[i]
-    j <- 2
-    for (j in seq_along(rowsToSplit_i)) {
-      endRow <- rowsToSplit_i[j]
-      if (j > 1) { startRow <- rowsToSplit_i[j - 1] + 1
-      } else { startRow <- 1 }
-      
-      if (!is.null(rowWeights)) { rowWeightsJ <- rowWeights[j]
-      } else {
-        n <- endRow - startRow + 1
-        rowWeightsJ <- rep(1 / rowsPerPeriod, n)
-      }
-      
-      valoresObservaciones[startRow:endRow, idx_i] <- valoresObservaciones[endRow, idx_i] * rowWeightsJ
+if (!sonEstacionesConvencionales) {
+  # Agregacion diaria
+  print(paste0(Sys.time(), ' - Agregando valores diarios...'))
+  triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
+                        PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
+                        PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
+                        PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
+                        BARRA.DE.PORONGOS.RHT=ymd_hm("2019-12-10 09:00", tz = tz(fechasObservaciones[1])),
+                        VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
+  triHourlyUpTo <- triHourlyUpTo[names(triHourlyUpTo) %in% estaciones$Nombre]
+  
+  colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
+  # x <- triHourlyUpTo[[5]]
+  rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
+    hora <- as.integer(substr(fechasObservaciones, 12, 13))
+    if (!is.na(x)) { 
+      return(seq_along(fechasObservaciones)[hora %% 3 == 0 & fechasObservaciones <= x])
+    } else { 
+      return(seq_along(fechasObservaciones)[hora %% 3])
     }
-    
-    return(valoresObservaciones[, idx_i])
+  }, fechasObservaciones=fechasObservaciones)
+  
+  idx <- sapply(rowsToSplit, function(x) !is.null(x))
+  colsToSplit <- colsToSplit[idx]
+  rowsToSplit <- rowsToSplit[idx]
+  rm(idx)
+  
+  getmode <- function(v) {
+    uniqv <- unique(v)
+    uniqv[which.max(tabulate(match(v, uniqv)))]
   }
   
-  valoresObservaciones[, colsToSplit] <- sapply(
-    seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
-    colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
-  return(valoresObservaciones)
+  splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
+    splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
+      # i <- colsToSplit[1]
+      rowsToSplit_i <- rowsToSplit[[i]]
+      rowsPerPeriod <- getmode(diff(rowsToSplit_i))
+      idx_i <- colsToSplit[i]
+      j <- 2
+      for (j in seq_along(rowsToSplit_i)) {
+        endRow <- rowsToSplit_i[j]
+        if (j > 1) { startRow <- rowsToSplit_i[j - 1] + 1
+        } else { startRow <- 1 }
+        
+        if (!is.null(rowWeights)) { rowWeightsJ <- rowWeights[j]
+        } else {
+          n <- endRow - startRow + 1
+          rowWeightsJ <- rep(1 / rowsPerPeriod, n)
+        }
+        
+        valoresObservaciones[startRow:endRow, idx_i] <- valoresObservaciones[endRow, idx_i] * rowWeightsJ
+      }
+      
+      return(valoresObservaciones[, idx_i])
+    }
+    
+    valoresObservaciones[, colsToSplit] <- sapply(
+      seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
+      colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
+    return(valoresObservaciones)
+  }
+  
+  valoresObservaciones <- splitAccumulated(
+    valoresObservaciones, colsToSplit, rowsToSplit, rowWeights = NULL)
+  
+  rm(rowsToSplit, colsToSplit)
+  
+  iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
+                      x = rownames(valoresObservaciones), fixed = T)
+  iStartHour <- iStartHours[1]
+  if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
+    iEndHour <- iStartHours[length(iStartHours)] + 23
+  } else {
+    iEndHour <- iStartHours[length(iStartHours) - 1] + 23
+  }
+  
+  idx <- iStartHour:iEndHour
+  rm(iStartHours, iStartHour, iEndHour)
+  
+  fechasObservaciones <- fechasObservaciones[idx]
+  valoresObservaciones <- valoresObservaciones[idx, ]
+  clases <- (seq_along(fechasObservaciones) - 1) %/% 24L
+  clases <- fechasObservaciones[(clases * 24L) + 1]
+  clases <- parse_date_time(substr(as.character(clases), 1, 10), 
+                            orders = 'Ymd', tz=tz(fechasObservaciones), truncated = 0)
+  
+  # max_gap_lengths <- aggregate(valoresObservaciones, by=list(day=clases), FUN=max_run_length)
+  nNoNa <- aggregate(valoresObservaciones, by=list(day=clases), FUN=function(x) sum(!is.na(x)))[, -1]
+  valoresObservaciones <- as.matrix(aggregate(valoresObservaciones, by=list(day=clases), FUN=sum, na.rm=T)[, -1])
+  fechasObservaciones <- unique(clases)
+  row.names(valoresObservaciones) <- as.character(fechasObservaciones)
+  
+  maxNHorasParaRechazarDia <- 21
+  iAceptados <- nNoNa > maxNHorasParaRechazarDia
+  valoresObservaciones[!iAceptados] <- NA
+  valoresObservaciones[iAceptados] <- valoresObservaciones[iAceptados] * 24 / nNoNa[iAceptados]  
 }
 
-valoresObservaciones <- splitAccumulated(
-  valoresObservaciones, colsToSplit, rowsToSplit, rowWeights = NULL)
-
-rm(rowsToSplit, colsToSplit)
-
-iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
-                    x = rownames(valoresObservaciones), fixed = T)
-iStartHour <- iStartHours[1]
-if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
-  iEndHour <- iStartHours[length(iStartHours)] + 23
-} else {
-  iEndHour <- iStartHours[length(iStartHours) - 1] + 23
-}
-
-idx <- iStartHour:iEndHour
-rm(iStartHours, iStartHour, iEndHour)
-
-fechasObservaciones <- fechasObservaciones[idx]
-valoresObservaciones <- valoresObservaciones[idx, ]
-clases <- (seq_along(fechasObservaciones) - 1) %/% 24L
-clases <- fechasObservaciones[(clases * 24L) + 1]
-clases <- parse_date_time(substr(as.character(clases), 1, 10), 
-                          orders = 'Ymd', tz=tz(fechasObservaciones), truncated = 0)
-
-# max_gap_lengths <- aggregate(valoresObservaciones, by=list(day=clases), FUN=max_run_length)
-nNoNa <- aggregate(valoresObservaciones, by=list(day=clases), FUN=function(x) sum(!is.na(x)))[, -1]
-valoresObservaciones <- as.matrix(aggregate(valoresObservaciones, by=list(day=clases), FUN=sum, na.rm=T)[, -1])
-fechasObservaciones <- unique(clases)
-row.names(valoresObservaciones) <- as.character(fechasObservaciones)
-
-maxNHorasParaRechazarDia <- 21
-iAceptados <- nNoNa > maxNHorasParaRechazarDia
-valoresObservaciones[!iAceptados] <- NA
-valoresObservaciones[iAceptados] <- valoresObservaciones[iAceptados] * 24 / nNoNa[iAceptados]
 
 # Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
@@ -159,12 +177,12 @@ print(paste0(Sys.time(), ' - Cargando shapefile con mapa base...'))
 shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
 print(paste0(Sys.time(), ' - Descargando datos de GSMaP del ', dt_ini, ' al ', dt_fin))
 pathsGSMaP <- descargaGSMaP(
-  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
+  dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
+  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
 print(paste0(Sys.time(), ' - Descargando datos de GPM del ', dt_ini, ' al ', dt_fin))
 pathsGPM <- descargaGPM(
-  dt_ini = dt_ini, dt_fin = dt_fin, horaUTCInicioAcumulacion = horaUTCInicioAcumulacion, 
-  shpBase = shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
+  dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
+  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
 
 # La otra parte de la función F a definir son los valores de U1, U2, ... Un.
 # Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
@@ -179,9 +197,9 @@ pathsGPM <- descargaGPM(
 # cambiando el path a la carpeta de datos en cuestión
 print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
 pathsRegresores <- cargarRegresores(
-  carpetaRegresores = paste0(pathDatos, 'satelites'), fechasRegresando = fechasObservaciones)
+  carpetaRegresores=paste0(pathDatos, 'satelites'), fechasRegresando=fechasObservaciones)
 pathsRegresores <- pathsRegresores[
-  , apply(X = pathsRegresores, MARGIN = 2, FUN = function(x) {!all(is.na(x))}), drop=F]
+  , apply(X=pathsRegresores, MARGIN=2, FUN=function(x) {!all(is.na(x))}), drop=F]
 
 # Definición de la grilla de interpolación.
 # Igual a la del primer regresor con factorEscaladoGrillaInterpolacion celdas en la nueva grilla por
@@ -197,7 +215,12 @@ coordsAInterpolar <- grillaPixelesSobreBoundingBox(
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
 coordsObservaciones <- estaciones
-sp::coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
+if (sonEstacionesConvencionales) {
+  sp::coordinates(coordsObservaciones) <- c('long', 'lat')
+} else {
+  sp::coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
+}
+
 class(coordsObservaciones)
 # Las coordenadas de las estaciones están sin proyectar, es decir directamente en latitud/longitud. 
 # Le asignamos al objeto una proyección que represente esto
@@ -217,8 +240,8 @@ if (.Platform$OS.type == "windows") {
 }
 
 # Shapefile con el contorno del país y máscara para los píxeles de la grilla que son internos al contorno
-shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = shpEncoding)
+shpMask <- cargarSHPYObtenerMascaraParaGrilla(
+  pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, encoding = shpEncoding)
 shpBase = shpMask$shp
 # Objeto auxiliar con los ejes de la grilla y el área de mapeo, para que sea igual para todos los 
 # mapas independientemente de los datos que tenga
@@ -235,8 +258,8 @@ coordsQC <- grillaRegresor[i, ]
 i <- !is.na(over(coordsAInterpolar, geometry(shpRioNegro)))
 coordsAInterpolar <- coordsAInterpolar[i, ]
 
-shpMask <- cargarSHPYObtenerMascaraParaGrilla(pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, 
-                                              encoding = shpEncoding)
+shpMask <- cargarSHPYObtenerMascaraParaGrilla(
+  pathSHP=pathSHPMapaBase, grilla=coordsAInterpolar, encoding = shpEncoding)
 
 print(paste0(Sys.time(), ' - Cargando shapefile con subcuencas...'))
 shpSubCuencas <- cargarSHP(pathSHP = pathSHPSubCuencas)
@@ -280,4 +303,3 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   
   return(corrs)
 }
-
