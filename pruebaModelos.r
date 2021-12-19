@@ -1,4 +1,4 @@
-if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
+if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 # Linux installations need to run these to have rgdal available
@@ -21,10 +21,15 @@ dt_fin <- '2020-05-31'
 #dt_fin <- '2020-09-05'
 #dt_ini <- '2020-03-01'
 #dt_fin <- '2020-03-05'
-estacionesADescartar <- c(
-  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
-#estacionesADescartar <- NA
+
+dt_ini <- '2020-12-01'
+dt_fin <- '2020-12-31'
+
+
+#estacionesADescartar <- c(
+#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- FALSE
@@ -40,8 +45,9 @@ runVerif <- TRUE
 
 postFijoPluvios <- '_seleccionPluvios'
 #postFijoPluvios <- ''
-nombreExperimento <- paste0('_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca_v2', 
-                            postFijoPluvios)
+nombreExperimento <- paste0(
+  '_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca_v2', 
+  postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 

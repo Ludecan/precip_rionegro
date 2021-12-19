@@ -1,4 +1,4 @@
-if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
+if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
@@ -15,7 +15,7 @@ if (dir.exists('F:/ADME/precip_rionegro')) { setwd('F:/ADME/precip_rionegro')
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2021-02-01'
+  paramsStr <- 'dt_fin=2021-12-15'
   # paramsStr <- 'dt_fin=2021-01-05;dt_ini=2020-11-30'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
@@ -45,12 +45,14 @@ if (interactive() && length(paramsStr) == 0) {
   dt_ini="2017-02-01"
 }
 if (is.na(dt_ini)) {
-  dt_ini <- as.Date(dt_fin)-1
+  #dt_ini <- as.Date(dt_fin)-1
+  dt_ini <- dt_fin
 }
 
-estacionesADescartar <- c(
-  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+estacionesADescartar <- NULL
+#estacionesADescartar <- c(
+#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 #forzarReDescarga <- !interactive()
@@ -64,8 +66,8 @@ source('aplicaQC.r', encoding = 'WINDOWS-1252')
 print(paste0(Sys.time(), ' - Aplicando Tests de QC...'))
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
-  paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
-  plotMaps = TRUE)
+  paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
+  plotMaps=TRUE)
 
 # Guardamos el mapa de pluviómetros y satélites en datos/mapas/
 source('graficosParticulares.r', encoding = 'WINDOWS-1252')
@@ -190,7 +192,7 @@ listaMapas <- createDefaultListaMapas(paramsIyM = params, fechasObservaciones = 
 # Una vez que está todo armado, la función nombreModelo sirve para ver que el modelo que
 # especificamos sea efectivamente el que queremos
 print(paste0(Sys.time(), ' - Interpolando modelo ', 
-             nombreModelo(params = params, pathsRegresores = pathsRegresores), '...'))
+             nombreModelo(params=params, pathsRegresores=pathsRegresores), '...'))
 
 
 # Interpolación de los datos

@@ -18,6 +18,26 @@ source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), e
 descargaPluviosADME <- function(
     dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
     forzarReDescarga=FALSE) {
+  url_medidas_pluvios <- Sys.getenv(x='URL_MEDIDAS_PLUVIOS')
+  if (url_medidas_pluvios == '') {
+    stop(paste0(
+      'La variable de entorno URL_MEDIDAS_PLUVIOS no se encuentra definida. ',
+      'Defina su valor y vuelva a intentarlo'))
+  }
+  
+  url <- paste0(url_medidas_pluvios, '?dtIni=', dt_ini, '&dtFin=', dt_fin)
+  localFile <- paste0(
+    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
+  
+  descargarArchivos(
+    urls=url, nombresArchivosDestino=localFile, curlOpts=list(use_ssl = 3), 
+    forzarReDescarga=forzarReDescarga)
+  return(localFile)
+}
+
+descargaPluviosConvencionalesADME <- function(
+  dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
+  forzarReDescarga=FALSE) {
   url <- paste0(Sys.getenv(x='URL_MEDIDAS_PLUVIOS'), '?dtIni=', dt_ini, '&dtFin=', dt_fin)
   localFile <- paste0(
     pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
@@ -29,27 +49,40 @@ descargaPluviosADME <- function(
 }
 
 descargaGSMaP <- function(
-    dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
-    horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
-    forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
-    urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/v7/', producto='hourly_G',
-    verbose=TRUE) {
+  dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
+  horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GSMaP/', shpBase=NULL,
+  forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
+  urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/', productVersion='v7', 
+  producto='hourly_G', verbose=TRUE
+) {
   # fijo la hora inicial
+  
+  if (dt_fin == dt_ini) {
+    dt_fin <- as.Date(dt_ini) + 1
+  }
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
   
   # Descargo y parseo el CTL
   nomArchCTL <- paste0('GSMaP_NRT.', producto, '.rain.ctl')
   pathLocalCTL <- paste0(pathSalida, nomArchCTL)
-  descargarArchivos(urls = paste0(urlBase, 'sample/', nomArchCTL), 
-                    nombresArchivosDestino = pathLocalCTL, forzarReDescarga = forzarReDescarga,
-                    maxRetries=1, segundosEntreIntentos=3, curlOpts = list(netrc=1))
+  descargarArchivos(
+    urls=paste0(urlBase, productVersion, '/sample/', nomArchCTL), 
+    nombresArchivosDestino=pathLocalCTL, 
+    forzarReDescarga=forzarReDescarga,
+    maxRetries=1, 
+    segundosEntreIntentos=3, 
+    curlOpts=list(netrc=1))
   ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
 
   # Armo urls y pathsLocales horarios
   horas <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="hour")
-  urls <- strftime(x = horas, 
-                   format = paste0(urlBase, producto, '/%Y/%m/%d/gsmap_gauge.%Y%m%d.%H%M.dat.gz'))
+  urls <- strftime(
+    x=horas, 
+    format=paste0(
+      urlBase, productVersion, '/', producto, '/%Y/%m/%d/gsmap_gauge.%Y%m%d.%H%M.dat.gz'
+    )
+  )
   pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
   pathsLocalesDescomprimidos <- substr(pathsLocales, start = 1, stop = nchar(pathsLocales) - 3)
   # write(toJSON(authInfo), 'GSMaP_authInfo.json')
@@ -119,11 +152,15 @@ descargaGSMaP <- function(
 }
 
 descargaGPM <- function(
-    dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
-    horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
-    productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
-    urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis',
-    verbose=TRUE) {
+  dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
+  horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/GPM/', shpBase=NULL,
+  productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
+  urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis',
+  verbose=TRUE
+) {
+  if (dt_fin == dt_ini) {
+    dt_fin <- as.Date(dt_ini) + 1
+  }
   # fijo la hora inicial
   dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
   dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
@@ -175,7 +212,7 @@ descargaGPM <- function(
       }
     }
 
-    curlOpts <- list(use_ssl = 3, netrc = 1, timeout = 600L, connecttimeout = 600L)    
+    curlOpts <- list(use_ssl=3, netrc=1, timeout=600L, connecttimeout=600L)
     res <- descargarArchivos(
       urls=urls[iPeriodosADescargar], nombresArchivosDestino=pathsLocales[iPeriodosADescargar],
       forzarReDescarga=forzarReDescarga, maxRetries=1, segundosEntreIntentos=3, 
