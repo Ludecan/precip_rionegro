@@ -24,23 +24,17 @@ descargaPluviosADME <- function(
       'La variable de entorno URL_MEDIDAS_PLUVIOS no se encuentra definida. ',
       'Defina su valor y vuelva a intentarlo'))
   }
-  
   url <- paste0(url_medidas_pluvios, '?dtIni=', dt_ini, '&dtFin=', dt_fin)
-  localFile <- paste0(
-    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
   
-  descargarArchivos(
-    urls=url, nombresArchivosDestino=localFile, curlOpts=list(use_ssl = 3), 
-    forzarReDescarga=forzarReDescarga)
-  return(localFile)
-}
-
-descargaPluviosConvencionalesADME <- function(
-  dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
-  forzarReDescarga=FALSE) {
-  url <- paste0(Sys.getenv(x='URL_MEDIDAS_PLUVIOS'), '?dtIni=', dt_ini, '&dtFin=', dt_fin)
+  sonEstacionesConvencionales <- endsWith(url_medidas_pluvios, 'Convencionales.php')
+  if (sonEstacionesConvencionales) {
+    postfijo <- '_convencionales'
+  } else {
+    postfijo <- ''
+  }
   localFile <- paste0(
-    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall.xlsx')
+    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall', 
+    postfijo, '.xlsx')
   
   descargarArchivos(
     urls=url, nombresArchivosDestino=localFile, curlOpts=list(use_ssl = 3), 

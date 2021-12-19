@@ -22,8 +22,8 @@ dt_fin <- '2020-05-31'
 #dt_ini <- '2020-03-01'
 #dt_fin <- '2020-03-05'
 
-dt_ini <- '2020-12-01'
-dt_fin <- '2020-12-31'
+dt_ini <- '2020-05-01'
+dt_fin <- '2020-05-31'
 
 
 #estacionesADescartar <- c(
@@ -43,19 +43,17 @@ runValidation <- TRUE
 runPlots <- TRUE
 runVerif <- TRUE
 
-postFijoPluvios <- '_seleccionPluvios'
+postFijoPluvios <- '_Convencionales'
 #postFijoPluvios <- ''
-nombreExperimento <- paste0(
-  '_mascara03_CorreccionExtrapolacion_sateliteEnMascara_nuevaCuenca_v2', 
-  postFijoPluvios)
+nombreExperimento <- paste0('2021_12_', postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
 localFileNonQCed <- changeFileExt(
   appendToFileName(localFile, paste0('_non_qced', postFijoPluvios)), '.tsv')
 grabarSeriesArchivoUnico(
-  pathArchivoDatos = localFileNonQCed, estaciones=estaciones, fechas = fechasObservaciones, 
-  datos = valoresObservaciones)
+  pathArchivoDatos=localFileNonQCed, estaciones=estaciones, 
+  fechas=fechasObservaciones, datos=valoresObservaciones)
 
 localFileQCed <- changeFileExt(
   appendToFileName(localFile, paste0('_qced', postFijoPluvios)), '.tsv')
@@ -63,12 +61,12 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   source('aplicaQC.r', encoding = 'WINDOWS-1252')
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
-    paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
-    plotMaps = TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/'))
+    paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
+    plotMaps=TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/'))
   
   grabarSeriesArchivoUnico(
-    pathArchivoDatos = localFileQCed, estaciones=estaciones, fechas = fechasObservaciones, 
-    datos = valoresObservaciones)
+    pathArchivoDatos=localFileQCed, estaciones=estaciones, 
+    fechas=fechasObservaciones, datos=valoresObservaciones)
 } else {
   datos <- leerSeriesArchivoUnico(
     pathArchivoDatos = localFileQCed, nFilasEstaciones = 4, filaId = 2, fileEncoding = 'WINDOWS-1252')
@@ -102,18 +100,19 @@ if (FALSE) {
   })
 }
 
-corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)
+corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms=FALSE)
 
-dfCorrs <- data.frame(satelite=c(rep('GPM', nrow(pathsRegresores)), rep('GSMaP', nrow(pathsRegresores))), 
-                      fecha=as.Date(rep(fechasObservaciones, 2)),
-                      corr=c(corrs[, 1], corrs[, 2]))
+dfCorrs <- data.frame(
+  satelite=c(rep('GPM', nrow(pathsRegresores)), rep('GSMaP', nrow(pathsRegresores))), 
+  fecha=as.Date(rep(fechasObservaciones, 2)),
+  corr=c(corrs[, 1], corrs[, 2]))
 
 p <- ggplot(data=dfCorrs, aes(x=fecha, y=corr, colour=satelite, group=satelite)) + 
-  geom_line() + geom_point() +
-  scale_x_date(date_breaks = "1 month") +
-  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1),
-        plot.title = element_text(hjust = 0.5)) +
-  labs(title='Correlación Diaria', x='Fecha', y='Correlación')
+     geom_line() + geom_point() +
+     scale_x_date(date_breaks = "1 month") +
+     theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1),
+           plot.title = element_text(hjust = 0.5)) +
+     labs(title='Correlación Diaria', x='Fecha', y='Correlación')
 
 ggsave(filename = 'Resultados/1-Exploracion/CorrelacionDiaria.png', plot = p)
 
