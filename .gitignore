@@ -2,12 +2,13 @@
 *.rej
 *.RData
 *.Rhistory
+GSMaP_authInfo.json
+GPM_authInfo.json
 datos/CartografiaBase/RCache/
 datos/mapas/
 datos/pluviometros/
 datos/satelites/
-GSMaP_authInfo.json
-GPM_authInfo.json
+Informes/
 RCache/
 RCache_windows/
 RCache_unix/
