@@ -2,7 +2,6 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
-
 # Línea de comandos de ejemplo: 
 # - Rscript main.r dt_fin=2021-01-16
 # Esto producirá el mapa con los acumulados del período (2020-01-15 10:00 UTC, 2020-01-16 10:00 UTC]
@@ -15,7 +14,7 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2021-12-15'
+  paramsStr <- 'dt_fin=2021-11-29'
   # paramsStr <- 'dt_fin=2021-01-05;dt_ini=2020-11-30'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
@@ -34,7 +33,7 @@ parsearParamsPrecipRioNegro <- function(params) {
 params <- parsearParamsPrecipRioNegro(paramsStr)
 dt_ini=params$dt_ini
 dt_fin=params$dt_fin
-if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 22) {
+if (params$dt_fin==Sys.Date() && as.POSIXlt(Sys.time())$hour < 7) {
   dt_fin <- as.character(as.Date(params$dt_fin) - 1)
 }
 

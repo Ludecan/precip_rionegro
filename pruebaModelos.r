@@ -22,8 +22,8 @@ dt_fin <- '2020-05-31'
 #dt_ini <- '2020-03-01'
 #dt_fin <- '2020-03-05'
 
-dt_ini <- '2020-05-01'
-dt_fin <- '2020-05-31'
+dt_ini <- '2021-11-01'
+dt_fin <- '2021-12-25'
 
 
 #estacionesADescartar <- c(
@@ -43,8 +43,7 @@ runValidation <- TRUE
 runPlots <- TRUE
 runVerif <- TRUE
 
-postFijoPluvios <- '_Convencionales'
-#postFijoPluvios <- ''
+postFijoPluvios <- ''
 nombreExperimento <- paste0('2021_12_', postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
@@ -101,11 +100,14 @@ if (FALSE) {
 }
 
 corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms=FALSE)
-
 dfCorrs <- data.frame(
-  satelite=c(rep('GPM', nrow(pathsRegresores)), rep('GSMaP', nrow(pathsRegresores))), 
+  satelite=c(
+    rep(colnames(pathsRegresores)[1], nrow(pathsRegresores)), 
+    rep(colnames(pathsRegresores)[2], nrow(pathsRegresores))
+  ), 
   fecha=as.Date(rep(fechasObservaciones, 2)),
-  corr=c(corrs[, 1], corrs[, 2]))
+  corr=c(corrs[, 1], corrs[, 2])
+)
 
 p <- ggplot(data=dfCorrs, aes(x=fecha, y=corr, colour=satelite, group=satelite)) + 
      geom_line() + geom_point() +
@@ -125,7 +127,7 @@ idx <- (ncol(pathsRegresores) - (length(corr_thresholds))):ncol(pathsRegresores)
 colnames(pathsRegresores)[idx] <- c('Combinado', paste0('Combinado', corr_thresholds))
 # pathsRegresores[, 'Combinado0.6'] <- NA_character_
 
-iRow <- 7
+iRow <- 2
 for (iRow in 1:nrow(pathsRegresores)) {
   idx <- which.max(corrs[iRow, ])
   if (length(idx) > 0) {
@@ -160,8 +162,6 @@ sum(!is.na(pathsRegresores[, 'Combinado0.7']))
 sum(!is.na(pathsRegresores[, 'Combinado0.8']))
 
 paramsBase <- createParamsInterpolarYMapear(
-  proj4StringObservaciones=proj4string(coordsObservaciones),
-  proj4StringAInterpolar=proj4string(coordsAInterpolar),
   coordsAInterpolarSonGrilla=TRUE, 
   interpolationMethod='automap',
   mLimitarValoresInterpolados='LimitarMinimoyMaximo',
@@ -209,7 +209,8 @@ paramsBase <- createParamsInterpolarYMapear(
   difMaxFiltradoDeOutliersCV = 0,
   modoDiagnostico=TRUE,
   simpleKrigingEnRK=FALSE,
-  preECDFMatching=FALSE)
+  preECDFMatching=FALSE
+)
 paramsBase$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos = 2, continuo = T)
 
 # escala <- darEscala(especificacion = paramsBase$especEscalaDiagnostico, valores = c(0, 1, 10))
@@ -435,8 +436,8 @@ if (FALSE) {
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado', 'GRK-GPM', 'GRK-Combinado0.5', 'GRK-Combinado0.8')
-modelosACorrer <- c(1, 2, 3, 12, 7, 4, 8, 11)
+modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado', 'GRK-GPM')
+modelosACorrer <- c(1, 2, 3, 12, 7, 4)
 
 source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
 
@@ -470,10 +471,13 @@ if (runGridding) {
       nomModeloFormateadoParaArchivos <- gsub(pattern = '*', replacement = '', x = nomModelo, fixed = T)
       pathModelo <- paste0(pathResultadosGrillado, nomModeloFormateadoParaArchivos, '/')
       dir.create(pathModelo, showWarnings = F, recursive = T)      
-      listaMapas$nombreArchivo <- 
-        paste0(pathModelo, 
-               appendToFileName(filename=listaMapas$nombreArchivo, 
-                                postFijo=paste('_', nomModeloFormateadoParaArchivos, sep='')))
+      listaMapas$nombreArchivo <- paste0(
+        pathModelo, appendToFileName(
+          filename=listaMapas$nombreArchivo, postFijo=paste0(
+            '_', nomModeloFormateadoParaArchivos
+          )
+        )
+      )
       
       #pathsRegresores = pr
       #paramsIyM = paramsI
@@ -563,4 +567,3 @@ if (runPlots) {
     carpetaSalida=dirPlots, replot=FALSE)
 }
 
-i

@@ -14,6 +14,7 @@ instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
 source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
 source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatos, '/st_interp/sysutils/sysutils.r'), encoding = 'WINDOWS-1252')
 
 descargaPluviosADME <- function(
     dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
@@ -49,13 +50,13 @@ descargaGSMaP <- function(
   urlBase='ftp://hokusai.eorc.jaxa.jp/realtime_ver/', productVersion='v7', 
   producto='hourly_G', verbose=TRUE
 ) {
-  # fijo la hora inicial
+  # Los datos de GSMaP siguen este formato de nombres:
+  # gsmap_gauge.20211226.1700.dat.gz
+  # El período de observación corresponde a (2021-12-26 17:00 UTC, 2021-12-26 18:00 UTC]?
   
-  if (dt_fin == dt_ini) {
-    dt_fin <- as.Date(dt_ini) + 1
-  }
-  dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
-  dt_fin <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion - 1)
+  # fijo las hora inicial/final
+  dt_ini_gsmap <- sprintf('%s %02d:00', date(dt_ini) - 1, horaUTCInicioAcumulacion + 1)
+  dt_fin_gsmap <- sprintf('%s %02d:00', date(dt_fin), horaUTCInicioAcumulacion)
   
   # Descargo y parseo el CTL
   nomArchCTL <- paste0('GSMaP_NRT.', producto, '.rain.ctl')
@@ -66,11 +67,12 @@ descargaGSMaP <- function(
     forzarReDescarga=forzarReDescarga,
     maxRetries=1, 
     segundosEntreIntentos=3, 
-    curlOpts=list(netrc=1))
-  ctl <- parseCTL(ctlFile = pathLocalCTL, convert360to180 = TRUE)
+    curlOpts=list(netrc=1)
+  )
+  ctl <- parseCTL(ctlFile=pathLocalCTL, convert360to180=TRUE)
 
   # Armo urls y pathsLocales horarios
-  horas <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="hour")
+  horas <- seq(as.POSIXct(dt_ini_gsmap), as.POSIXct(dt_fin_gsmap), by="hour")
   urls <- strftime(
     x=horas, 
     format=paste0(
@@ -78,12 +80,12 @@ descargaGSMaP <- function(
     )
   )
   pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
-  pathsLocalesDescomprimidos <- substr(pathsLocales, start = 1, stop = nchar(pathsLocales) - 3)
+  pathsLocalesDescomprimidos <- substr(pathsLocales, start=1, stop=nchar(pathsLocales) - 3)
   # write(toJSON(authInfo), 'GSMaP_authInfo.json')
   
   # Armo paths locales diarios para la agregación
-  dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
-  pathsLocalesDiarios <- strftime(x = dias, format = paste0(pathSalida, '%Y%m%d.tif'))
+  dias <- seq(as.POSIXct(dt_ini_gsmap), as.POSIXct(dt_fin_gsmap), by="day") + lubridate::days(1)
+  pathsLocalesDiarios <- strftime(x=dias, format=paste0(pathSalida, '%Y%m%d.tif'))
   
   # Busco los paths locales diarios que no existan
   iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)
@@ -94,19 +96,13 @@ descargaGSMaP <- function(
       iHorasADescargar[(24*(i-1) + 1):(24*i)] <- iHorasADescargar[(24*(i-1) + 1):(24*i)] + (iNoExisten[i]-1)*24
     }
     
-    if (.Platform$OS.type == "windows") {
-      memtot_gb <- memory.size(max=NA) / 1024
-    } else {
-      memtot_gb <- as.numeric(system("awk '/MemTot/ {print $2}' /proc/meminfo", intern=TRUE)) / 1024**2  
-    }
-    # Limit number of processes to no more than either 10 or 1 per GB of RAM
-    nConexionesSimultaneas <- min(10, round(memtot_gb))
-    nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
+    nCoresAUsar <- getAvailableCores(maxCoresPerGB = 1)
+    nConexionesSimultaneas <- min(10, nCoresAUsar)
     
     if (verbose) {
       print(paste0(
         Sys.time(), " - Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), 
-        " days."))
+        " days. Output Path: ", pathSalida))
       if (length(pathsLocalesDiarios) == 1) {
         print(paste0(
           Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
@@ -132,10 +128,10 @@ descargaGSMaP <- function(
     
     if (length(iHorasADescargar) > 0) {
       agregacionTemporalGrillada(
-        fechas = horas[iHorasADescargar], pathsRegresor = pathsLocalesDescomprimidos[iHorasADescargar],
-        formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
-        nFechasAAgregar = 24, funcionAgregacion = base::sum, ctl=ctl, shpBase = shpBase, 
-        overlap = FALSE, nCoresAUsar=nCoresAUsar)
+        fechas=horas[iHorasADescargar], pathsRegresor=pathsLocalesDescomprimidos[iHorasADescargar],
+        formatoNomArchivoSalida=paste(pathSalida, '%Y%m%d.tif', sep=''), minNfechasParaAgregar=24, 
+        nFechasAAgregar=24, funcionAgregacion=base::sum, ctl=ctl, shpBase=shpBase,
+        overlap=FALSE, nCoresAUsar=nCoresAUsar, archivoSalidaUsaFechaFinal=TRUE)
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
@@ -152,29 +148,31 @@ descargaGPM <- function(
   urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis',
   verbose=TRUE
 ) {
-  if (dt_fin == dt_ini) {
-    dt_fin <- as.Date(dt_ini) + 1
-  }
-  # fijo la hora inicial
-  dt_ini <- sprintf('%s %02d:00', date(dt_ini), horaUTCInicioAcumulacion)
-  dt_fin <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
+  # Los datos de GPM-Imerg siguen este formato de nombres:
+  # 3B-HHR-L.MS.MRG.3IMERG.20170201-S100000-E102959.0600.V06B.30min.tif
+  # El período de observación corresponde a (2017-02-01 10:00 UTC, 2017-02-01 10:29:59 UTC]?
   
-  formatoPrefijo <- paste(urlBase, producto, '/%Y/%m/3B-HHR-L.MS.MRG.3IMERG.%Y%m%d-S%H%M%S', sep='')
+  # fijo las horas inicial/final
+  dt_ini_gpm <- sprintf('%s %02d:00', date(dt_ini) - 1, horaUTCInicioAcumulacion)
+  dt_fin_gpm <- sprintf('%s %02d:30', date(dt_fin), horaUTCInicioAcumulacion - 1)
+  
+  formatoPrefijo <- paste0(urlBase, producto, '/%Y/%m/3B-HHR-L.MS.MRG.3IMERG.%Y%m%d-S%H%M%S')
   formatoE <- '-E%H%M%S.'
-  formatoPostfijo <- paste('%04d.', productVersion, '.30min.tif', sep='')
+  formatoPostfijo <- paste0('%04d.', productVersion, '.30min.tif')
   
   # Armo urls y pathsLocales horarios
-  mediasHoras <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin) + 30 * 60, by="30 mins")
-  urls <- paste0(strftime(x = head(mediasHoras, -1), format = formatoPrefijo),
-                 strftime(x=tail(mediasHoras, -1) - 1, format = formatoE),
-                 sprintf(fmt = formatoPostfijo, 
-                         (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30))
+  mediasHoras <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm) + 30 * 60, by="30 mins")
+  urls <- paste0(
+    strftime(x=head(mediasHoras, -1), format=formatoPrefijo),
+    strftime(x=tail(mediasHoras, -1) - 1, format=formatoE),
+    sprintf(fmt = formatoPostfijo, (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30)
+  )
   pathsLocales <- paste0(pathSalida, 'originales/', basename(urls))
   do_unzip = rep(FALSE, length(urls))
   
   # Armo paths locales diarios para la agregación
-  dias <- seq(as.POSIXct(dt_ini), as.POSIXct(dt_fin), by="day")
-  pathsLocalesDiarios <- strftime(x = dias, format = paste0(pathSalida, '%Y%m%d.tif'))
+  dias <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm), by="day") + lubridate::days(1)
+  pathsLocalesDiarios <- strftime(x=dias, format=paste0(pathSalida, '%Y%m%d.tif'))
   
   # Busco los paths locales diarios que no existan
   iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)
@@ -187,19 +185,13 @@ descargaGPM <- function(
       iPeriodosADescargar[idx] <- iPeriodosADescargar[idx] + (iNoExisten[i]-1)*numPeriodos
     }
     
-    if (.Platform$OS.type == "windows") {
-      memtot_gb <- memory.size(max=NA) / 1024
-    } else {
-      memtot_gb <- as.numeric(system("awk '/MemTot/ {print $2}' /proc/meminfo", intern=TRUE)) / 1024**2  
-    }
-    # Limit number of processes to no more than either 10 or 1 per GB of RAM
-    nConexionesSimultaneas <- min(10, round(memtot_gb))
-    nCoresAUsar <- min(nConexionesSimultaneas, detectCores(T, T))
+    nCoresAUsar <- getAvailableCores(maxCoresPerGB = 1)
+    nConexionesSimultaneas <- min(10, nCoresAUsar)
 
     if (verbose) {
       print(paste0(
         Sys.time(), " - Downloading ", length(iPeriodosADescargar), " files for ", 
-        length(iNoExisten), " days."))
+        length(iNoExisten), " days. Output Path: ", pathSalida))
       if (length(pathsLocalesDiarios) == 1) {
         print(paste0(
           Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
@@ -211,7 +203,8 @@ descargaGPM <- function(
       urls=urls[iPeriodosADescargar], nombresArchivosDestino=pathsLocales[iPeriodosADescargar],
       forzarReDescarga=forzarReDescarga, maxRetries=1, segundosEntreIntentos=3, 
       curlOpts=curlOpts, nConexionesSimultaneas=nConexionesSimultaneas, 
-      do_unzip=do_unzip[iPeriodosADescargar])
+      do_unzip=do_unzip[iPeriodosADescargar]
+    )
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
                     paste(urls[iPeriodosADescargar[res == 0]], collapse = '\n'), 
@@ -227,12 +220,14 @@ descargaGPM <- function(
     
     if (length(iPeriodosADescargar) > 0) {
       agregacionTemporalGrillada(
-        fechas = head(mediasHoras[iPeriodosADescargar], -1), 
-        pathsRegresor = pathsLocales[iPeriodosADescargar],
-        formatoNomArchivoSalida = paste(pathSalida, '%Y%m%d.tif', sep=''), 
-        minNfechasParaAgregar=numPeriodos, nFechasAAgregar = numPeriodos, 
-        funcionAgregacion = base::sum, shpBase = shpBase, overlap = FALSE, 
-        funcEscalado = function(x) { x / 20 }, nCoresAUsar=nCoresAUsar)
+        fechas=mediasHoras[iPeriodosADescargar], 
+        pathsRegresor=pathsLocales[iPeriodosADescargar],
+        formatoNomArchivoSalida=paste0(pathSalida, '%Y%m%d.tif'), 
+        minNfechasParaAgregar=numPeriodos, nFechasAAgregar=numPeriodos, 
+        funcionAgregacion=base::sum, shpBase=shpBase, overlap=FALSE, 
+        funcEscalado=function(x) { x / 20 }, nCoresAUsar=nCoresAUsar, 
+        archivoSalidaUsaFechaFinal=TRUE
+      )
     }
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
