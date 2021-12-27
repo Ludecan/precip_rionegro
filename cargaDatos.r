@@ -21,6 +21,13 @@ wktAInterpolar <- readLines(paste0(pathDatos, 'CRS/utm21s_km.wkt'))
 # pixel de la grilla de los regresores
 factorEscaladoGrillaInterpolacion <- 2
 
+# El software asume que los datos de pluviómetros seguirán el criterio de guardado del "día i + 1":
+# Un dato observado en el período (día i a las 07:00 LT, día i + 1 a las 07:00 LT] será 
+# almacenado con fecha del día i + 1. 
+# Ie: el dato almacenado con fecha 2022-01-01 corresponde al período 
+# (2021-12-31 a las 07:00 LT, 2022-01-01 a las 07:00 LT]
+# Los datos agregados, sean tanto de pluviómetros como de satélites seguirán también 
+# este criterio, así como los resultados producidos por la librería.
 
 # Descarga de datos de pluviometros
 source('descargaDatos.r', encoding = 'WINDOWS-1252')
@@ -28,6 +35,7 @@ print(paste0(Sys.time(), ' - Descargando datos de pluviometros del ', dt_ini, ' 
 localFile <- descargaPluviosADME(
   dt_ini=dt_ini, dt_fin=dt_fin, pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
+print(paste0(Sys.time(), ' - Datos de pluviometros descargados en ', localFile))
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
@@ -55,10 +63,14 @@ if (sonEstacionesConvencionales) {
   # TODO: -1,79769313486E+308 no se está interpretando bien como una string NA
   datos$datos[datos$datos < 0] <- NA
 } else {
-  datos <- leerSeriesXLSX(pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8')  
+  datos <- leerSeriesXLSX(
+    pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8'
+  )
 }
+
 estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
+rownames(datos$datos) <- as.character(fechasObservaciones)
 valoresObservaciones <- datos$datos
 
 if (!is.null(estacionesADescartar)) {
@@ -73,6 +85,8 @@ if (!is.null(estacionesADescartar)) {
 }
 
 if (!sonEstacionesConvencionales) {
+  # TODO: Actualizar esto para que cumpla con el criterio del día i + 1 si alguna vez 
+  # se vuelve a utilizar
   # Agregacion diaria
   print(paste0(Sys.time(), ' - Agregando valores diarios...'))
   triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
@@ -139,8 +153,9 @@ if (!sonEstacionesConvencionales) {
   
   rm(rowsToSplit, colsToSplit)
   
-  iStartHours <- grep(pattern = sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
-                      x = rownames(valoresObservaciones), fixed = T)
+  iStartHours <- grep(
+    pattern=sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
+    x=rownames(valoresObservaciones), fixed=T)
   iStartHour <- iStartHours[1]
   if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
     iEndHour <- iStartHours[length(iStartHours)] + 23
@@ -173,16 +188,18 @@ if (!sonEstacionesConvencionales) {
 
 # Descarga de datos de satelite
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
-print(paste0(Sys.time(), ' - Cargando shapefile con mapa base...'))
+print(paste0(Sys.time(), ' - Cargando shapefile con mapa base de ', pathSHPMapaBase, '...'))
 shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
 print(paste0(Sys.time(), ' - Descargando datos de GSMaP del ', dt_ini, ' al ', dt_fin))
 pathsGSMaP <- descargaGSMaP(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
-  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
+  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
+)
 print(paste0(Sys.time(), ' - Descargando datos de GPM del ', dt_ini, ' al ', dt_fin))
 pathsGPM <- descargaGPM(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
-  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales)
+  shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
+)
 
 # La otra parte de la función F a definir son los valores de U1, U2, ... Un.
 # Esto se define en el parámetro pathsRegresores. pathsRegresores es una matriz con una columna por
@@ -207,7 +224,8 @@ pathsRegresores <- pathsRegresores[
 grillaRegresor <- geometry(readGDAL(pathsRegresores[1, 1]))
 newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
 coordsAInterpolar <- grillaPixelesSobreBoundingBox(
-  objSP=grillaRegresor, outputCRS=CRS(proj4stringAInterpolar), nCeldasX=newNCeldasX)
+  objSP=grillaRegresor, outputCRS=CRS(proj4stringAInterpolar), nCeldasX=newNCeldasX
+)
 # mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
 
 
@@ -303,3 +321,4 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   
   return(corrs)
 }
+ 
