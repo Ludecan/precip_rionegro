@@ -22,7 +22,7 @@ dt_fin <- '2020-05-31'
 #dt_ini <- '2020-03-01'
 #dt_fin <- '2020-03-05'
 
-dt_ini <- '2021-11-01'
+dt_ini <- '2017-02-01'
 dt_fin <- '2021-12-25'
 
 
@@ -59,16 +59,22 @@ localFileQCed <- changeFileExt(
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   source('aplicaQC.r', encoding = 'WINDOWS-1252')
   valoresObservaciones <- applyQCTests(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, 
+    coordsObservaciones, fechasObservaciones, valoresObservaciones,
     paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
-    plotMaps=TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/'))
+    plotMaps=TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/')
+  )
   
   grabarSeriesArchivoUnico(
-    pathArchivoDatos=localFileQCed, estaciones=estaciones, 
-    fechas=fechasObservaciones, datos=valoresObservaciones)
+    pathArchivoDatos=localFileQCed, estaciones=estaciones,
+    fechas=fechasObservaciones, datos=valoresObservaciones
+  )
 } else {
   datos <- leerSeriesArchivoUnico(
-    pathArchivoDatos = localFileQCed, nFilasEstaciones = 4, filaId = 2, fileEncoding = 'WINDOWS-1252')
+    pathArchivoDatos=localFileQCed, 
+    nFilasEstaciones=6, 
+    filaId=3, 
+    fileEncoding='WINDOWS-1252'
+  )
   valoresObservaciones <- datos$datos
   rm(datos)
 }
@@ -211,7 +217,7 @@ paramsBase <- createParamsInterpolarYMapear(
   simpleKrigingEnRK=FALSE,
   preECDFMatching=FALSE
 )
-paramsBase$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos = 2, continuo = T)
+paramsBase$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(nDigitos=2, continuo=T)
 
 # escala <- darEscala(especificacion = paramsBase$especEscalaDiagnostico, valores = c(0, 1, 10))
 
@@ -452,8 +458,7 @@ if (runTestsRegresores) {
 ############# Gridding #############
 pathResultadosGrillado <- paste0('Resultados/3-Grillado', nombreExperimento, '/')
 if (runGridding) {
-  i <- 4
-  i <- 1
+  i <- 2
   for (i in modelosACorrer) {
     try({
       paramsI <- listaParams[[i]]
@@ -489,12 +494,20 @@ if (runGridding) {
       #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
       tsAInterpolar <- 1:nrow(valoresObservaciones)
       interpolarYMapear(
-        coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones, 
-        valoresObservaciones = valoresObservaciones, pathsRegresores = pr, 
-        coordsAInterpolar = coordsAInterpolar, paramsIyM = paramsI, shpMask = shpMask, 
-        xyLims = xyLims, listaMapas=listaMapas, returnInterpolacion = F, 
-        paramsParaRellenoRegresores = NULL, pathsRegresoresParaRellenoRegresores = NULL, 
-        tsAInterpolar=tsAInterpolar)
+        coordsObservaciones=coordsObservaciones, 
+        fechasObservaciones=fechasObservaciones, 
+        valoresObservaciones=valoresObservaciones, 
+        pathsRegresores=pr, 
+        coordsAInterpolar=coordsAInterpolar, 
+        paramsIyM=paramsI, 
+        shpMask=shpMask, 
+        xyLims=xyLims, 
+        listaMapas=listaMapas, 
+        returnInterpolacion=F, 
+        paramsParaRellenoRegresores=NULL, 
+        pathsRegresoresParaRellenoRegresores=NULL, 
+        tsAInterpolar=tsAInterpolar
+      )
     })
   }
 }
