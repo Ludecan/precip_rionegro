@@ -55,6 +55,7 @@ applyQCTests <- function(
     pathsRegresores, plotMaps=FALSE, pathResultadosQC='Resultados/2-QC/') {
   replot <- FALSE
   
+  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 1...'))
   # Two rounds of QC tests
   test <- testEspacialPrecipitacion(
     coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
@@ -75,6 +76,7 @@ applyQCTests <- function(
   test$reemplazar[test$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test, valoresObservaciones)
   
+  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 2...'))
   test2 <- testEspacialPrecipitacion(
     coordsObservaciones = coordsObservaciones, fechasObservaciones = fechasObservaciones,
     valoresObservaciones = valoresObservaciones, minNCuadrantes=3, fInf = 1.4, amplitudMin = 1, 
@@ -100,6 +102,7 @@ applyQCTests <- function(
   listaMapas <- createDefaultListaMapas(
     paramsInterpolacion, fechasObservaciones = fechasObservaciones, dibujarEscalaFija = FALSE)
   
+  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GPM...'))
   test3 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
     pathsRegresores = pathsRegresores[, 'GPM', drop=F], listaMapas = listaMapas, 
@@ -107,6 +110,7 @@ applyQCTests <- function(
   
   # test3[test3$fecha == '2019-01-08',]
   
+  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GSMaP..'))
   test4 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
     pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], listaMapas = listaMapas, 
@@ -129,6 +133,7 @@ applyQCTests <- function(
   test3$reemplazar[iTest] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test3, valoresObservaciones)
   
+  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers Media/Desv. Est..'))
   test5 <- deteccionOutliersMediaSD(x = valoresObservaciones, factorSDHaciaAbajo = 3, sdMin = 1)
   # test5[test3$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   
@@ -149,6 +154,7 @@ applyQCTests <- function(
   test5$reemplazar[iTest] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test5, valoresObservaciones)
   
+  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers Max to Mean Ratios.'))
   test6 <- testMaxToMeanRatios(valoresObservaciones)
   test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   
@@ -168,6 +174,6 @@ applyQCTests <- function(
   #  coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion,
   #  pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], maxOutlyingness = 3.5, maxNIters = 5)
                                        
-  
+  print(paste0(Sys.time(), ' - QC Finalizado.'))
   return(valoresObservaciones)
 }
