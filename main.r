@@ -14,7 +14,7 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-01-05'
+  paramsStr <- 'dt_fin=2022-01-16'
   # paramsStr <- 'dt_fin=2021-01-05;dt_ini=2020-11-30'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
@@ -54,8 +54,8 @@ estacionesADescartar <- NULL
 #  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
-#forzarReDescarga <- !interactive()
-forzarReDescarga <- FALSE
+forzarReDescarga <- !interactive()
+#forzarReDescarga <- TRUE
 borrarDatosOriginales <- forzarReDescarga
 #borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
@@ -198,21 +198,23 @@ print(paste0(Sys.time(), ' - Interpolando modelo ',
 # Cambiando tsAinterpolar se puede elegir la fecha que se quiera
 # tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2018-02-03', tz=tz(fechasObservaciones[1])))
 tsAInterpolar=1:nrow(valoresObservaciones)
-interpolarYMapear(coordsObservaciones=coordsObservaciones, 
-                  fechasObservaciones=fechasObservaciones, 
-                  valoresObservaciones=valoresObservaciones, 
-                  pathsRegresores=pathsRegresores, 
-                  coordsAInterpolar=coordsAInterpolar, 
-                  paramsIyM=params,
-                  shpMask=shpMask,
-                  xyLims=xyLims,
-                  listaMapas=listaMapas,
-                  returnInterpolacion=FALSE,  # Para ahorrar memoria
-                  paramsParaRellenoRegresores=NULL,
-                  pathsRegresoresParaRellenoRegresores=NULL,
-                  espEscalaFija=NULL,
-                  espEscalaAdaptada=NULL,
-                  tsAInterpolar=tsAInterpolar)
+interpolarYMapear(
+  coordsObservaciones=coordsObservaciones, 
+  fechasObservaciones=fechasObservaciones, 
+  valoresObservaciones=valoresObservaciones, 
+  pathsRegresores=pathsRegresores, 
+  coordsAInterpolar=coordsAInterpolar, 
+  paramsIyM=params,
+  shpMask=shpMask,
+  xyLims=xyLims,
+  listaMapas=listaMapas,
+  returnInterpolacion=FALSE,  # Para ahorrar memoria
+  paramsParaRellenoRegresores=NULL,
+  pathsRegresoresParaRellenoRegresores=NULL,
+  espEscalaFija=NULL,
+  espEscalaAdaptada=NULL,
+  tsAInterpolar=tsAInterpolar
+)
 
 print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/', 
              gsub(listaMapas$nombreArchivo, pattern = 'png', replacement = 'tif')))

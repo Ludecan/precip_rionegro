@@ -45,6 +45,7 @@ runCV <- TRUE
 runValidation <- TRUE
 runPlots <- TRUE
 runVerif <- TRUE
+runExternalValidation <- TRUE
 
 postFijoPluvios <- ''
 nombreExperimento <- paste0('2021_12', postFijoPluvios)
@@ -599,6 +600,9 @@ if (runExternalValidation) {
   sp::coordinates(estacionesR3) <- c('Longitud', 'Latitud')
   sp::proj4string(estacionesR3) <- sp::CRS(projargs=proj4stringLatLong, SRS_string=wktLatLong)
   estacionesR3 <- sp::spTransform(x = estacionesR3, CRS(projargs=proj4stringAInterpolar))
+  i <- !is.na(over(estacionesR3, geometry(shpRioNegro)))
+  estacionesR3 <- estacionesR3[i, ]
+  valoresObservacionesR3 <- valoresObservacionesR3[, i]
   coordsAInterpolarValidacionExterna <- sp::geometry(estacionesR3)
 
   # Recorto los datos de R3 al rango de fechas del experimento  
