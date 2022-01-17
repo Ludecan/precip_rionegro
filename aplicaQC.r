@@ -105,9 +105,10 @@ applyQCTests <- function(
   print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra IMERG...'))
   
   test3 <- deteccionOutliersRLM(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
-    pathsRegresores = pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas = listaMapas, 
-    factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
+    coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
+    pathsRegresores=pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas=listaMapas, 
+    factorMADHaciaAbajo=NA, factorSDHaciaAbajo=2.2, sdMin=1, returnTestDF=TRUE
+  )
   
   # test3[test3$fecha == '2019-01-08',]
   
