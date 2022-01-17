@@ -213,7 +213,7 @@ plotEjemplosRellenoRasters <- function() {
 plotComparacionModelos <- function(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     pathsModelos=cargarRegresores(carpetaRegresores = 'Resultados/3-Grillado', fechasRegresando = fechasObservaciones), 
-    modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
+    modelosAPlotear=c('IMERG_V06B', 'GSMaP_v7', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
     especificacionEscala, shpBase, nColsPlots=3, carpetaSalida='Resultados/5-ComparacionModelos', 
     replot=FALSE) {
   pathsModelos <- pathsModelos[, modelosAPlotear]

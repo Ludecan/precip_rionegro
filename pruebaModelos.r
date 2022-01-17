@@ -1,3 +1,6 @@
+# Set process priority to below normal
+tools::psnice(value = 15)
+
 if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
@@ -17,13 +20,13 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 #dt_ini <- '2009-09-16'
 dt_ini <- '2017-02-01'
 #dt_fin <- '2020-03-01'
-dt_fin <- '2020-05-31'
+#dt_fin <- '2020-05-31'
 #dt_fin <- '2020-09-05'
 #dt_ini <- '2020-03-01'
-#dt_fin <- '2020-03-05'
+dt_fin <- '2020-03-05'
 
-dt_ini <- '2017-02-01'
-dt_fin <- '2021-12-25'
+#dt_ini <- '2017-02-01'
+#dt_fin <- '2021-12-31'
 
 
 #estacionesADescartar <- c(
@@ -44,7 +47,7 @@ runPlots <- TRUE
 runVerif <- TRUE
 
 postFijoPluvios <- ''
-nombreExperimento <- paste0('2021_12_', postFijoPluvios)
+nombreExperimento <- paste0('2021_12', postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
@@ -101,7 +104,7 @@ if (FALSE) {
     objSP = coordsObservaciones, pathsRegresores = pathsRegresores)
   sapply(uniqueCuts, FUN = function(x) {
     idx = cuts == x
-    return(cor(valoresObservaciones[idx], valoresRegresores[['GPM']][idx], use = "pairwise.complete.obs"))
+    return(cor(valoresObservaciones[idx], valoresRegresores[['IMERG_V06B']][idx], use = "pairwise.complete.obs"))
   })
 }
 
@@ -308,7 +311,7 @@ if (FALSE) {
   listaParams[[1]] <- paramsI
   listaRegresores[[1]] <- NA
   
-  # 2 - GPM sin calibrar
+  # 2 - IMERG sin calibrar
   paramsI <- paramsBase
   paramsI$mLimitarValoresInterpolados <- 'NoLimitar'
   paramsI$interpolationMethod <- 'none'
@@ -316,7 +319,7 @@ if (FALSE) {
   paramsI$umbralMascaraCeros <- 0
   paramsI$metodoRemocionDeSesgo <- 'ninguno'
   listaParams[[2]] <- paramsI
-  listaRegresores[[2]] <- pathsRegresores[, c('GPM'), drop=FALSE]
+  listaRegresores[[2]] <- pathsRegresores[, c('IMERG_V06B'), drop=FALSE]
   
   # 3 - GSMaP sin calibrar
   paramsI <- paramsBase
@@ -326,16 +329,16 @@ if (FALSE) {
   paramsI$umbralMascaraCeros <- 0
   paramsI$metodoRemocionDeSesgo <- 'ninguno'
   listaParams[[3]] <- paramsI
-  listaRegresores[[3]] <- pathsRegresores[, c('GSMaP'), drop=FALSE]
+  listaRegresores[[3]] <- pathsRegresores[, c('GSMaP_v7'), drop=FALSE]
   
-  # 4 - Kriging Universal Espacial + Regresion Generalizada en GPM
+  # 4 - Kriging Universal Espacial + Regresion Generalizada en IMERG
   paramsI <- paramsBase
   paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
   paramsI$interpolationMethod <- 'automap'
   paramsI$metodoIgualacionDistribuciones <- 'GLS'
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[4]] <- paramsI
-  listaRegresores[[4]] <- pathsRegresores[, c('GPM'), drop=FALSE]
+  listaRegresores[[4]] <- pathsRegresores[, c('IMERG_V06B'), drop=FALSE]
   paramsI$signosValidosRegresores <- 1
   names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[4]])
   
@@ -346,18 +349,18 @@ if (FALSE) {
   paramsI$metodoIgualacionDistribuciones <- 'GLS'
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[5]] <- paramsI
-  listaRegresores[[5]] <- pathsRegresores[,c('GSMaP'), drop=FALSE]
+  listaRegresores[[5]] <- pathsRegresores[,c('GSMaP_v7'), drop=FALSE]
   paramsI$signosValidosRegresores <- 1
   names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[5]])
   
-  # 6 - Kriging Universal Espacial + Regresion Generalizada en GPM y GSMaP
+  # 6 - Kriging Universal Espacial + Regresion Generalizada en IMERG y GSMaP
   paramsI <- paramsBase
   paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
   paramsI$interpolationMethod <- 'automap'
   paramsI$metodoIgualacionDistribuciones <- 'GLS'
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[6]] <- paramsI
-  listaRegresores[[6]] <- pathsRegresores[,c('GPM', 'GSMaP'), drop=FALSE]
+  listaRegresores[[6]] <- pathsRegresores[,c('IMERG_V06B', 'GSMaP_v7'), drop=FALSE]
   
   # 7 - Kriging Universal Espacial + Regresion Generalizada en Combinado
   paramsI <- paramsBase
@@ -442,7 +445,7 @@ if (FALSE) {
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'GPM', 'GSMaP', 'GR-Combinado', 'GRK-Combinado', 'GRK-GPM')
+modelosACorrer <- c('K', 'IMERG_V06B', 'GSMaP_v7', 'GR-Combinado', 'GRK-Combinado', 'GRK-IMERG_V06B')
 modelosACorrer <- c(1, 2, 3, 12, 7, 4)
 
 source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
@@ -575,8 +578,124 @@ if (runPlots) {
   plotComparacionModelos(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     pathsModelos=cargarRegresores(carpetaRegresores = pathResultadosGrillado, fechasRegresando = fechasObservaciones), 
-    modelosAPlotear=c('GPM', 'GSMaP', 'K', 'GR-Combinado', 'GRK-Combinado'), 
+    modelosAPlotear=c('IMERG_V06B', 'GSMaP_v7', 'K', 'GR-Combinado', 'GRK-Combinado'), 
     especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=3, 
     carpetaSalida=dirPlots, replot=FALSE)
 }
 
+if (runExternalValidation) {
+  pathResultadosValidacionExterna <- paste0(
+    'Resultados/4_1-ValidacionExterna', nombreExperimento, '/'
+  )
+  datosR3 <- leerSeriesArchivoUnico(
+    pathArchivoDatos=paste0(pathDatos, 'pluviometros/R3_2017_01_2020_03.tsv')
+  )
+  
+  estacionesR3 <- datosR3$estaciones
+  # Cambio el criterio de guardado de los datos de R3 a "día i + 1"
+  fechasObservacionesR3 <- datosR3$fechas + lubridate::days(1)
+  valoresObservacionesR3 <- datosR3$datos
+  rownames(valoresObservacionesR3) <- as.character(fechasObservacionesR3)
+  sp::coordinates(estacionesR3) <- c('Longitud', 'Latitud')
+  sp::proj4string(estacionesR3) <- sp::CRS(projargs=proj4stringLatLong, SRS_string=wktLatLong)
+  estacionesR3 <- sp::spTransform(x = estacionesR3, CRS(projargs=proj4stringAInterpolar))
+  coordsAInterpolarValidacionExterna <- sp::geometry(estacionesR3)
+
+  # Recorto los datos de R3 al rango de fechas del experimento  
+  minDate <- max(min(fechasObservaciones), min(fechasObservacionesR3))
+  maxDate <- min(max(fechasObservaciones), max(fechasObservacionesR3))
+  
+  idx <- minDate <= fechasObservacionesR3 & fechasObservacionesR3 <= maxDate
+  fechasObservacionesR3 <- fechasObservacionesR3[idx]
+  valoresObservacionesR3 <- valoresObservacionesR3[idx, ]
+  
+  cvs <- vector(mode="list", length = length(modelosACorrer))
+  i <- 5
+  for (i in seq_along(modelosACorrer)) {
+    try({
+      iModel <- modelosACorrer[i]
+      paramsI <- listaParams[[iModel]]
+      paramsI$modoDiagnostico <- FALSE
+      if (is.na(listaRegresores[iModel])) { pr <- NULL 
+      } else { pr <- listaRegresores[[iModel]] }
+      
+      nomModelo <- nombreModelo(params=paramsI, pathsRegresores=pr)
+      print(paste(Sys.time(), ': Validacion contra red externa ', nomModelo, sep=''))
+      
+      # paramsI$nCoresAUsar <- 1
+      listaMapas <- createDefaultListaMapas(
+        paramsI, fechasObservaciones, dibujarEscalaFija = FALSE, salvarGeoTiff = FALSE, 
+        recalcularSiYaExiste = FALSE, incluirSubtitulo = FALSE)
+      
+      nomModeloFormateadoParaArchivos <- gsub(pattern = '*', replacement = '', x = nomModelo, fixed = T)
+      pathModelo <- paste0(pathResultadosValidacionExterna, nomModeloFormateadoParaArchivos, '/')
+      listaMapas$nombreArchivo <- paste0(
+        pathModelo, appendToFileName(
+          filename=listaMapas$nombreArchivo, postFijo=paste0(
+            '_', nomModeloFormateadoParaArchivos
+          )
+        )
+      )
+      
+      #pathsRegresores = pr
+      #coordsAInterpolar=coordsAInterpolarValidacionExterna
+      #paramsIyM = paramsI
+      #shpMask = NULL
+      #paramsParaRellenoRegresores = NULL
+      #pathsRegresoresParaRellenoRegresores = NULL
+      #returnInterpolacion <- TRUE
+      #tsAInterpolar <- 1:nrow(valoresObservaciones)
+      #tsAInterpolar <- 48
+      #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
+      tsAInterpolar <- 1:nrow(valoresObservaciones)
+      interps <- interpolarYMapear(
+        coordsObservaciones=coordsObservaciones,
+        fechasObservaciones=fechasObservaciones,
+        valoresObservaciones=valoresObservaciones,
+        pathsRegresores=pr,
+        coordsAInterpolar=coordsAInterpolarValidacionExterna, 
+        paramsIyM=paramsI,
+        shpMask=NULL,
+        xyLims=xyLims,
+        listaMapas=listaMapas,
+        returnInterpolacion=TRUE,
+        paramsParaRellenoRegresores=NULL,
+        pathsRegresoresParaRellenoRegresores=NULL,
+        tsAInterpolar=tsAInterpolar
+      )
+
+      names(cvs)[i] <- nomModelo
+      cvs[[i]] <- t(sapply(X=interps, function(x) {x$predictions$var1.pred}))
+    })
+  }
+  
+  validationStats <- calcValidationStatisticsMultipleModels(
+    valoresObservacionesR3, cvs, climatologias=NULL, pathResultados=pathResultadosValidacionExterna
+  )
+  
+  validationStats$validationStatsOverall
+  
+  # validationStats$validationStatsTemporales
+  rmses <- sapply(validationStats$validationStatsTemporales, FUN = function(x) {return(x[, 'RMSE'])} )
+  
+  mejores <- unlist(apply(rmses, MARGIN = 1, which.min))
+  uMejores <- unique(mejores)
+  i <- uMejores[1]
+  for (i in uMejores) {
+    print(sum(!is.na(mejores) & mejores==i))
+  }
+  
+  linePlot(x=fechasObservaciones, y=rmses)
+  t(sapply(validationStats$validationStatsEspaciales, function(x) { round(apply(x, 2, mean, na.rm=T), 2)}))
+  
+  ordenModelosPorColumnas <- names(cvs)
+  ordenModelosPorColumnas <- c('K', 'GRK-Combinado')
+  calcAndPlotAllValidationStatisticsV2(
+    fechas=fechasObservacionesR3, pronosticos=cvs, observaciones=valoresObservacionesR3,
+    climatologias=NULL, coordsObservaciones=estacionesR3, 
+    shpBase=shpBase, xyLims=xyLims, nColsPlots=min(length(ordenModelosPorColumnas), 3),
+    ordenModelosPorColumnas=ordenModelosPorColumnas,
+    tamaniosPuntos=8, tamanioFuentePuntos=7, tamanioFuenteEjes=20, tamanioFuenteTitulo=22,
+    carpetaSalida=pathResultadosValidacionExterna
+  )    
+}
