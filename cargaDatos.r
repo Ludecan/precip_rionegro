@@ -195,7 +195,16 @@ pathsGSMaP <- descargaGSMaP(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
   shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
 )
-print(paste0(Sys.time(), ' - Descargando datos de GPM del ', dt_ini, ' al ', dt_fin))
+loadGSMaPV8 <- FALSE
+if (loadGSMaPV8) {
+  print(paste0(Sys.time(), ' - Descargando datos de GSMaP_v8 del ', dt_ini, ' al ', dt_fin))
+  pathsGSMaPv8 <- descargaGSMaP(
+    dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion,
+    shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales, 
+    productVersion='v8'
+  )
+}
+print(paste0(Sys.time(), ' - Descargando datos de IMERG del ', dt_ini, ' al ', dt_fin))
 pathsGPM <- descargaGPM(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
   shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
@@ -213,8 +222,11 @@ pathsGPM <- descargaGPM(
 # La función cargarRegresor(es) se encarga de esto. Para cargar un dato de satélite  se debe llamar 
 # cambiando el path a la carpeta de datos en cuestión
 print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
-pathsRegresores <- cargarRegresores(
-  carpetaRegresores=paste0(pathDatos, 'satelites'), fechasRegresando=fechasObservaciones)
+if (loadGSMaPV8) {
+  pathsRegresores <- as.matrix(cbind(pathsGPM, pathsGSMaP, pathsGSMaPv8))
+} else {
+  pathsRegresores <- as.matrix(cbind(pathsGPM, pathsGSMaP))
+}
 pathsRegresores <- pathsRegresores[
   , apply(X=pathsRegresores, MARGIN=2, FUN=function(x) {!all(is.na(x))}), drop=F]
 
@@ -321,4 +333,3 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   
   return(corrs)
 }
- 

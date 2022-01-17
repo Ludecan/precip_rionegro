@@ -102,10 +102,11 @@ applyQCTests <- function(
   listaMapas <- createDefaultListaMapas(
     paramsInterpolacion, fechasObservaciones = fechasObservaciones, dibujarEscalaFija = FALSE)
   
-  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GPM...'))
+  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra IMERG...'))
+  
   test3 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
-    pathsRegresores = pathsRegresores[, 'GPM', drop=F], listaMapas = listaMapas, 
+    pathsRegresores = pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas = listaMapas, 
     factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
   
   # test3[test3$fecha == '2019-01-08',]
@@ -113,7 +114,7 @@ applyQCTests <- function(
   print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GSMaP..'))
   test4 <- deteccionOutliersRLM(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion, 
-    pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], listaMapas = listaMapas, 
+    pathsRegresores = pathsRegresores[, 'GSMaP_v7', drop=F], listaMapas = listaMapas, 
     factorMADHaciaAbajo = NA, factorSDHaciaAbajo = 2.2, sdMin = 1, returnTestDF = TRUE)
   
   iTest <- test3$tipoOutlier %in% tiposOutliersValoresSospechosos & 
@@ -172,7 +173,7 @@ applyQCTests <- function(
   
   #lala <- deteccionOutliersUniversalGriddingCV(
   #  coordsObservaciones, fechasObservaciones, valoresObservaciones, params = paramsInterpolacion,
-  #  pathsRegresores = pathsRegresores[, 'GSMaP', drop=F], maxOutlyingness = 3.5, maxNIters = 5)
+  #  pathsRegresores = pathsRegresores[, 'GSMaP_v7', drop=F], maxOutlyingness = 3.5, maxNIters = 5)
                                        
   print(paste0(Sys.time(), ' - QC Finalizado.'))
   return(valoresObservaciones)
