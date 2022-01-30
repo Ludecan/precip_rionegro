@@ -1,47 +1,20 @@
 iFrame <- sys.nframe()
-if (iFrame >= 3) { script.dir.descargaDatos <- sys.frame(iFrame - 3)$ofile
-} else { script.dir.descargaDatos <- NULL }
-while ((is.null(script.dir.descargaDatos) || is.na(regexpr('descargaDatos.r', script.dir.descargaDatos, fixed=T)[1])) && iFrame >= 0) {
-  script.dir.descargaDatos <- sys.frame(iFrame)$ofile
+if (iFrame >= 3) { script.dir.descargaDatosSatelites <- sys.frame(iFrame - 3)$ofile
+} else { script.dir.descargaDatosSatelites <- NULL }
+while ((is.null(script.dir.descargaDatosSatelites) || is.na(regexpr('descargaDatosSatelites.r', script.dir.descargaDatosSatelites, fixed=T)[1])) && iFrame >= 0) {
+  script.dir.descargaDatosSatelites <- sys.frame(iFrame)$ofile
   iFrame <- iFrame - 1
 }
-if (is.null(script.dir.descargaDatos)) { script.dir.descargaDatos <- ''
-} else { script.dir.descargaDatos <- paste0(dirname(script.dir.descargaDatos), '/') }
+if (is.null(script.dir.descargaDatosSatelites)) { script.dir.descargaDatosSatelites <- ''
+} else { script.dir.descargaDatosSatelites <- paste0(dirname(script.dir.descargaDatosSatelites), '/') }
 
-source(paste0(script.dir.descargaDatos, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
 
-source(paste0(script.dir.descargaDatos, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatos, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatos, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatos, '/st_interp/sysutils/sysutils.r'), encoding = 'WINDOWS-1252')
-
-descargaPluviosADME <- function(
-    dt_ini=dt_fin, dt_fin=date(now()), pathSalida='datos/pluviometros/',
-    forzarReDescarga=FALSE) {
-  url_medidas_pluvios <- Sys.getenv(x='URL_MEDIDAS_PLUVIOS')
-  if (url_medidas_pluvios == '') {
-    stop(paste0(
-      'La variable de entorno URL_MEDIDAS_PLUVIOS no se encuentra definida. ',
-      'Defina su valor y vuelva a intentarlo'))
-  }
-  url <- paste0(url_medidas_pluvios, '?dtIni=', dt_ini, '&dtFin=', dt_fin)
-  
-  sonEstacionesConvencionales <- endsWith(url_medidas_pluvios, 'Convencionales.php')
-  if (sonEstacionesConvencionales) {
-    postfijo <- '_convencionales'
-  } else {
-    postfijo <- ''
-  }
-  localFile <- paste0(
-    pathSalida, gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_rainfall', 
-    postfijo, '.xlsx')
-  
-  descargarArchivos(
-    urls=url, nombresArchivosDestino=localFile, curlOpts=list(use_ssl = 3), 
-    forzarReDescarga=forzarReDescarga)
-  return(localFile)
-}
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/sysutils/sysutils.r'), encoding = 'WINDOWS-1252')
 
 descargaGSMaP <- function(
   dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),

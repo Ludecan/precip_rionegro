@@ -1,6 +1,6 @@
 ##### 0 - Descarga y preparación de los datos
 dt_ini <- '2017-02-01'
-dt_fin <- '2020-03-01'
+dt_fin <- '2022-01-22'
 #estacionesADescartar <- c(
 #  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
 #  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
@@ -64,10 +64,10 @@ my_agg <- function(x, umbral0=0.2) {
 
 t(aggregate(x = valoresObservaciones, by=list(anio=clases), FUN=my_agg))
 
-obsStats <- apply(valoresObservaciones, MARGIN = 2, 
-                  FUN = function(x) {
-                    return(aggregate(x = x, by=list(anio=clases), FUN=my_agg))
-                  })
+obsStats <- apply(
+  valoresObservaciones, MARGIN = 2, 
+  FUN = function(x) { return(aggregate(x = x, by=list(anio=clases), FUN=my_agg))}
+)
 
 obsStatsOverall <- t(sapply(X = obsStats, FUN = function(x) { 
   return(c(colMeans(x[,2][,1:3], na.rm=T), apply(x[,2][,4:6], MARGIN = 2, FUN = max)))
@@ -224,7 +224,4 @@ valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion = paramsInterpolacionQCTests, pathsRegresores = pathsRegresores, 
   plotMaps = TRUE)
-
-
-
 

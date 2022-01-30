@@ -30,12 +30,64 @@ factorEscaladoGrillaInterpolacion <- 2
 # este criterio, así como los resultados producidos por la librería.
 
 # Descarga de datos de pluviometros
-source('descargaDatos.r', encoding = 'WINDOWS-1252')
-print(paste0(Sys.time(), ' - Descargando datos de pluviometros del ', dt_ini, ' al ', dt_fin))
-localFile <- descargaPluviosADME(
-  dt_ini=dt_ini, dt_fin=dt_fin, pathSalida=paste0(pathDatos, 'pluviometros/'), 
+source('descargaDatosPluviometros.r', encoding = 'WINDOWS-1252')
+
+# Verificaciones de configuración
+for (envvar in c('URL_MEDIDAS_PLUVIOS_CONVENCIONALES', 'URL_MEDIDAS_PLUVIOS_TELEMEDIDA', 'URL_MEDIDAS_PLUVIOS_RESPALDO')) {
+  
+}
+
+if (Sys.getenv(x='URL_MEDIDAS_PLUVIOS_CONVENCIONALES') == '') {
+  stop('La variable de entorno URL_MEDIDAS_PLUVIOS_CONVENCIONALES no se encuentra definida. Defina su valor y vuelva a intentarlo')
+}
+if (Sys.getenv(x='URL_MEDIDAS_PLUVIOS_TELEMEDIDA') == '') {
+  stop('La variable de entorno URL_MEDIDAS_PLUVIOS_TELEMEDIDA no se encuentra definida. Defina su valor y vuelva a intentarlo')
+}
+if (Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO') == '') {
+  stop(paste0(
+    'La variable de entorno URL_MEDIDAS_PLUVIOS_RESPALDO no se encuentra definida. ',
+    'Defina su valor y vuelva a intentarlo'))
+}
+
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros convencionales de ADME del ', dt_ini, ' al ', dt_fin))
+datosConvencionales <- descargaPluviosADMEConvencionales(
+  dt_ini=dt_ini, 
+  dt_fin=dt_fin, 
+  url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_CONVENCIONALES'),
+  pathSalida=paste0(pathDatos, 'pluviometros/'), 
+  forzarReDescarga=forzarReDescarga
+)
+logDatosObtenidosPluviometros(datosConvencionales)
+
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros de telemedida de ADME del ', dt_ini, ' al ', dt_fin))
+datosTelemedida <- descargaPluviosADMETelemedida(
+  dt_ini=dt_ini, 
+  dt_fin=dt_fin, 
+  url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_TELEMEDIDA'),
+  pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
-print(paste0(Sys.time(), ' - Datos de pluviometros descargados en ', localFile))
+logDatosObtenidosPluviometros(datosTelemedida)
+
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros de respaldo del ', dt_ini, ' al ', dt_fin))
+datosRespaldo <- descargaPluviosRespaldo(
+  dt_ini=dt_ini, 
+  dt_fin=dt_fin, 
+  url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO'),
+  pathSalida=paste0(pathDatos, 'pluviometros/'), 
+  forzarReDescarga=forzarReDescarga)
+logDatosObtenidosPluviometros(datosRespaldo)
+
+datos <- concatenarDatos(datos1 = datosConvencionales, datos2 = datosTelemedida)
+datos <- concatenarDatos(datos1 = datos, datos2 = datosRespaldo)
+
+rm(datosConvencionales, datosTelemedida, datosRespaldo)
+
+iAConservar <- apply(X = !is.na(datos$datos), FUN = any, MARGIN = 2)
+print(paste0(Sys.time(), ' - Descartando ', sum(!iAConservar), ' estaciones sin datos.'))
+datos$estaciones <- datos$estaciones[iAConservar, , drop=FALSE]
+datos$datos <- datos$datos[, iAConservar, drop=FALSE]
+
+
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
@@ -51,142 +103,24 @@ print(paste0(Sys.time(), ' - Datos de pluviometros descargados en ', localFile))
 source(paste0(pathSTInterp, 'instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
 instant_pkgs(c('sp', 'gstat', 'Cairo', 'rgdal', 'devEMF', 'ncdf4'))
 
-# 2 - Lectura de datos de series temporales de observaciones puntuales de las estaciones
-source(paste0(pathSTInterp, 'SeriesTemporales/leerSeriesTemporales.r'), encoding='WINDOWS-1252')
-url_medidas_pluvios <- Sys.getenv(x='URL_MEDIDAS_PLUVIOS')
-sonEstacionesConvencionales <- endsWith(url_medidas_pluvios, 'Convencionales.php')
-
-if (sonEstacionesConvencionales) {
-  datos <- leerSeriesXLSX(
-    pathArchivoDatos=localFile, colsEstaciones=1:6, colId=3, hojaDatos='Medidas', 
-    fileEncoding='UTF-8', na.strings=c('-1111', '-1,79769313486E+308'))
-  # TODO: -1,79769313486E+308 no se está interpretando bien como una string NA
-  datos$datos[datos$datos < 0] <- NA
-} else {
-  datos <- leerSeriesXLSX(
-    pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8'
-  )
-}
-
 estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 rownames(datos$datos) <- as.character(fechasObservaciones)
 valoresObservaciones <- datos$datos
 
 if (!is.null(estacionesADescartar)) {
-  if (sonEstacionesConvencionales) {
-    iAConservar <- !estaciones$cod_pluv %in% estacionesADescartar  
-  } else {
-    iAConservar <- !estaciones$Nombre %in% estacionesADescartar  
-  }
+  iAConservar <- !estaciones$NombreEstacionR %in% estacionesADescartar
+  print(paste0(Sys.time(), ' - Descartando datos de  ', sum(!iAConservar), ' estaciones.'))
+  
   estaciones <- estaciones[iAConservar, ]
   valoresObservaciones <- valoresObservaciones[, iAConservar, drop=F]
   rm(iAConservar)
 }
 
-if (!sonEstacionesConvencionales) {
-  # TODO: Actualizar esto para que cumpla con el criterio del día i + 1 si alguna vez 
-  # se vuelve a utilizar
-  # Agregacion diaria
-  print(paste0(Sys.time(), ' - Agregando valores diarios...'))
-  triHourlyUpTo <- list(PASO.MAZANGANO.RHT=ymd_hm("2019-11-06 06:00", tz = tz(fechasObservaciones[1])),
-                        PASO.LAGUNA.I.RHT=ymd_hm("2019-12-03 09:00", tz = tz(fechasObservaciones[1])),
-                        PASO.LAGUNA.II.RHT=ymd_hm("2019-12-03 12:00", tz = tz(fechasObservaciones[1])),
-                        PASO.PEREIRA.RHT=ymd_hm("2019-12-04 15:00", tz = tz(fechasObservaciones[1])),
-                        BARRA.DE.PORONGOS.RHT=ymd_hm("2019-12-10 09:00", tz = tz(fechasObservaciones[1])),
-                        VILLA.SORIANO.RHT=ymd_hm("2019-12-11 12:00", tz = tz(fechasObservaciones[1])))
-  triHourlyUpTo <- triHourlyUpTo[names(triHourlyUpTo) %in% estaciones$Nombre]
-  
-  colsToSplit <- which(sapply(colnames(valoresObservaciones), FUN = function(x) x %in% names(triHourlyUpTo)))
-  # x <- triHourlyUpTo[[5]]
-  rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
-    hora <- as.integer(substr(fechasObservaciones, 12, 13))
-    if (!is.na(x)) { 
-      return(seq_along(fechasObservaciones)[hora %% 3 == 0 & fechasObservaciones <= x])
-    } else { 
-      return(seq_along(fechasObservaciones)[hora %% 3])
-    }
-  }, fechasObservaciones=fechasObservaciones)
-  
-  idx <- sapply(rowsToSplit, function(x) !is.null(x))
-  colsToSplit <- colsToSplit[idx]
-  rowsToSplit <- rowsToSplit[idx]
-  rm(idx)
-  
-  getmode <- function(v) {
-    uniqv <- unique(v)
-    uniqv[which.max(tabulate(match(v, uniqv)))]
-  }
-  
-  splitAccumulated <- function(valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
-    splitAccumulated_i <- function(i, valoresObservaciones, colsToSplit, rowsToSplit, rowWeights=NULL) {
-      # i <- colsToSplit[1]
-      rowsToSplit_i <- rowsToSplit[[i]]
-      rowsPerPeriod <- getmode(diff(rowsToSplit_i))
-      idx_i <- colsToSplit[i]
-      j <- 2
-      for (j in seq_along(rowsToSplit_i)) {
-        endRow <- rowsToSplit_i[j]
-        if (j > 1) { startRow <- rowsToSplit_i[j - 1] + 1
-        } else { startRow <- 1 }
-        
-        if (!is.null(rowWeights)) { rowWeightsJ <- rowWeights[j]
-        } else {
-          n <- endRow - startRow + 1
-          rowWeightsJ <- rep(1 / rowsPerPeriod, n)
-        }
-        
-        valoresObservaciones[startRow:endRow, idx_i] <- valoresObservaciones[endRow, idx_i] * rowWeightsJ
-      }
-      
-      return(valoresObservaciones[, idx_i])
-    }
-    
-    valoresObservaciones[, colsToSplit] <- sapply(
-      seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
-      colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
-    return(valoresObservaciones)
-  }
-  
-  valoresObservaciones <- splitAccumulated(
-    valoresObservaciones, colsToSplit, rowsToSplit, rowWeights = NULL)
-  
-  rm(rowsToSplit, colsToSplit)
-  
-  iStartHours <- grep(
-    pattern=sprintf('%02d:00', horaLocalInicioAcumulacion + 1), 
-    x=rownames(valoresObservaciones), fixed=T)
-  iStartHour <- iStartHours[1]
-  if (iStartHours[length(iStartHours)] + 23 <= nrow(valoresObservaciones)) {
-    iEndHour <- iStartHours[length(iStartHours)] + 23
-  } else {
-    iEndHour <- iStartHours[length(iStartHours) - 1] + 23
-  }
-  
-  idx <- iStartHour:iEndHour
-  rm(iStartHours, iStartHour, iEndHour)
-  
-  fechasObservaciones <- fechasObservaciones[idx]
-  valoresObservaciones <- valoresObservaciones[idx, ]
-  clases <- (seq_along(fechasObservaciones) - 1) %/% 24L
-  clases <- fechasObservaciones[(clases * 24L) + 1]
-  clases <- parse_date_time(substr(as.character(clases), 1, 10), 
-                            orders = 'Ymd', tz=tz(fechasObservaciones), truncated = 0)
-  
-  # max_gap_lengths <- aggregate(valoresObservaciones, by=list(day=clases), FUN=max_run_length)
-  nNoNa <- aggregate(valoresObservaciones, by=list(day=clases), FUN=function(x) sum(!is.na(x)))[, -1]
-  valoresObservaciones <- as.matrix(aggregate(valoresObservaciones, by=list(day=clases), FUN=sum, na.rm=T)[, -1])
-  fechasObservaciones <- unique(clases)
-  row.names(valoresObservaciones) <- as.character(fechasObservaciones)
-  
-  maxNHorasParaRechazarDia <- 21
-  iAceptados <- nNoNa > maxNHorasParaRechazarDia
-  valoresObservaciones[!iAceptados] <- NA
-  valoresObservaciones[iAceptados] <- valoresObservaciones[iAceptados] * 24 / nNoNa[iAceptados]  
-}
-
+logDatosObtenidosPluviometros(datos, postFijoMsj = ' en total tras concatenar las redes')
 
 # Descarga de datos de satelite
+source('descargaDatosSatelites.r', encoding = 'WINDOWS-1252')
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
 print(paste0(Sys.time(), ' - Cargando shapefile con mapa base de ', pathSHPMapaBase, '...'))
 shpBase <- cargarSHP(pathSHPMapaBase, encoding = 'CP1252')
@@ -245,11 +179,7 @@ coordsAInterpolar <- grillaPixelesSobreBoundingBox(
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
 coordsObservaciones <- estaciones
-if (sonEstacionesConvencionales) {
-  sp::coordinates(coordsObservaciones) <- c('long', 'lat')
-} else {
-  sp::coordinates(coordsObservaciones) <- c('Longitud', 'Latitud')
-}
+sp::coordinates(coordsObservaciones) <- c('longitud', 'latitud')
 
 class(coordsObservaciones)
 # Las coordenadas de las estaciones están sin proyectar, es decir directamente en latitud/longitud. 
