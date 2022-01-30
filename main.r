@@ -14,8 +14,8 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-01-16'
-  # paramsStr <- 'dt_fin=2021-01-05;dt_ini=2020-11-30'
+  paramsStr <- 'dt_fin=2022-01-23'
+  #paramsStr <- 'dt_fin=2022-01-16;dt_ini=2017-12-31'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
 print(paste0('ParamsStr="', paramsStr, '"'))
@@ -48,10 +48,9 @@ if (is.na(dt_ini)) {
   dt_ini <- dt_fin
 }
 
-estacionesADescartar <- NULL
-#estacionesADescartar <- c(
-#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+estacionesADescartar <- c(
+  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- !interactive()
