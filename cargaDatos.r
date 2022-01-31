@@ -81,8 +81,8 @@ datos <- concatenarDatos(datos1 = datosConvencionales, datos2 = datosTelemedida)
 datos <- concatenarDatos(datos1 = datos, datos2 = datosRespaldo)
 
 iOrden <- order(datos$estaciones$NombreEstacionR)
-datos$estaciones <- datos$estaciones[iOrden, ]
-datos$datos <- datos$datos[, iOrden]
+datos$estaciones <- datos$estaciones[iOrden, , drop=F]
+datos$datos <- datos$datos[, iOrden, drop=F]
 
 rm(datosConvencionales, datosTelemedida, datosRespaldo)
 
