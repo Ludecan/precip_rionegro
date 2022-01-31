@@ -1,6 +1,6 @@
 ##### 0 - Descarga y preparación de los datos
 dt_ini <- '2017-02-01'
-dt_fin <- '2022-01-22'
+dt_fin <- '2021-12-31'
 #estacionesADescartar <- c(
 #  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
 #  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
@@ -13,10 +13,9 @@ plotDatos <- FALSE
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
-##### 1 - Tablas estadísticas
-iFechas <- rownames(valoresObservaciones) >= '2017-02-01' & rownames(valoresObservaciones) <= '2020-01-31'
-valoresObservaciones <- valoresObservaciones[iFechas,]
+valoresObservaciones[valoresObservaciones > 450] <- NA_real_
 
+##### 1 - Tablas estadísticas
 diff_meses <- function(d1, d2) {
   a1 <- as.integer(substr(d1, 1, 4))
   a2 <- as.integer(substr(d2, 1, 4))
@@ -45,8 +44,13 @@ my_agg <- function(x, umbral0=0.2) {
   n <- length(x)
   nNoNa <- length(xNoNa)
   
-  pctFaltantes <- (1 - (nNoNa / n)) * 100
-  pctPrecip <- sum(xNoNa > umbral0) / nNoNa * 100
+  if (nNoNa > 0) {
+    pctFaltantes <- (1 - (nNoNa / n)) * 100
+    pctPrecip <- sum(xNoNa > umbral0) / nNoNa * 100
+  } else {
+    pctFaltantes <- 100
+    pctPrecip <- -Inf
+  }
   if (nNoNa >= (n * 0.8)) {
     acumulado <- sum(xNoNa) * n / nNoNa
   } else {
@@ -59,7 +63,7 @@ my_agg <- function(x, umbral0=0.2) {
   rachaSeca <- max_run_length(x, conditionFunc=function(x) { x < umbral0 })
   
   return(c(pctFaltantes=pctFaltantes, pctPrecip=pctPrecip, acumulado=acumulado, 
-           maximo=maximo, rachaLluviosa=rachaLluviosa, rachaSeca=rachaSeca))
+           maximo=maximo, rachaLluviosa=rachaLluviosa, rachaSeca=rachaSeca, n=n))
 }
 
 t(aggregate(x = valoresObservaciones, by=list(anio=clases), FUN=my_agg))
@@ -70,9 +74,11 @@ obsStats <- apply(
 )
 
 obsStatsOverall <- t(sapply(X = obsStats, FUN = function(x) { 
-  return(c(colMeans(x[,2][,1:3], na.rm=T), apply(x[,2][,4:6], MARGIN = 2, FUN = max)))
+  return(c(colMeans(x[,2][,1:3], na.rm=T), 
+           apply(x[,2][,4:6], MARGIN = 2, FUN = max),
+           colSums(x[,2][,7,drop=F], na.rm=T)
+        ))
 }))
-
 obsStatsOverall[, 'rachaLluviosa'] <- apply(
   valoresObservaciones, MARGIN = 2, FUN = function(x) {
     return(max_run_length(x, conditionFunc=function(x) { x >= umbral0 }))
@@ -91,37 +97,111 @@ t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='maximo'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaLluviosa'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaSeca'))
 
-iRaras <- obsStatsOverall[, 'pctFaltantes'] > 40 |
-          obsStatsOverall[, 'pctPrecip'] < 23 | obsStatsOverall[, 'pctPrecip'] > 40 |
-          obsStatsOverall[, 'acumulado'] < 1000 | obsStatsOverall[, 'acumulado'] > 1800 |
+iRaras <- # obsStatsOverall[, 'pctFaltantes'] > 40 |
+          # obsStatsOverall[, 'pctPrecip'] < 23 | 
+          obsStatsOverall[, 'pctPrecip'] > 40 |
+          is.na(obsStatsOverall[, 'acumulado']) | 
+          # obsStatsOverall[, 'acumulado'] < 1000 | 
+          obsStatsOverall[, 'acumulado'] > 1800 |
           obsStatsOverall[, 'maximo'] > 450 |
           obsStatsOverall[, 'rachaLluviosa'] > 15 |
           obsStatsOverall[, 'rachaSeca'] > 45
+
+write.table(
+  obsStatsOverall, paste0(pathResultados, '2-QC/obsStatsOverall.tsv'), 
+  sep = '\t', na = '-99', dec = '.', row.names = T, col.names = T
+)
+
+reglas <- rep('', nrow(estaciones))
+names(reglas) <- estaciones$NombreEstacionR
+
+idx <- obsStatsOverall[, 'pctFaltantes'] > 40
+reglas[idx] <- paste(reglas[idx], 'Alto % Faltantes,')
+
+idx <- obsStatsOverall[, 'pctPrecip'] < 23
+reglas[idx] <- paste(reglas[idx], 'Bajo % Precip,')
+
+idx <- obsStatsOverall[, 'pctPrecip'] > 40
+reglas[idx] <- paste(reglas[idx], 'Alto  % Precip,')
+
+idx <- is.na(obsStatsOverall[, 'acumulado'])
+reglas[idx] <- paste(reglas[idx], 'Datos Insuficientes para Calcular Acumulado,')
+
+idx <- !is.na(obsStatsOverall[, 'acumulado']) & obsStatsOverall[, 'acumulado'] < 1000
+reglas[idx] <- paste(reglas[idx], 'Bajo Acumulado,')
+
+idx <- !is.na(obsStatsOverall[, 'acumulado']) & obsStatsOverall[, 'acumulado'] > 1800
+reglas[idx] <- paste(reglas[idx], 'Alto Acumulado,')
+
+idx <- obsStatsOverall[, 'maximo'] > 450
+reglas[idx] <- paste(reglas[idx], 'Alto Máximo,')
+
+idx <- obsStatsOverall[, 'rachaLluviosa'] > 15
+reglas[idx] <- paste(reglas[idx], 'Racha Lluviosa Muy Larga,')
+
+idx <- obsStatsOverall[, 'rachaSeca'] > 45
+reglas[idx] <- paste(reglas[idx], 'Racha Seca Muy Larga,')
+
+View(reglas[iRaras])
+
+names(iRaras)[iRaras]
+estaciones$redOrigen[iRaras]
 
 ##### 2 - Correlación VS Distancia
 source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
 dist <- rdist(sp::coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 # Cuantas veces la estación es la menos correlacionada con otra
-bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
+bajaCorr <- table(
+  estaciones$NombreEstacionR[apply(corr, MARGIN = 1, FUN = which.min)]
+)
+# bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
 corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
-estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 3], names(corrNA[corrNA])))
+estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 4], names(corrNA[corrNA])))
 
 # estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
 
-clasesEstaciones <- rep('General', nrow(estaciones))
-for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
+graficoCorrVsDistancia(
+  dist, corr, 
+  clasesEstaciones=estaciones$redOrigen, 
+  nomArchSalida='Resultados/1-Exploracion/corrVSDist_redes.png',
+  tamaniosPuntos=2.5, figurasPuntos=20
+)
 
-graficoCorrVsDistancia(dist, corr, clasesEstaciones = clasesEstaciones, 
-                       nomArchSalida = 'Resultados/1-Exploracion/corrVSDist.png')
+clasesEstaciones <- rep('Ok', nrow(estaciones))
+for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$NombreEstacionR == estacion)] <- estacion
+graficoCorrVsDistancia(
+  dist, corr,
+  clasesEstaciones=clasesEstaciones,
+  defaultClass='Ok',
+  nomArchSalida='Resultados/1-Exploracion/corrVSDist.png',
+  widthPx = 3000
+)
 
-estacionesRaras
+clasesEstaciones <- rep('Ok', nrow(estaciones))
+clasesEstaciones[estaciones$NombreEstacionR %in% estacionesRaras] <- 'Sospechosa'
+graficoCorrVsDistancia(
+  dist=dist, corr=corr,
+  clasesEstaciones=clasesEstaciones,
+  nomArchSalida='Resultados/1-Exploracion/corrVSDist_sinOutliers.png',
+  widthPx = 2500
+)
+
+idx <- !estaciones$NombreEstacionR %in% estacionesRaras
+dist2 <- rdist(sp::coordinates(coordsObservaciones)[idx, ])
+corr2 <- cor(valoresObservaciones[, idx], use="pairwise.complete.obs")
+# Cuantas veces la estación es la menos correlacionada con otra
+bajaCorr2 <- table(
+  estaciones$NombreEstacionR[apply(corr2, MARGIN = 1, FUN = which.min)]
+)
+# bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
+corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
+estacionesRaras <- unique(c(estacionesRaras, names(bajaCorr)[bajaCorr2 >= 20], names(corrNA[corrNA])))
 
 
 ##### 3 - Ubicación Estaciones
-iRaras <- iRaras | estaciones$Nombre %in% estacionesRaras
+iRaras <- iRaras | estaciones$NombreEstacionR %in% estacionesRaras
 estacionesRaras <- estaciones$Nombre[iRaras]
-
 #estacionesRaras <- c('ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT',
 #                     'PASO.LAGUNA.II.RHT', 'PASO.AGUIAR.RHT', 'PASO.PEREIRA.RHT', 
 #                     'BARRA.DE.PORONGOS.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
@@ -129,7 +209,7 @@ estacionesRaras <- estaciones$Nombre[iRaras]
 #                     'PASO.AGUIAR.RHT', 'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 
 clasesEstaciones <- rep('General', nrow(estaciones))
-for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$Nombre == estacion)] <- estacion
+for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$NombreEstacionR == estacion)] <- estacion
 
 colores <- rep('#4FA9FF', nrow(estaciones))
 colores[clasesEstaciones != 'General'] <- '#FFCF23'

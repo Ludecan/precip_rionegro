@@ -242,6 +242,7 @@ descargaPluviosRespaldo <- function(
   datosRespaldo <- extraerVariableEstacionesDeFechas(
     datosVarsEstacionesFechas = datosRespaldo, idStrVariable = 'R3'
   )
+  
   datosRespaldo$datos[datosRespaldo$datos == 'TRAZA'] <- "5e-2"
   class(datosRespaldo$datos) <- "numeric"
 
@@ -259,19 +260,21 @@ descargaPluviosRespaldo <- function(
     datosRespaldoHistorico <- leerSeriesArchivoUnico(
       paste0(pathSalida, 'R3_201701_202201.tsv')
     )
-    
-    datosRespaldoHistorico$datos[1, ]
+    # Criterío dia i + 1
+    datosRespaldoHistorico$fechas <- datosRespaldoHistorico$fechas + lubridate::days(1)
+    rownames(datosRespaldoHistorico$datos) <- as.character(datosRespaldoHistorico$fechas)
     
     iMatchesFechas <- base::match(as.character(fechas), as.character(datosRespaldoHistorico$fechas))
     idxFechas <- !is.na(iMatchesFechas)
     
     iMatchesEstaciones <- base::match(
-      datosRespaldo$estaciones$NombreEstacionR, 
+      datosRespaldo$estaciones$NombreEstacionR,
       datosRespaldoHistorico$estaciones$Estacion
     )
     idxEstaciones <- !is.na(iMatchesEstaciones)
     
-    datos[idxFechas, idxEstaciones] <- datosRespaldoHistorico$datos[iMatchesFechas[idxFechas], iMatchesEstaciones[idxEstaciones]]
+    datos[idxFechas, idxEstaciones] <- datosRespaldoHistorico$datos[
+      iMatchesFechas[idxFechas], iMatchesEstaciones[idxEstaciones]]
   }
 
   datosRespaldo$fechas <- fechas
