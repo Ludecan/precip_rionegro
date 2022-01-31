@@ -14,7 +14,7 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-01-23'
+  paramsStr <- 'dt_fin=2022-01-30'
   #paramsStr <- 'dt_fin=2022-01-16;dt_ini=2017-12-31'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }

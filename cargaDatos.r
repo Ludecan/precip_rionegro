@@ -71,7 +71,7 @@ logDatosObtenidosPluviometros(datosTelemedida)
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros de respaldo del ', dt_ini, ' al ', dt_fin))
 datosRespaldo <- descargaPluviosRespaldo(
   dt_ini=dt_ini, 
-  dt_fin=dt_fin, 
+  dt_fin=dt_fin,
   url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO'),
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
@@ -80,14 +80,16 @@ logDatosObtenidosPluviometros(datosRespaldo)
 datos <- concatenarDatos(datos1 = datosConvencionales, datos2 = datosTelemedida)
 datos <- concatenarDatos(datos1 = datos, datos2 = datosRespaldo)
 
+iOrden <- order(datos$estaciones$NombreEstacionR)
+datos$estaciones <- datos$estaciones[iOrden, ]
+datos$datos <- datos$datos[, iOrden]
+
 rm(datosConvencionales, datosTelemedida, datosRespaldo)
 
 iAConservar <- apply(X = !is.na(datos$datos), FUN = any, MARGIN = 2)
 print(paste0(Sys.time(), ' - Descartando ', sum(!iAConservar), ' estaciones sin datos.'))
 datos$estaciones <- datos$estaciones[iAConservar, , drop=FALSE]
 datos$datos <- datos$datos[, iAConservar, drop=FALSE]
-
-
 
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
