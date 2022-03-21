@@ -5,9 +5,12 @@
 # 3 - Lectura de rasters del satélite en formato geoTiff y definición de la grilla a interpolar
 # 4 - Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
 
+postFijoPluvios <- ''
+nombreExperimento <- paste0('2021_12', postFijoPluvios)
 pathSTInterp <- 'st_interp/'
 pathDatos <- 'datos/'
 pathResultados <- 'Resultados/'
+pathResultadosQC <- paste0(pathResultados, '2-QC', nombreExperimento, '/')
 pathSHPMapaBase <- paste0(pathDatos, 'CartografiaBase/uruguay_mas_cuenca_rio_negro.shp')
 pathSHPSubCuencas <- paste0(pathDatos, 'CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp')
 
@@ -31,11 +34,6 @@ factorEscaladoGrillaInterpolacion <- 2
 
 # Descarga de datos de pluviometros
 source('descargaDatosPluviometros.r', encoding = 'WINDOWS-1252')
-
-# Verificaciones de configuración
-for (envvar in c('URL_MEDIDAS_PLUVIOS_CONVENCIONALES', 'URL_MEDIDAS_PLUVIOS_TELEMEDIDA', 'URL_MEDIDAS_PLUVIOS_RESPALDO')) {
-  
-}
 
 if (Sys.getenv(x='URL_MEDIDAS_PLUVIOS_CONVENCIONALES') == '') {
   stop('La variable de entorno URL_MEDIDAS_PLUVIOS_CONVENCIONALES no se encuentra definida. Defina su valor y vuelva a intentarlo')
@@ -229,17 +227,23 @@ if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
   shpSubCuencas <- spTransform(shpSubCuencas, coordsAInterpolar@proj4string)
 }
 
-getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
+estacionesDeReferencia <- readLines(con=paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt'))
+iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
+iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
+iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
+
+getCorrs <- function(coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
   valoresRegresores <- extraerValoresRegresoresSobreSP(
-    objSP = coordsObservaciones, pathsRegresores = pathsRegresores)
+    objSP=coordsObservaciones, pathsRegresores=pathsRegresores)
   
   if (logTransforms) {
     valoresObservaciones <- log1p(valoresObservaciones)
     valoresRegresores <- lapply(valoresRegresores, log1p)
   }
   
-  j <- 1
-  i <- 7
+  # j <- 1
+  # i <- 7
+  # i <- which(row.names(valoresObservaciones) == '2017-04-13')
   corrs <- sapply(1:ncol(pathsRegresores), function(j) {
     return(
       sapply(1:nrow(valoresObservaciones), FUN = function(i) {
@@ -249,7 +253,7 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
             return(1)
           } else {
             return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], 
-                       use = "pairwise.complete.obs"))
+                       use = "pairwise.complete.obs", method = "pearson"))
           }        
         } else {
           return(NA)
@@ -264,4 +268,32 @@ getCorrs <- function(valoresObservaciones, pathsRegresores, logTransforms=TRUE) 
   }
   
   return(corrs)
+}
+
+getRegresorCombinado <- function(
+    coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms=TRUE
+) {
+  corrs <- getCorrs(
+    coordsObservaciones=coordsObservaciones,
+    valoresObservaciones=valoresObservaciones, 
+    pathsRegresores=pathsRegresores,
+    logTransforms=FALSE
+  )
+  
+  res <- matrix(
+    data=rep(NA_character_, nrow(valoresObservaciones)), 
+    ncol=1, 
+    dimnames=list(rownames(valoresObservaciones), 'Combinado')
+  )
+  for (iRow in 1:nrow(pathsRegresores)) {
+    idx <- which.max(corrs[iRow, ])
+    if (length(idx) > 0) {
+      res[iRow, 1] <- pathsRegresores[iRow, idx]
+    } else if (!is.na(pathsRegresores[iRow, 1])) {
+      res[iRow, 1] <- pathsRegresores[iRow, 1]
+    } else {
+      res[iRow, 1] <- pathsRegresores[iRow, 2] 
+    }
+  }
+  return(res)
 }

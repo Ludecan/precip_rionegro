@@ -240,7 +240,7 @@ descargaPluviosRespaldo <- function(
     pathArchivoDatos=localFile, colIdEstacion='nombre'
   )
   datosRespaldo <- extraerVariableEstacionesDeFechas(
-    datosVarsEstacionesFechas = datosRespaldo, idStrVariable = 'R3'
+    datosVarsEstacionesFechas=datosRespaldo, idStrVariable='R3'
   )
   
   datosRespaldo$datos[datosRespaldo$datos == 'TRAZA'] <- "5e-2"

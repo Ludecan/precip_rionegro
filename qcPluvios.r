@@ -12,6 +12,9 @@ borrarDatosOriginales <- FALSE
 plotDatos <- FALSE
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
+postFijoPluvios <- ''
+nombreExperimento <- paste0('2021_12', postFijoPluvios)
+pathResultadosQC <- paste0(pathResultados, '2-QC', nombreExperimento, '/')
 
 valoresObservaciones[valoresObservaciones > 450] <- NA_real_
 
@@ -36,20 +39,25 @@ max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
   }
 }
 
+sum(!(datos$estaciones$tipoPluvio & !datos$estaciones$tipoAutomatica))
+
+
 umbral0 <- 0.2
 x <- valoresObservaciones[clases == 0, 1]
 my_agg <- function(x, umbral0=0.2) {
-  xNoNa <- na.omit(x)
-  
+  idx <- na.omit(x)
+
   n <- length(x)
   nNoNa <- length(xNoNa)
   
   if (nNoNa > 0) {
     pctFaltantes <- (1 - (nNoNa / n)) * 100
     pctPrecip <- sum(xNoNa > umbral0) / nNoNa * 100
+    pctCeros <- sum(xNoNa <= umbral0) / nNoNa * 100
   } else {
     pctFaltantes <- 100
     pctPrecip <- -Inf
+    pctCeros <- -Inf
   }
   if (nNoNa >= (n * 0.8)) {
     acumulado <- sum(xNoNa) * n / nNoNa
@@ -62,11 +70,10 @@ my_agg <- function(x, umbral0=0.2) {
   rachaLluviosa <- max_run_length(x, conditionFunc=function(x) { x >= umbral0 })
   rachaSeca <- max_run_length(x, conditionFunc=function(x) { x < umbral0 })
   
-  return(c(pctFaltantes=pctFaltantes, pctPrecip=pctPrecip, acumulado=acumulado, 
-           maximo=maximo, rachaLluviosa=rachaLluviosa, rachaSeca=rachaSeca, n=n))
+  return(c(pctFaltantes=pctFaltantes, pctPrecip=pctPrecip, pctCeros=pctCeros, 
+           acumulado=acumulado, maximo=maximo, rachaLluviosa=rachaLluviosa, 
+           rachaSeca=rachaSeca, n=n))
 }
-
-t(aggregate(x = valoresObservaciones, by=list(anio=clases), FUN=my_agg))
 
 obsStats <- apply(
   valoresObservaciones, MARGIN = 2, 
@@ -74,9 +81,9 @@ obsStats <- apply(
 )
 
 obsStatsOverall <- t(sapply(X = obsStats, FUN = function(x) { 
-  return(c(colMeans(x[,2][,1:3], na.rm=T), 
-           apply(x[,2][,4:6], MARGIN = 2, FUN = max),
-           colSums(x[,2][,7,drop=F], na.rm=T)
+  return(c(colMeans(x[,2][,1:4], na.rm=T), 
+           apply(x[,2][,5:7], MARGIN = 2, FUN = max),
+           colSums(x[,2][,8,drop=F], na.rm=T)
         ))
 }))
 obsStatsOverall[, 'rachaLluviosa'] <- apply(
@@ -90,12 +97,107 @@ obsStatsOverall[, 'rachaSeca'] <- apply(
 obsStatsOverall[, 1:4] <- round(obsStatsOverall[, 1:4], 1)
 obsStatsOverall
 
+
+for (columna in colnames(obsStatsOverall)) {
+  coordsObservaciones$value <- obsStatsOverall[, columna]
+  
+  mapearPuntosGGPlot(
+    puntos=coordsObservaciones, shpBase=shpBase, xyLims=xyLims, zcol='value', titulo=columna, 
+    tamaniosPuntos=3, tamanioFuentePuntos=3, 
+    nomArchResultados=paste0(pathResultados, '1-Exploracion/mapaEstaciones_', columna,'.png'))
+}
+
+
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctFaltantes'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctPrecip'))
+t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='pctCeros'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='acumulado'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='maximo'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaLluviosa'))
 t(sapply(obsStats, function(x, columna) { x[, 2][, columna]}, columna='rachaSeca'))
+
+
+x <- valoresObservaciones[, 5]
+my_agg2 <- function(x, umbral0=0.2) {
+  idx <- which(!is.na(x))
+  primerNoNa <- idx[1]
+  ultimoNoNa <- idx[length(idx)]
+  xNoNa <- x[idx]
+  
+  n <- as.integer(ultimoNoNa - primerNoNa + 1)
+  nNoNa <- length(xNoNa)
+  
+  if (nNoNa > 0) {
+    pctFaltantes <- (1 - (nNoNa / n)) * 100
+    pctPrecip <- sum(xNoNa > umbral0) / n * 100
+    pctCeros <- sum(xNoNa <= umbral0) / n * 100
+  } else {
+    pctFaltantes <- 100
+    pctPrecip <- -Inf
+    pctCeros <- -Inf
+  }
+  if (nNoNa >= (n * 0.8)) {
+    acumulado <- sum(xNoNa) * n / nNoNa
+  } else {
+    acumulado <- NA_real_
+  }
+  promedioDiario <-mean(xNoNa)
+  desviacionEstandar <-sd(xNoNa)
+  
+  maximo <- max(xNoNa)
+  
+  rachaLluviosa <- max_run_length(x, conditionFunc=function(x) { x >= umbral0 })
+  rachaSeca <- max_run_length(x, conditionFunc=function(x) { x < umbral0 })
+  
+  return(
+    data.frame(
+      pctFaltantes=pctFaltantes, pctPrecip=pctPrecip, pctCeros=pctCeros, 
+      acumulado=acumulado, promedioDiario=promedioDiario, 
+      desviacionEstandar=desviacionEstandar, maximo=maximo, rachaLluviosa=rachaLluviosa, 
+      rachaSeca=rachaSeca, n=n
+    )
+  )
+}
+
+obsStats2 <- do.call(rbind.data.frame, apply(valoresObservaciones, MARGIN=2, FUN=my_agg2))
+
+
+
+iRaras <- obsStats2[, 'pctFaltantes'] > 30 |
+  # obsStats2[, 'pctPrecip'] < 23 | 
+  # obsStats2[, 'pctPrecip'] > 40 |
+  # is.na(obsStats2[, 'acumulado']) |
+  # obsStats2[, 'acumulado'] < 1000 | 
+  # obsStats2[, 'acumulado'] > 1800 |
+  # obsStats2[, 'maximo'] > 450 |
+  obsStats2[, 'rachaLluviosa'] > 15 |
+  obsStats2[, 'rachaSeca'] > 45
+
+
+plot(1:nrow(obsStats2[!iRaras, ]) / sum(!iRaras), sort(obsStats2[!iRaras, 'pctFaltantes'], decreasing = T))
+
+promediosRaros <- deteccionOutliersMediaSD(x=t(obsStats2[!iRaras, 'promedioDiario', drop=F]), factorSDHaciaAbajo = 2.5)
+iRaras[!iRaras] <- promediosRaros$tipoOutlier %in% tiposOutliersValoresSospechosos
+
+
+median(obsStats2[!iRaras, 'promedioDiario']) - 3 * mad(obsStats2[!iRaras, 'promedioDiario'])
+
+
+promediosRaros <- obsStats2[, 'promedioDiario'] < 2 | obsStats2[, 'promedioDiario'] > 4.4
+obsStats2[promediosRaros, ]
+
+
+for (iColumna in seq.int(1, ncol(obsStats2))) {
+  columna <- colnames(obsStats2)[iColumna]
+  coordsObservaciones$value <- obsStats2[, iColumna]
+  coordsObservaciones$value[iRaras] <- NA
+
+  mapearPuntosGGPlot(
+    puntos=coordsObservaciones, shpBase=shpBase, xyLims=xyLims, zcol='value', 
+    titulo=columna, tamaniosPuntos=3, tamanioFuentePuntos=3, 
+    nomArchResultados=paste0(pathResultados, '1-Exploracion/mapasEstaciones/', iColumna, '_mapaEstaciones_', columna,'.png'))
+}
+
 
 iRaras <- # obsStatsOverall[, 'pctFaltantes'] > 40 |
           # obsStatsOverall[, 'pctPrecip'] < 23 | 
@@ -155,9 +257,10 @@ corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
 bajaCorr <- table(
   estaciones$NombreEstacionR[apply(corr, MARGIN = 1, FUN = which.min)]
 )
+sort(bajaCorr, decreasing = T)
 # bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
 corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
-estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 4], names(corrNA[corrNA])))
+estacionesRaras <- unique(c(names(bajaCorr)[bajaCorr >= 10], names(corrNA[corrNA])))
 
 # estacionesRaras <- c("PUENTE.NUEVO.DURAZNO..RHT.")
 
@@ -178,6 +281,7 @@ graficoCorrVsDistancia(
   widthPx = 3000
 )
 
+
 clasesEstaciones <- rep('Ok', nrow(estaciones))
 clasesEstaciones[estaciones$NombreEstacionR %in% estacionesRaras] <- 'Sospechosa'
 graficoCorrVsDistancia(
@@ -186,17 +290,6 @@ graficoCorrVsDistancia(
   nomArchSalida='Resultados/1-Exploracion/corrVSDist_sinOutliers.png',
   widthPx = 2500
 )
-
-idx <- !estaciones$NombreEstacionR %in% estacionesRaras
-dist2 <- rdist(sp::coordinates(coordsObservaciones)[idx, ])
-corr2 <- cor(valoresObservaciones[, idx], use="pairwise.complete.obs")
-# Cuantas veces la estación es la menos correlacionada con otra
-bajaCorr2 <- table(
-  estaciones$NombreEstacionR[apply(corr2, MARGIN = 1, FUN = which.min)]
-)
-# bajaCorr <- table(as.character(lapply(apply(corr, MARGIN = 1, FUN = which.min), FUN = names)))
-corrNA <- apply(corr, MARGIN = 1, FUN = function(x) { all(is.na(x)) })
-estacionesRaras <- unique(c(estacionesRaras, names(bajaCorr)[bajaCorr2 >= 20], names(corrNA[corrNA])))
 
 
 ##### 3 - Ubicación Estaciones

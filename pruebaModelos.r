@@ -52,14 +52,16 @@ nombreExperimento <- paste0('2021_12', postFijoPluvios)
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 
-localFileNonQCed <- changeFileExt(
-  appendToFileName(localFile, paste0('_non_qced', postFijoPluvios)), '.tsv')
+localFileNonQCed <- paste0(
+  pathDatos, 'pluviometros/', gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_non_qced', postFijoPluvios, '.tsv'
+)
 grabarSeriesArchivoUnico(
   pathArchivoDatos=localFileNonQCed, estaciones=estaciones, 
   fechas=fechasObservaciones, datos=valoresObservaciones)
 
-localFileQCed <- changeFileExt(
-  appendToFileName(localFile, paste0('_qced', postFijoPluvios)), '.tsv')
+localFileQCed <- paste0(
+  pathDatos, 'pluviometros/', gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_qced', postFijoPluvios, '.tsv'
+)
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   source('aplicaQC.r', encoding = 'WINDOWS-1252')
   valoresObservaciones <- applyQCTests(
@@ -88,10 +90,18 @@ if (plotDatos) {
   source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
   especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
     nDigitos = 1, continuo = T)
+  
+  caja <- bbox(shpBase)
+  grillaAlternativaRegresores <- grillaPixelesSobreBoundingBox(
+    objSP = shpBase, nCeldasX=round(diff(caja[1, ])), nCeldasY=round(diff(caja[2, ]))
+  )
+  
   plotObservacionesYRegresores(
     coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones, 
-    valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot = forzarReDescarga,
-    grillaAlternativaRegresores=coordsAInterpolar, especificacionEscala=especificacionEscala)
+    valoresObservaciones=valoresObservaciones, shpBase=shpBase, replot=forzarReDescarga,
+    grillaAlternativaRegresores=grillaAlternativaRegresores, 
+    especificacionEscala=especificacionEscala
+  )
 }
 
 source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
@@ -109,7 +119,7 @@ if (FALSE) {
   })
 }
 
-corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms=FALSE)
+corrs <- getCorrs(coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms=FALSE)
 dfCorrs <- data.frame(
   satelite=c(
     rep(colnames(pathsRegresores)[1], nrow(pathsRegresores)), 
@@ -492,7 +502,7 @@ if (runGridding) {
       #paramsIyM = paramsI
       #paramsParaRellenoRegresores = NULL
       #pathsRegresoresParaRellenoRegresores = NULL
-      #returnInterpolacion <- FALSE
+      #returnInterpolacion <- 0L
       #tsAInterpolar <- 1:nrow(valoresObservaciones)
       #tsAInterpolar <- 48
       #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
@@ -507,7 +517,7 @@ if (runGridding) {
         shpMask=shpMask, 
         xyLims=xyLims, 
         listaMapas=listaMapas, 
-        returnInterpolacion=F, 
+        returnInterpolacion=0L, 
         paramsParaRellenoRegresores=NULL, 
         pathsRegresoresParaRellenoRegresores=NULL, 
         tsAInterpolar=tsAInterpolar
@@ -647,7 +657,7 @@ if (runExternalValidation) {
       #shpMask = NULL
       #paramsParaRellenoRegresores = NULL
       #pathsRegresoresParaRellenoRegresores = NULL
-      #returnInterpolacion <- TRUE
+      #returnInterpolacion <- 2L
       #tsAInterpolar <- 1:nrow(valoresObservaciones)
       #tsAInterpolar <- 48
       #tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2014-01-31', tz=tz(fechasObservaciones[1])))
@@ -662,7 +672,7 @@ if (runExternalValidation) {
         shpMask=NULL,
         xyLims=xyLims,
         listaMapas=listaMapas,
-        returnInterpolacion=TRUE,
+        returnInterpolacion=2L,
         paramsParaRellenoRegresores=NULL,
         pathsRegresoresParaRellenoRegresores=NULL,
         tsAInterpolar=tsAInterpolar
