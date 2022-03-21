@@ -14,7 +14,7 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-01-30'
+  paramsStr <- 'dt_fin=2022-03-20'
   #paramsStr <- 'dt_fin=2022-01-16;dt_ini=2017-12-31'
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
@@ -48,9 +48,10 @@ if (is.na(dt_ini)) {
   dt_ini <- dt_fin
 }
 
-estacionesADescartar <- c(
-  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+#estacionesADescartar <- c(
+#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
+#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
+estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- !interactive()
@@ -65,7 +66,8 @@ print(paste0(Sys.time(), ' - Aplicando Tests de QC...'))
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
-  plotMaps=TRUE)
+  plotMaps=TRUE
+)
 
 # Guardamos el mapa de pluviómetros y satélites en datos/mapas/
 source('graficosParticulares.r', encoding = 'WINDOWS-1252')
@@ -163,19 +165,9 @@ params$especEscalaDiagnostico <- crearEspecificacionEscalaRelativaAlMinimoYMaxim
   nDigitos = 2, continuo = T)
 
 print(paste0(Sys.time(), ' - Obteniendo regresor de maxima correlacion...'))
-corrs <- getCorrs(valoresObservaciones, pathsRegresores, logTransforms = FALSE)
-
-pathsRegresores <- cbind(pathsRegresores, rep(NA_character_, nrow(pathsRegresores)))
-colnames(pathsRegresores)[ncol(pathsRegresores)] <- 'Combinado'
-for (iRow in 1:nrow(pathsRegresores)) {
-  idx <- which.max(corrs[iRow, ])
-  if (length(idx) > 0) {
-    pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, idx]
-  } else {
-    pathsRegresores[iRow, 'Combinado'] <- pathsRegresores[iRow, 1]
-  }
-}
-pathsRegresores <- pathsRegresores[, 'Combinado', drop=F]
+pathsRegresores <- getRegresorCombinado(
+  coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms = FALSE
+)
 params$signosValidosRegresores <- rep(1, ncol(pathsRegresores))
 names(params$signosValidosRegresores) <- colnames(pathsRegresores)
 # Descomentar esto para usar Kriging Ordinario
@@ -207,7 +199,7 @@ interpolarYMapear(
   shpMask=shpMask,
   xyLims=xyLims,
   listaMapas=listaMapas,
-  returnInterpolacion=FALSE,  # Para ahorrar memoria
+  returnInterpolacion=0L,  # Para ahorrar memoria
   paramsParaRellenoRegresores=NULL,
   pathsRegresoresParaRellenoRegresores=NULL,
   espEscalaFija=NULL,

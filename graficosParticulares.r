@@ -315,14 +315,14 @@ plotObservacionesYRegresores <- function(
         coordsObservaciones$value <- valoresObservaciones[iFecha, ]
         # x <- pathsRegresoresAEvaluar[iFecha, 1]
         rastersI <- lapply(pathsRegresoresAEvaluar[iFecha,], FUN = function(x) {
-            if (!is.na(x)) { 
-              return(readGDAL(x, silent = T))
-            } else { 
-              grillaAux <- grillaSobreBoundingBox(objSP = shpBase, nCeldasX = 2, nCeldasY = 2)
-              grillaAux <- SpatialGridDataFrame(grillaAux, data = data.frame(value=rep(NA, length(grillaAux))))
-              return(grillaAux)
-            }
-          })
+          if (!is.na(x)) { 
+            return(readGDAL(x, silent = T))
+          } else { 
+            grillaAux <- grillaSobreBoundingBox(objSP = shpBase, nCeldasX = 2, nCeldasY = 2)
+            grillaAux <- SpatialGridDataFrame(grillaAux, data = data.frame(value=rep(NA, length(grillaAux))))
+            return(grillaAux)
+          }
+        })
         
         if (grepl(pattern = '+units=m', x = proj4string(rastersI[[1]]), fixed = T)) {
           rastersI[[1]] <- SpatialGridDataFrameEnMtoSpatialGridDataFrameEnKm(rastersI[[1]])
@@ -341,6 +341,7 @@ plotObservacionesYRegresores <- function(
             }
           }, grillaAlternativaRegresores=grillaAlternativaRegresores)
         }
+        
         
         xyLims <- getXYLims(c(shpBase, coordsObservaciones, rastersI), ejesXYLatLong = F)
         if (is.null(especificacionEscala)) {
@@ -371,10 +372,10 @@ plotObservacionesYRegresores <- function(
             '. Corr=', round(correlation, 2))
           
           gs[[iModelo+1]] <- mapearGrillaGGPlot(
-            grilla = rastersI[[iModelo]], shpBase = shpBase, escala = escala, xyLims = xyLims, 
-            titulo = titulo, dibujarPuntosObservaciones = T, 
-            coordsObservaciones = coordsObservaciones, dibujar = F,
-            alturaEscalaContinua = alturaEscalaContinua)
+            grilla=rastersI[[iModelo]], shpBase=shpBase, escala=escala, xyLims=xyLims, 
+            titulo=titulo, dibujarPuntosObservaciones=T, 
+            coordsObservaciones=coordsObservaciones, dibujar=F,
+            alturaEscalaContinua=alturaEscalaContinua)
         }
         
         gs <- gs[permutacionColumnasParaGraficarPorFilas(length(gs), nColsPlot = nColsPlots)]
