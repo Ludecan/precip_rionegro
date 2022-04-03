@@ -1,0 +1,14 @@
+volumes:
+  datos: {}
+  Resultados: {}
+  netrc: {}
+
+services:
+  precip_rionegro:
+    image: precip_rionegro
+    volumes:
+      - ${PWD}/datos:/datos
+      - ${PWD}/Resultados:/Resultados
+      - ${HOME}/.netrc:/root/.netrc:ro
+    env_file:
+      - .env

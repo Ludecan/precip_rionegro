@@ -14,8 +14,12 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-03-20'
-  #paramsStr <- 'dt_fin=2022-01-16;dt_ini=2017-12-31'
+  paramsStr <- 'dt_fin=2022-04-09'
+  paramsStr <- 'dt_fin=2022-04-09;dt_ini=2022-04-07'
+} else {
+  # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
+  # interactivas de desarrollo
+  options(warn=-1)
 }
 if (length(paramsStr) == 0) { paramsStr <- '' }
 print(paste0('ParamsStr="', paramsStr, '"'))
@@ -48,9 +52,6 @@ if (is.na(dt_ini)) {
   dt_ini <- dt_fin
 }
 
-#estacionesADescartar <- c(
-#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
@@ -59,6 +60,12 @@ forzarReDescarga <- !interactive()
 borrarDatosOriginales <- forzarReDescarga
 #borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
+
+if (dt_ini == dt_fin) {
+  print(paste0(Sys.time(), ' - Ejecutando merging para la fecha ', dt_fin, '...'))  
+} else {
+  print(paste0(Sys.time(), ' - Ejecutando merging para dt_ini=', dt_ini, ', dt_fin=', dt_fin, '...')) 
+}
 
 source('cargaDatos.r', encoding = 'WINDOWS-1252')
 source('aplicaQC.r', encoding = 'WINDOWS-1252')

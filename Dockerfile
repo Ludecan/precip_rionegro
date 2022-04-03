@@ -1,28 +1,22 @@
-FROM rocker/r-ubuntu:20.04
+# Base R image
+FROM rstudio/r-base:4.1.2-focal
 
-LABEL maintainer="Peter Solymos <peter@analythium.io>"
-
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    pandoc \
-    pandoc-citeproc \
-    libcurl4-gnutls-dev \
+	cmake \
+	libgsl-dev \
+	libgdal-dev \
+	libxt-dev \
     libcairo2-dev \
-    libxt-dev \
-    libssl-dev \
-    libssh2-1-dev \
-    && rm -rf /var/lib/apt/lists/*
+	libharfbuzz-dev \
+	libfribidi-dev
 
-ENV _R_SHLIB_STRIP_=true
-COPY Rprofile.site /etc/R
-RUN install.r shiny forecast jsonlite ggplot2 htmltools plotly
+# Install R packages
+COPY renv.lock ./
+RUN R -e 'install.packages("renv", repos="https://cran.rstudio.com/")'
+RUN R -e 'renv::restore()'
 
-RUN addgroup --system app && adduser --system --ingroup app app
-WORKDIR /home/app
-COPY app .
-RUN chown app:app -R /home/app
-USER app
+COPY st_interp ./st_interp
+COPY *.r ./
 
-EXPOSE 3838
-
-CMD ["R", "-e", "shiny::runApp('/home/app', port = 3838, host = '0.0.0.0')"]
+ENTRYPOINT ["Rscript", "main.r"]
