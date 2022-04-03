@@ -247,44 +247,55 @@ applyQCTests <- function(
   listaMapas <- createDefaultListaMapas(
     paramsInterpolacion, fechasObservaciones=fechasObservaciones, dibujarEscalaFija=FALSE)
   
-  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra IMERG...'))
-  
-  test3 <- deteccionOutliersRLM(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
-    pathsRegresores=pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas=listaMapas, 
-    factorMADHaciaAbajo=NA, factorSDHaciaAbajo=5.6, factorSDHaciaArriba=5.6, sdMin=1, 
-    returnTestDF=TRUE
-  )
-  
-  # test3[test3$fecha == '2017-04-10',]
-  # plot(test3[test3$fecha == '2017-04-10','valor'], test3[test3$fecha == '2017-04-10','estimado'])
-   
-  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GSMaP..'))
-  test4 <- deteccionOutliersRLM(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
-    pathsRegresores=pathsRegresores[, 'GSMaP_v7', drop=F], listaMapas=listaMapas, 
-    factorMADHaciaAbajo=NA, factorSDHaciaAbajo=5.6, factorSDHaciaArriba=5.6, sdMin=1, 
-    returnTestDF=TRUE
-  )
-
-  #corrs <- getCorrs(valoresObservaciones, pathsRegresores)
-
-  iTest <- test3$tipoOutlier %in% tiposOutliersValoresSospechosos & 
-           test3$tipoOutlier == test4$tipoOutlier & 
-           (test3$estimado + test4$estimado) * 0.5 > 10
-  # test3[iTest, ]
-  
-  if (plotMaps) {
-    mapearResultadosDeteccionOutliersV2(
-      test=test3[iTest, ], 
-      coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
-      tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-      carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/3/'), shpBase=shpBase, 
-      replot=replot)
+  requiredCols <- c('IMERG_V06B', 'GSMaP_v7')
+  if (all(requiredCols %in% colnames(pathsRegresores))) {
+    print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra IMERG...'))
+    
+    test3 <- deteccionOutliersRLM(
+      coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
+      pathsRegresores=pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas=listaMapas, 
+      factorMADHaciaAbajo=NA, factorSDHaciaAbajo=5.6, factorSDHaciaArriba=5.6, sdMin=1, 
+      returnTestDF=TRUE
+    )
+    
+    # test3[test3$fecha == '2017-04-10',]
+    # plot(test3[test3$fecha == '2017-04-10','valor'], test3[test3$fecha == '2017-04-10','estimado'])
+    
+    print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GSMaP..'))
+    test4 <- deteccionOutliersRLM(
+      coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
+      pathsRegresores=pathsRegresores[, 'GSMaP_v7', drop=F], listaMapas=listaMapas, 
+      factorMADHaciaAbajo=NA, factorSDHaciaAbajo=5.6, factorSDHaciaArriba=5.6, sdMin=1, 
+      returnTestDF=TRUE
+    )
+    
+    #corrs <- getCorrs(valoresObservaciones, pathsRegresores)
+    
+    iTest <- test3$tipoOutlier %in% tiposOutliersValoresSospechosos & 
+      test3$tipoOutlier == test4$tipoOutlier & 
+      (test3$estimado + test4$estimado) * 0.5 > 10
+    # test3[iTest, ]
+    
+    if (plotMaps) {
+      mapearResultadosDeteccionOutliersV2(
+        test=test3[iTest, ], 
+        coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
+        tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
+        carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/3/'), shpBase=shpBase, 
+        replot=replot)
+    }
+    
+    test3$reemplazar[iTest] <- 1
+    valoresObservaciones <- ejecutarReemplazosSRT(test3, valoresObservaciones)    
+  } else {
+    writeLines(paste0(
+      Sys.time(), 
+      ' - No se encontró el valor de los siguientes regresores satelitales:\n ',
+      requiredCols[!requiredCols %in% colnames(pathsRegresores)],
+      '\nSalteando control de calidad en base a satélites.'
+    ))
   }
-  
-  test3$reemplazar[iTest] <- 1
-  valoresObservaciones <- ejecutarReemplazosSRT(test3, valoresObservaciones)
+
   
   print(paste0(Sys.time(), ' - Ejecutando Detección Outliers Media/Desv. Est..'))
   test5 <- deteccionOutliersMediaSD(x=valoresObservaciones, factorSDHaciaAbajo=7, sdMin=1)

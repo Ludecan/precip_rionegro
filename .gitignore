@@ -14,3 +14,7 @@ RCache_windows/
 RCache_unix/
 Resultados/
 ResultadosEjemplo/
+.Rproj.user
+tiemposEjecucion.txt
+.env
+log/

@@ -5,6 +5,14 @@
 # 3 - Lectura de rasters del satélite en formato geoTiff y definición de la grilla a interpolar
 # 4 - Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
 
+if (file.exists('.env')) {
+  # Leo variables de entorno del archivo
+  envvars <- strsplit(readLines('.env'), split='=')
+  envvars <- setNames(lapply(envvars, function(x) x[2]), sapply(envvars, function(x) x[1]))
+  do.call(Sys.setenv, envvars)
+  Sys.getenv("URL_MEDIDAS_PLUVIOS_TELEMEDIDA")
+}
+
 postFijoPluvios <- ''
 nombreExperimento <- paste0('2021_12', postFijoPluvios)
 pathSTInterp <- 'st_interp/'
@@ -55,7 +63,7 @@ datosConvencionales <- descargaPluviosADMEConvencionales(
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga
 )
-logDatosObtenidosPluviometros(datosConvencionales)
+logDatosObtenidosPluviometros(datosConvencionales, " convencionales de UTE")
 
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros de telemedida de ADME del ', dt_ini, ' al ', dt_fin))
 datosTelemedida <- descargaPluviosADMETelemedida(
@@ -64,7 +72,7 @@ datosTelemedida <- descargaPluviosADMETelemedida(
   url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_TELEMEDIDA'),
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
-logDatosObtenidosPluviometros(datosTelemedida)
+logDatosObtenidosPluviometros(datosTelemedida, " de telemedida de UTE")
 
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros de respaldo del ', dt_ini, ' al ', dt_fin))
 datosRespaldo <- descargaPluviosRespaldo(
@@ -73,10 +81,17 @@ datosRespaldo <- descargaPluviosRespaldo(
   url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO'),
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
   forzarReDescarga=forzarReDescarga)
-logDatosObtenidosPluviometros(datosRespaldo)
+logDatosObtenidosPluviometros(datosRespaldo, " de respaldo")
 
 datos <- concatenarDatos(datos1 = datosConvencionales, datos2 = datosTelemedida)
 datos <- concatenarDatos(datos1 = datos, datos2 = datosRespaldo)
+
+if (is.null(datos)) {
+  stop(paste0(
+    Sys.time(), 
+    " - No se obtuvo datos de ninguna red pluviométrica. El sistema no puede continuar."
+  ))
+}
 
 iOrden <- order(datos$estaciones$NombreEstacionR)
 datos$estaciones <- datos$estaciones[iOrden, , drop=F]
