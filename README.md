@@ -54,7 +54,6 @@ La reconstrucción se puede hacer con la siguiente regla de makefile:
 make docker-build
 ```
 
-
 2. Ejecución mediante docker run
 2.1 Fecha actual
 ```
