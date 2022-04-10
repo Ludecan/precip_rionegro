@@ -49,19 +49,24 @@ Salvar en un archivo .env en la raíz del proyecto
 ```
 docker build -t precip_rionegro .
 ```
+La reconstrucción se puede hacer con la siguiente regla de makefile:
+```
+make docker-build
+```
+
 
 2. Ejecución mediante docker run
 2.1 Fecha actual
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $PWD/log:/log -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro
+docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro
 ```
 2.2 Fecha específica
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $PWD/log:/log -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08
+docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08
 ```
 2.3 Rango de Fechas
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $PWD/log:/log -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08;dt_ini=2022-04-01
+docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08;dt_ini=2022-04-01
 ```
 
 El comando docker-run se puede ejecutar como una regla de make:
