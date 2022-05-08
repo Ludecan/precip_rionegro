@@ -156,7 +156,7 @@ if (loadGSMaPV8) {
   )
 }
 print(paste0(Sys.time(), ' - Descargando datos de IMERG del ', dt_ini, ' al ', dt_fin))
-pathsGPM <- descargaGPM(
+pathsIMERG <- descargaIMERG(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
   shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
 )
@@ -174,9 +174,9 @@ pathsGPM <- descargaGPM(
 # cambiando el path a la carpeta de datos en cuestión
 print(paste0(Sys.time(), ' - Preparando grilla de regresores y objetos espaciales...'))
 if (loadGSMaPV8) {
-  pathsRegresores <- as.matrix(cbind(pathsGPM, pathsGSMaP, pathsGSMaPv8))
+  pathsRegresores <- as.matrix(cbind(pathsIMERG, pathsGSMaP, pathsGSMaPv8))
 } else {
-  pathsRegresores <- as.matrix(cbind(pathsGPM, pathsGSMaP))
+  pathsRegresores <- as.matrix(cbind(pathsIMERG, pathsGSMaP))
 }
 pathsRegresores <- pathsRegresores[
   , apply(X=pathsRegresores, MARGIN=2, FUN=function(x) {!all(is.na(x))}), drop=F]
