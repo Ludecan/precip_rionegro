@@ -5,7 +5,7 @@ SHELL := /bin/bash
 # - `make docker-run "run_args=dt_fin=2022-03-01"` (single date)
 # - `make docker-run "run_args=dt_fin=2022-03-01\;dt_ini=2022-03-31"` (date range)
 docker-run $(run_args):
-	docker run -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/root/.netrc:ro --env-file .env precip_rionegro $(run_args)
+	docker run -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/root/.netrc:ro --env-file .env precip_rionegro $(run_args) -u `stat -c "%u:%g" $(PWD)/datos`
 
 docker-build:
 	docker build -t precip_rionegro .
