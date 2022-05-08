@@ -103,11 +103,6 @@ datos$datos <- datos$datos[, iOrden, drop=F]
 
 rm(datosConvencionales, datosTelemedida, datosRespaldo)
 
-iAConservar <- apply(X = !is.na(datos$datos), FUN = any, MARGIN = 2)
-print(paste0(Sys.time(), ' - Descartando ', sum(!iAConservar), ' estaciones sin datos.'))
-datos$estaciones <- datos$estaciones[iAConservar, , drop=FALSE]
-datos$datos <- datos$datos[, iAConservar, drop=FALSE]
-
 # 1 - Instalación de paquetes que seguro vamos a necesitar
 # Este fuente tiene una función instant_pkgs que busca si un paquete está instalado, si no lo está 
 # lo instala y lo carga con require
