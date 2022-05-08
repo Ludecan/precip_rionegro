@@ -158,7 +158,7 @@ descargaGSMaP <- function(
   return(paths)
 }
 
-descargaGPM <- function(
+descargaIMERG <- function(
   dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
   horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/IMERG/', shpBase=NULL,
   productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
@@ -240,7 +240,7 @@ descargaGPM <- function(
       do_unzip=do_unzip[iPeriodosADescargar]
     )
     if (any(res == 0)) {
-      warning(paste('Error downloading GSMaP files:', 
+      warning(paste('Error downloading IMERG files:', 
                     paste(urls[iPeriodosADescargar[res == 0]], collapse = '\n'), 
                     sep='\n'))
     }
