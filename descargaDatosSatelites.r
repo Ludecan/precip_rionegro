@@ -108,7 +108,8 @@ descargaGSMaP <- function(
       urls=urls[iHorasADescargar], nombresArchivosDestino=pathsLocales[iHorasADescargar],
       maxRetries=2, segundosEntreIntentos=5, curlOpts=list(netrc=1), 
       nConexionesSimultaneas=nConexionesSimultaneas, forzarReDescarga=forzarReDescarga,
-      do_unzip=rep(TRUE, length(iHorasADescargar)))
+      do_unzip=rep(TRUE, length(iHorasADescargar))
+    )
     if (any(res == 0)) {
       warning(paste('Error downloading GSMaP files:', 
                     paste(urls[iHorasADescargar[res == 0]], collapse = '\n'), 

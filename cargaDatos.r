@@ -91,6 +91,10 @@ if (is.null(datos)) {
     Sys.time(), 
     " - No se obtuvo datos de ninguna red pluviométrica. El sistema no puede continuar."
   ))
+} else {
+  logDatosObtenidosPluviometros(
+    datos, postFijoMsj=' en total tras concatenar las redes'
+  )
 }
 
 iOrden <- order(datos$estaciones$NombreEstacionR)
@@ -125,14 +129,12 @@ valoresObservaciones <- datos$datos
 
 if (!is.null(estacionesADescartar)) {
   iAConservar <- !estaciones$NombreEstacionR %in% estacionesADescartar
-  print(paste0(Sys.time(), ' - Descartando datos de  ', sum(!iAConservar), ' estaciones.'))
+  print(paste0(Sys.time(), ' - Descartando datos de  ', sum(!iAConservar), ' estaciones especificadas para descarte.'))
   
   estaciones <- estaciones[iAConservar, ]
   valoresObservaciones <- valoresObservaciones[, iAConservar, drop=F]
   rm(iAConservar)
 }
-
-logDatosObtenidosPluviometros(datos, postFijoMsj = ' en total tras concatenar las redes')
 
 # Descarga de datos de satelite
 source('descargaDatosSatelites.r', encoding = 'WINDOWS-1252')
