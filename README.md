@@ -82,7 +82,7 @@ make docker-run "dt_fin=2022-04-08\;dt_ini=2022-04-01"
 # Resultados
 El programa almacena los resultados de su ejecución en 2 ubicaciones:
 
-1. Datos de pluviometros
+## 1. Datos de pluviometros
 Los datos descargados de las redes pluviométricas se almacenan en `datos\pluviometros` con los siguientes nombres de archivo:
 ```
 YYYYMMDD_YYYYMMDD_rainfall_convencionales.xlsx
@@ -92,7 +92,7 @@ YYYYMMDD_YYYYMMDD_rainfall_telemedida.xlsx
 Donde cada archivo corresponde a las redes convencionales, de respaldo y de telemedida respectivamente y YYYYMMDD son las fechas de comienzo y fin de los datos.
 El período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC: `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`.
 
-2. Datos Satelitales
+## 2. Datos Satelitales
 Los datos descargados de los productos satelitales se almacenan en `datos\satelites` con el siguiente formato de nombres:
 ```
 \<<producto>>\<<version>>\YYYYMMDD.tif
@@ -100,7 +100,7 @@ Los datos descargados de los productos satelitales se almacenan en `datos\sateli
 Donde <<producto>> puede ser IMERG o GSMaP y <<version>> es la versión de producto almacenada. Actualmente se utiliza IMERG en su versión V06B y GSMaP en su versión v7.
 Al igual que para los pluviometros, el período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC: `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`.
 
-3. Resultados de interpolación y merging
+## 3. Resultados de interpolación y merging
 La interpolación y merging producen 3 salidas en la carpeta `Resultados/Operativo` asociados a cada fecha de ejecución:
 - Una carpeta `YYYYMMDD` con archivos `png` correspondientes a la salida de cada paso intermedio de la interpolación. Los archivos en esta carpeta son útiles para depuración y para análisis de las corridas.
 - Un archivo `YYYYMMDD.tif` con los valores interpolados en cada píxel así como su información geográfica en formato geoTiff. Estos archivos son autocontenidos y puden ser cargados en cualquier software GIS para análisis posteriores o visualización.
