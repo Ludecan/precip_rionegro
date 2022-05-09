@@ -24,8 +24,12 @@ cd ..
 nano $HOME/.netrc
 ```
 
-Agregar entradas para `jsimpson.pps.eosdis.nasa.gov` (IMERG) y `hokusai.eorc.jaxa.jp` (GSMaP)
+Agregar entradas para `jsimpsonftps.pps.eosdis.nasa.gov` y `jsimpson.pps.eosdis.nasa.gov` (IMERG) y `hokusai.eorc.jaxa.jp` (GSMaP)
 ```
+machine jsimpsonftps.pps.eosdis.nasa.gov
+login
+password
+
 machine jsimpson.pps.eosdis.nasa.gov
 login
 password
@@ -57,15 +61,15 @@ make docker-build
 2. Ejecución mediante docker run
 2.1 Fecha actual
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro
 ```
 2.2 Fecha específica
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro dt_fin=2022-04-08
 ```
 2.3 Rango de Fechas
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08;dt_ini=2022-04-01
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro dt_fin=2022-04-08;dt_ini=2022-03-31
 ```
 
 El comando docker-run se puede ejecutar como una regla de make:
@@ -73,4 +77,23 @@ El comando docker-run se puede ejecutar como una regla de make:
 make docker-run
 make docker-run "dt_fin=2022-04-08"
 make docker-run "dt_fin=2022-04-08\;dt_ini=2022-04-01"
+```
+
+# Resultados
+El programa almacena los resultados de su ejecución en 2 ubicaciones:
+
+1. Datos de pluviometros
+Los datos descargados de las redes pluviométricas se almacenan en `datos\pluviometros` con los siguientes nombres de archivo:
+```
+YYYYMMDD_YYYYMMDD_rainfall_convencionales.xlsx
+YYYYMMDD_YYYYMMDD_rainfall_respaldo.json
+YYYYMMDD_YYYYMMDD_rainfall_telemedida.xlsx
+```
+Donde cada archivo corresponde a las redes convencionales, de respaldo y de telemedida respectivamente y YYYYMMDD son las fechas de comienzo y fin de los datos.
+El período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC. `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`
+
+2. Datos Satelitales
+Los datos descargados de los productos satelitales se almacenan en `datos\satelites` con el siguiente formato de nombres:
+```
+\<<producto>>\<<version>>\YYYYMMDD.tif
 ```
