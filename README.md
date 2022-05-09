@@ -61,15 +61,15 @@ make docker-build
 2. Ejecución mediante docker run
 2.1 Fecha actual
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro
 ```
 2.2 Fecha específica
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro dt_fin=2022-04-08
 ```
 2.3 Rango de Fechas
 ```
-docker run -v $PWD/datos:/datos -v $PWD/Resultados:/Resultados -v $HOME/.netrc:/root/.netrc:ro --env-file .env precip_rionegro dt_fin=2022-04-08;dt_ini=2022-04-01
+docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Resultados:/Resultados -v $(HOME)/.netrc:/.netrc:ro -v $(PWD)/RCache_unix:/RCache_unix --env-file .env --env HOME=/ precip_rionegro dt_fin=2022-04-08;dt_ini=2022-03-31
 ```
 
 El comando docker-run se puede ejecutar como una regla de make:
