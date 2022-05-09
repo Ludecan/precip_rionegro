@@ -90,10 +90,18 @@ YYYYMMDD_YYYYMMDD_rainfall_respaldo.json
 YYYYMMDD_YYYYMMDD_rainfall_telemedida.xlsx
 ```
 Donde cada archivo corresponde a las redes convencionales, de respaldo y de telemedida respectivamente y YYYYMMDD son las fechas de comienzo y fin de los datos.
-El período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC. `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`
+El período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC: `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`.
 
 2. Datos Satelitales
 Los datos descargados de los productos satelitales se almacenan en `datos\satelites` con el siguiente formato de nombres:
 ```
 \<<producto>>\<<version>>\YYYYMMDD.tif
 ```
+Donde <<producto>> puede ser IMERG o GSMaP y <<version>> es la versión de producto almacenada. Actualmente se utiliza IMERG en su versión V06B y GSMaP en su versión v7.
+Al igual que para los pluviometros, el período de acumulación de los datos almacenados en los archivos es desde el día YYYYMMDD-1 a las 10 UTC, hasta el día YYYYMMDD a las 10 UTC: `(YYYYMMDD-1 a las 10UTC, YYYYMMDD a las 10 UTC]`.
+
+3. Resultados de interpolación y merging
+La interpolación y merging producen 3 salidas en la carpeta `Resultados/Operativo` asociados a cada fecha de ejecución:
+- Una carpeta `YYYYMMDD` con archivos `png` correspondientes a la salida de cada paso intermedio de la interpolación. Los archivos en esta carpeta son útiles para depuración y para análisis de las corridas.
+- Un archivo `YYYYMMDD.tif` con los valores interpolados en cada píxel así como su información geográfica en formato geoTiff. Estos archivos son autocontenidos y puden ser cargados en cualquier software GIS para análisis posteriores o visualización.
+- Un archivo `acumuladosSubcuencas/YYYY_MM_DD.tsv` con una fila para cada fecha en la que haya ejecutado el programa y 25 columnas, una para cada subcuenca contenida en la cuenca del Río Negro, con el valor promedio de todos los píxeles que componen la subcuenca. Las subcuencas se definen en el archivo `datos/CartografiaBase/SubcuencasModelo/mini_para_modelo_RioNegro.shp` y las columnas siguen el mismo orden que los polígonos en el shapefile.
