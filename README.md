@@ -24,8 +24,12 @@ cd ..
 nano $HOME/.netrc
 ```
 
-Agregar entradas para `jsimpson.pps.eosdis.nasa.gov` (IMERG) y `hokusai.eorc.jaxa.jp` (GSMaP)
+Agregar entradas para `jsimpsonftps.pps.eosdis.nasa.gov` y `jsimpson.pps.eosdis.nasa.gov` (IMERG) y `hokusai.eorc.jaxa.jp` (GSMaP)
 ```
+machine jsimpsonftps.pps.eosdis.nasa.gov
+login
+password
+
 machine jsimpson.pps.eosdis.nasa.gov
 login
 password
