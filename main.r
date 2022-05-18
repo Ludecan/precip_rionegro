@@ -14,7 +14,7 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-05-07'
+  paramsStr <- 'dt_fin=2022-05-09'
   # paramsStr <- 'dt_fin=2022-04-09;dt_ini=2022-04-07'
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones

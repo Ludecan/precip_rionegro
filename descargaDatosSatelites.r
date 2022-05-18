@@ -161,7 +161,7 @@ descargaGSMaP <- function(
 descargaIMERG <- function(
   dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 1 * 24*60*60, dt_fin=date(now()),
   horaUTCInicioAcumulacion=10, pathSalida='datos/satelites/IMERG/', shpBase=NULL,
-  productVersion='V06B', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
+  productVersion='V06', forzarReDescarga=FALSE, borrarDatosOriginales=FALSE,
   urlBase='ftp://jsimpsonftps.pps.eosdis.nasa.gov/data/imerg/', producto='gis',
   verbose=TRUE
 ) {
@@ -179,10 +179,17 @@ descargaIMERG <- function(
   
   # Armo urls y pathsLocales horarios
   mediasHoras <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm) + 30 * 60, by="30 mins")
+  
+  productRevision <- rep('C', length(mediasHoras))
+  productRevision[mediasHoras < as.POSIXct("2022-05-08 16:00:00 -03")] <- 'B'
+  
   urls <- paste0(
     strftime(x=head(mediasHoras, -1), format=formatoPrefijo),
     strftime(x=tail(mediasHoras, -1) - 1, format=formatoE),
-    sprintf(fmt = formatoPostfijo, (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30)
+    sprintf(fmt = '%04d.', (head(seq_along(mediasHoras), -1) + 2 * horaUTCInicioAcumulacion -1) %% 48 * 30),
+    productVersion, 
+    productRevision,
+    '.30min.tif'
   )
   pathsLocales <- paste0(pathSalida, productVersion, '/originales/', basename(urls))
   do_unzip = rep(FALSE, length(urls))
@@ -207,7 +214,7 @@ descargaIMERG <- function(
       gsub(pattern='-', x=today() + 1, replacement=''), '.', strHoraUTCInicioAcumulacion
     )
     availableDates <- list(
-      V06B=list(min=paste0('20000608-', strHoraUTCInicioAcumulacion), max=fechaMax)
+      V06=list(min=paste0('20000608-', strHoraUTCInicioAcumulacion), max=fechaMax)
     )
     
     urlDates <- regmatches(
@@ -253,7 +260,7 @@ descargaIMERG <- function(
     
     if (length(iPeriodosADescargar) > 0) {
       agregacionTemporalGrillada(
-        fechas=mediasHoras[iPeriodosADescargar], 
+        fechas=mediasHoras[iPeriodosADescargar],
         pathsRegresor=pathsLocales[iPeriodosADescargar],
         formatoNomArchivoSalida=paste0(pathSalida, productVersion, '/%Y%m%d.tif'),
         minNfechasParaAgregar=numPeriodos, nFechasAAgregar=numPeriodos, 
@@ -269,10 +276,10 @@ descargaIMERG <- function(
   }
   
   paths <- matrix(
-    data = pathsLocalesDiarios,
-    ncol = 1, 
-    byrow = T,
-    dimnames = list(
+    data=pathsLocalesDiarios,
+    ncol=1, 
+    byrow=T,
+    dimnames=list(
       as.character(date(dias)),
       paste(basename(pathSalida), productVersion, sep='_')
     )
