@@ -71,7 +71,8 @@ datosTelemedida <- descargaPluviosADMETelemedida(
   dt_fin=dt_fin, 
   url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_TELEMEDIDA'),
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
-  forzarReDescarga=forzarReDescarga)
+  forzarReDescarga=forzarReDescarga
+)
 logDatosObtenidosPluviometros(datosTelemedida, " de telemedida de UTE")
 
 print(paste0(Sys.time(), ' - Descargando datos de pluviometros de respaldo del ', dt_ini, ' al ', dt_fin))
@@ -80,7 +81,8 @@ datosRespaldo <- descargaPluviosRespaldo(
   dt_fin=dt_fin,
   url_medidas_pluvios=Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO'),
   pathSalida=paste0(pathDatos, 'pluviometros/'), 
-  forzarReDescarga=forzarReDescarga)
+  forzarReDescarga=FALSE
+)
 logDatosObtenidosPluviometros(datosRespaldo, " de respaldo")
 
 datos <- concatenarDatos(datos1 = datosConvencionales, datos2 = datosTelemedida)
