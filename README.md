@@ -75,8 +75,8 @@ docker run -u `stat -c "%u:%g" $(PWD)/datos` -v $(PWD)/datos:/datos -v $(PWD)/Re
 El comando docker-run se puede ejecutar como una regla de make:
 ```
 make docker-run
-make docker-run "dt_fin=2022-04-08"
-make docker-run "dt_fin=2022-04-08\;dt_ini=2022-04-01"
+make docker-run "run_args=dt_fin=2022-05-17"
+make docker-run "run_args=dt_fin=2022-04-08\;dt_ini=2022-04-01"
 ```
 
 # Resultados
