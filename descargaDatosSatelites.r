@@ -8,13 +8,13 @@ while ((is.null(script.dir.descargaDatosSatelites) || is.na(regexpr('descargaDat
 if (is.null(script.dir.descargaDatosSatelites)) { script.dir.descargaDatosSatelites <- ''
 } else { script.dir.descargaDatosSatelites <- paste0(dirname(script.dir.descargaDatosSatelites), '/') }
 
-source(paste0(script.dir.descargaDatosSatelites, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/instalarPaquetes/instant_pkgs.r'))
 instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
 
-source(paste0(script.dir.descargaDatosSatelites, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatosSatelites, '/st_interp/GrADS/ReadGrADS.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatosSatelites, '/st_interp/agregacion/agregacion.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatosSatelites, '/st_interp/sysutils/sysutils.r'), encoding = 'WINDOWS-1252')
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/descargador/descargadorEx.r'))
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/GrADS/ReadGrADS.r'))
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/agregacion/agregacion.r'))
+source(paste0(script.dir.descargaDatosSatelites, '/st_interp/sysutils/sysutils.r'))
 
 descargaGSMaP <- function(
   dt_ini=parse_date_time(dt_fin, orders = 'ymd') - 7 * 24*60*60, dt_fin=date(now()),
@@ -25,7 +25,7 @@ descargaGSMaP <- function(
 ) {
   # Los datos de GSMaP siguen este formato de nombres:
   # gsmap_gauge.20211226.1700.dat.gz
-  # El per韔do de observaci髇 corresponde a (2021-12-26 16:00 UTC, 2021-12-26 17:00 UTC]?
+  # El per铆odo de observaci贸n corresponde a (2021-12-26 16:00 UTC, 2021-12-26 17:00 UTC]?
   
   # fijo las hora inicial/final
   dt_ini_gsmap <- sprintf('%s %02d:00', date(dt_ini) - 1, horaUTCInicioAcumulacion + 1)
@@ -57,11 +57,11 @@ descargaGSMaP <- function(
   pathsLocalesDescomprimidos <- substr(pathsLocales, start=1, stop=nchar(pathsLocales) - 3)
   # write(toJSON(authInfo), 'GSMaP_authInfo.json')
   
-  # Armo paths locales diarios para la agregaci髇
+  # Armo paths locales diarios para la agregaci贸n
   dias <- seq(as.POSIXct(dt_ini_gsmap), as.POSIXct(dt_fin_gsmap), by="day") + lubridate::days(1)
   pathsLocalesDiarios <- strftime(x=dias, format=paste0(pathSalida, productVersion, '/%Y%m%d.tif'))
 
-  # Busco los paths locales diarios que no existan, los que sean previos a la m韓ima 
+  # Busco los paths locales diarios que no existan, los que sean previos a la m铆nima 
   # fecha disponible se tratan como existentes para que no los descargue pero retorne 
   # sus paths como NA
   iNoExisten <- which(!file.exists(pathsLocalesDiarios) | file.info(pathsLocalesDiarios)$size <= 0)
@@ -167,7 +167,7 @@ descargaIMERG <- function(
 ) {
   # Los datos de GPM-Imerg siguen este formato de nombres:
   # 3B-HHR-L.MS.MRG.3IMERG.20170201-S100000-E102959.0600.V06B.30min.tif
-  # El per韔do de observaci髇 corresponde a (2017-02-01 10:00 UTC, 2017-02-01 10:29:59 UTC]?
+  # El per铆odo de observaci贸n corresponde a (2017-02-01 10:00 UTC, 2017-02-01 10:29:59 UTC]?
   
   # fijo las horas inicial/final
   dt_ini_gpm <- sprintf('%s %02d:00', date(dt_ini) - 1, horaUTCInicioAcumulacion)
@@ -194,7 +194,7 @@ descargaIMERG <- function(
   pathsLocales <- paste0(pathSalida, productVersion, '/originales/', basename(urls))
   do_unzip = rep(FALSE, length(urls))
   
-  # Armo paths locales diarios para la agregaci髇
+  # Armo paths locales diarios para la agregaci贸n
   dias <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm), by="day") + lubridate::days(1)
   pathsLocalesDiarios <- strftime(x=dias, format=paste0(pathSalida, productVersion, '/%Y%m%d.tif'))
   

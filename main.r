@@ -2,16 +2,16 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
 
-# LÌnea de comandos de ejemplo: 
+# L√≠nea de comandos de ejemplo: 
 # - Rscript main.r dt_fin=2021-01-16
-# Esto producir· el mapa con los acumulados del perÌodo (2020-01-15 10:00 UTC, 2020-01-16 10:00 UTC]
-# El archivo de s·lida se guarda en Resultados/Operativo/2021_01_15.tif.
+# Esto producir√° el mapa con los acumulados del per√≠odo (2020-01-15 10:00 UTC, 2020-01-16 10:00 UTC]
+# El archivo de s√°lida se guarda en Resultados/Operativo/2021_01_15.tif.
 # El archivo se guarda con el nombre de la fecha de inicio para usar el mismo criterio de registro
-# utilizado por INUMET, donde se guarda en la fecha de inicio pues el perÌodo tiene m·s horas (14)
-# el dÌa 15 que las que tiene el dÌa 16.
+# utilizado por INUMET, donde se guarda en la fecha de inicio pues el per√≠odo tiene m√°s horas (14)
+# el d√≠a 15 que las que tiene el d√≠a 16.
 
 
-# Imprimo los par·metros con los que se llamÛ el script para que quede en el log
+# Imprimo los par√°metros con los que se llam√≥ el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
   paramsStr <- 'dt_fin=2022-05-09'
@@ -67,8 +67,8 @@ if (dt_ini == dt_fin) {
   print(paste0(Sys.time(), ' - Ejecutando merging para dt_ini=', dt_ini, ', dt_fin=', dt_fin, '...')) 
 }
 
-source('cargaDatos.r', encoding = 'WINDOWS-1252')
-source('aplicaQC.r', encoding = 'WINDOWS-1252')
+source('cargaDatos.r')
+source('aplicaQC.r')
 print(paste0(Sys.time(), ' - Aplicando Tests de QC...'))
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
@@ -76,9 +76,9 @@ valoresObservaciones <- applyQCTests(
   plotMaps=TRUE
 )
 
-# Guardamos el mapa de pluviÛmetros y satÈlites en datos/mapas/
-source('graficosParticulares.r', encoding = 'WINDOWS-1252')
-source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
+# Guardamos el mapa de pluvi√≥metros y sat√©lites en datos/mapas/
+source('graficosParticulares.r')
+source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'))
 especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
   nDigitos = 1, continuo = T)
 print(paste0(Sys.time(), ' - Mapeando observaciones de pluviometros y satelites...'))
@@ -89,31 +89,31 @@ plotObservacionesYRegresores(
   carpetaSalida='datos/mapas/', especificacionEscala=especificacionEscala)
 
 
-# Estos fuentes tienen varias funciones necesarias para la interpolaciÛn. 
+# Estos fuentes tienen varias funciones necesarias para la interpolaci√≥n. 
 # Tiene las funciones para hacer kriging, universal kriging, la CV, SRT, etc...
-source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'), encoding = 'WINDOWS-1252')
-source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
-source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'))
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'))
+source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'))
 
-# Este tiene una funciÛn de ayuda que crea el objeto de par·metros para universalGridding
-source(paste0(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r'), encoding = 'WINDOWS-1252')
-# 5 - PreparaciÛn de Par·metros
-# La funciÛn que tenemos implementada para hacer la interpolaciÛn se llama interpolarYMapear en 
+# Este tiene una funci√≥n de ayuda que crea el objeto de par√°metros para universalGridding
+source(paste0(pathSTInterp, 'interpolar/parsearParamsInterpolarYMapear.r'))
+# 5 - Preparaci√≥n de Par√°metros
+# La funci√≥n que tenemos implementada para hacer la interpolaci√≥n se llama interpolarYMapear en 
 # interpolarYMapearEx.r
-# Tiene muchos par·metros que est·n pensados para ser llenados por software pero la podemos 
-# llamar "a mano" crÈandole los objetos de entrada que precisa
-# universalGridding implementa la "ecuaciÛn maestra" 
+# Tiene muchos par√°metros que est√°n pensados para ser llenados por software pero la podemos 
+# llamar "a mano" cr√©andole los objetos de entrada que precisa
+# universalGridding implementa la "ecuaci√≥n maestra" 
 # Z(s, t) = F(U1(s, t), U2(s, t), ... Un(s, t)) + Z*({Zi(s,t) - F(U1(s, t), U2(s, t), ... Un(s, t))}, s, t) + eps"(s, t)
 
-# El mÈtodo a usar en las funciones F y Z* se pasa en un objeto de par·metros en los campos
+# El m√©todo a usar en las funciones F y Z* se pasa en un objeto de par√°metros en los campos
 # "metodoIgualacionDistribuciones" para F e "interpolationMethod" para Z*
 # Los valores de metodoIgualacionDistribuciones que venimos manejando en la tesis son:
-# 1- 'ninguna'  sin ajuste de distribuciones, F(s, t) = U1(s, t), los dem·s regresores se ignoran
-# 2- 'regresionLineal' regresiÛn con MCO  F(s, t) = a0 + a1 * U1(s, t) + a2 * U2(s, t) + ... + an * Un(s, t) 
-# 3- 'regresionLinealRobusta' regresiÛn robusta, igual que arriba pero con RLM
+# 1- 'ninguna'  sin ajuste de distribuciones, F(s, t) = U1(s, t), los dem√°s regresores se ignoran
+# 2- 'regresionLineal' regresi√≥n con MCO  F(s, t) = a0 + a1 * U1(s, t) + a2 * U2(s, t) + ... + an * Un(s, t) 
+# 3- 'regresionLinealRobusta' regresi√≥n robusta, igual que arriba pero con RLM
 
 # Los valores de interpolationMethod que venimos manejando en la tesis son:
-# 1-'automap' Kriging. Seg˙n lo que se haya elegido en metodoIgualacionDistribuciones ser· KO, RK, RRK, etc.
+# 1-'automap' Kriging. Seg√∫n lo que se haya elegido en metodoIgualacionDistribuciones ser√° KO, RK, RRK, etc.
 print(paste0(Sys.time(), ' - Preparando parametros de interpolacion...'))
 params <- createParamsInterpolarYMapear(
   baseNomArchResultados=pathResultadosOperativos,
@@ -180,19 +180,19 @@ names(params$signosValidosRegresores) <- colnames(pathsRegresores)
 # Descomentar esto para usar Kriging Ordinario
 # pathsRegresores <- NULL
 
-# Otros par·metros adicionales. listaMapas dice como se deben llamar los archivos de salida y que
-# guardar. geoTiff, png con escala fija/ajustada, etc. Los valores por defecto est·n bien
+# Otros par√°metros adicionales. listaMapas dice como se deben llamar los archivos de salida y que
+# guardar. geoTiff, png con escala fija/ajustada, etc. Los valores por defecto est√°n bien
 listaMapas <- createDefaultListaMapas(paramsIyM = params, fechasObservaciones = fechasObservaciones,
                                       dibujarEscalaFija=F, salvarGeoTiff=T, recalcularSiYaExiste=F)
 
 
-# Una vez que est· todo armado, la funciÛn nombreModelo sirve para ver que el modelo que
+# Una vez que est√° todo armado, la funci√≥n nombreModelo sirve para ver que el modelo que
 # especificamos sea efectivamente el que queremos
 print(paste0(Sys.time(), ' - Interpolando modelo ', 
              nombreModelo(params=params, pathsRegresores=pathsRegresores), '...'))
 
 
-# InterpolaciÛn de los datos
+# Interpolaci√≥n de los datos
 # Cambiando tsAinterpolar se puede elegir la fecha que se quiera
 # tsAInterpolar <- which(fechasObservaciones == as.POSIXct('2018-02-03', tz=tz(fechasObservaciones[1])))
 tsAInterpolar=1:nrow(valoresObservaciones)
