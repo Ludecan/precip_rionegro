@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libxt-dev \
     libcairo2-dev \
 	libharfbuzz-dev \
-	libfribidi-dev
+	libfribidi-dev \
+	jags
 
 # Install R packages
 COPY renv.lock ./
