@@ -15,6 +15,7 @@ source('cargaDatos.r')
 
 iAConservar <- apply(X = !is.na(valoresObservaciones), FUN = any, MARGIN = 2)
 print(paste0(Sys.time(), ' - Descartando ', sum(!iAConservar), ' estaciones sin datos.'))
+estaciones <- estaciones[iAConservar, , drop=FALSE]
 coordsObservaciones <- coordsObservaciones[iAConservar, ]
 valoresObservaciones <- valoresObservaciones[, iAConservar, drop=FALSE]
 valoresObservaciones[valoresObservaciones > 450] <- NA_real_
@@ -326,6 +327,36 @@ mapaEstacionesConDistMax <- mapaEstaciones +
 
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
        dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in')
+
+
+
+
+puntos <- coordsObservaciones
+coords <- sp::coordinates(puntos)
+
+
+deReferencia <- rep(FALSE, nrow(estaciones))
+deReferencia[iEstacionesDeReferencia] <- TRUE
+df <- data.frame(x=coords[,1], y=coords[,2], redOrigen=coordsObservaciones$redOrigen, deReferencia=deReferencia)
+
+p <- ggplot(aes(x=x, y=y), data=df) + 
+  coord_equal(ratio=1, xlim=xyLims$xLim, ylim=xyLims$yLim) +
+  #labs(x = "Este[m]", y = "Norte[m]", fill = "") + 
+  labs(x = "", y = "", fill = "") + 
+  theme(panel.background=element_blank()) + 
+  geom_point(color=redOrigen, size=deReferencia) +
+  scale_size_manual(values=c(2, 3.5))
+
+# Dibujar escala no se usa, se pasa con true para que no haga nada
+p <- aplicarOpcionesAMapa(
+  p=p, xyLims=xyLims, shpBase=shpBase, dibujarEscala=T, dibujarEjes=T, 
+  titulo="", subtitulo="", widthPx=630
+)  
+
+# p <- p + geom_text_repel(data=df, aes(label=value), size=tamanioFuentePuntos, colour=coloresTexto)
+
+
+
 
 source('aplicaQC.r')
 
