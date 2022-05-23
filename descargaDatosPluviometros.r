@@ -8,11 +8,11 @@ while ((is.null(script.dir.descargaDatosPluviometros) || is.na(regexpr('descarga
 if (is.null(script.dir.descargaDatosPluviometros)) { script.dir.descargaDatosPluviometros <- ''
 } else { script.dir.descargaDatosPluviometros <- paste0(dirname(script.dir.descargaDatosPluviometros), '/') }
 
-#source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/instalarPaquetes/instant_pkgs.r'), encoding = 'WINDOWS-1252')
+#source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/instalarPaquetes/instant_pkgs.r'))
 #instant_pkgs(c('jsonlite', 'R.utils', 'lubridate', 'benchmarkme'))
 
-source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/descargador/descargadorEx.r'), encoding = 'WINDOWS-1252')
-source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/SeriesTemporales/leerSeriesTemporales.r'), encoding='WINDOWS-1252')
+source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/descargador/descargadorEx.r'))
+source(paste0(script.dir.descargaDatosPluviometros, '/st_interp/SeriesTemporales/leerSeriesTemporales.r'))
 
 logDatosObtenidosPluviometros <- function(datos, postFijoMsj='') {
   if (!is.null(datos)) {
@@ -48,7 +48,7 @@ descargaPluviosADMEConvencionales <- function(
       pathArchivoDatos = localFile, colsEstaciones = 1:6, colId = 3, hojaDatos = "Medidas",
       fileEncoding = "UTF-8", na.strings = c("-1111", "-1,79769313486E+308")
     )
-    # TODO: -1,79769313486E+308 no se está interpretando bien como una string NA
+    # TODO: -1,79769313486E+308 no se estÃ¡ interpretando bien como una string NA
     datosConvencionales$datos[datosConvencionales$datos < 0] <- NA
     
     colRenames <- list(
@@ -100,7 +100,7 @@ descargaPluviosADMETelemedida <- function(
       pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8'
     )
     
-    # TODO: Actualizar esto para que cumpla con el criterio del día i + 1 si alguna vez 
+    # TODO: Actualizar esto para que cumpla con el criterio del dÃ­a i + 1 si alguna vez 
     # se vuelve a utilizar
     # Agregacion diaria
     print(paste0(Sys.time(), ' - Agregando valores diarios...'))
@@ -271,10 +271,10 @@ descargaPluviosRespaldo <- function(
     datos[idx, ] <- datosRespaldo$datos[iMatches[idx], ]
     
     if (any(!idx)) {
-      archRespaldoHistorico <- paste0(pathSalida, 'R3_201701_202201.tsv')
+      archRespaldoHistorico <- paste0(pathSalida, 'R3_201701_202205.tsv')
       if (file.exists(archRespaldoHistorico)) {
         datosRespaldoHistorico <- leerSeriesArchivoUnico(archRespaldoHistorico)
-        # Criterío dia i + 1
+        # CriterÃ­o dia i + 1
         datosRespaldoHistorico$fechas <- datosRespaldoHistorico$fechas + lubridate::days(1)
         rownames(datosRespaldoHistorico$datos) <- as.character(datosRespaldoHistorico$fechas)
         

@@ -1,5 +1,5 @@
 # Base R image
-FROM rstudio/r-base:4.1.2-focal
+FROM rstudio/r-base:4.2.0-focal
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

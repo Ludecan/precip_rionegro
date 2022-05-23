@@ -2,7 +2,7 @@ mapearClimatologias <- function() {
   # Para hacer un grafico de 4 paneles con las climatologias, una para cada estaci?n del a?o
   
   # Verano -> DEF
-  # Otoño -> MAM
+  # OtoÃ±o -> MAM
   # Invierno -> JJA
   # Primavera -> SON
   
@@ -17,15 +17,15 @@ mapearClimatologias <- function() {
     if (iClimatologia == 1) {
       paths <- paste(pathDatos, sprintf('LST_Night_Combinada_Clim_mean/%03d.tif', iDiasDelAnio), sep='')    
       baseNomArch <- 'ClimatologiasMedias'
-      baseTitulo <- 'Climatología Media LST'
+      baseTitulo <- 'ClimatologÃ­a Media LST'
     } else if (iClimatologia == 2) {
       paths <- paste(pathDatos, sprintf('LST_Night_Combinada_Clim_median/%03d.tif', iDiasDelAnio), sep='')    
       baseNomArch <- 'ClimatologiasMedianas'
-      baseTitulo <- 'Climatología Mediana LST'
+      baseTitulo <- 'ClimatologÃ­a Mediana LST'
     } else {
       paths <- paste(pathDatos, sprintf('LST_Night_Combinada_Clim_SD/%03d.tif', iDiasDelAnio), sep='')    
       baseNomArch <- 'ClimatologiasSDs'
-      baseTitulo <- 'Climatología Desv. Estándar LST'
+      baseTitulo <- 'ClimatologÃ­a Desv. EstÃ¡ndar LST'
     }
     
     gs <- list()
@@ -64,7 +64,7 @@ mapearClimatologias <- function() {
                                     titulo = paste(baseTitulo, ' Invierno (', format(fechas[3], format='%d de %B'), ')', sep=''), 
                                     alturaEscalaContinua = alturaEscalaContinua)
       gs[[3]] <- mapearGrillaGGPlot(grilla = otonio, shpBase = shpBase, escala = escalas[[2]], dibujar=F, 
-                                    titulo = paste(baseTitulo, ' Otoño (', format(fechas[2], format='%d de %B'), ')', sep=''), 
+                                    titulo = paste(baseTitulo, ' OtoÃ±o (', format(fechas[2], format='%d de %B'), ')', sep=''), 
                                     alturaEscalaContinua = alturaEscalaContinua)
       gs[[4]] <- mapearGrillaGGPlot(grilla = primavera, shpBase = shpBase, escala = escalas[[4]], dibujar=F, 
                                     titulo = paste(baseTitulo, ' Primavera (', format(fechas[4], format='%d de %B'), ')', sep=''), 
@@ -92,7 +92,7 @@ graficarClimatologiasPuntuales <- function() {
   diasDelAnio <- 1:365  
   paths <- cbind(paste(pathDatos, sprintf('LST_Night_Combinada_Clim_mean/%03d.tif', diasDelAnio), sep=''), 
                  paths <- paste(pathDatos, sprintf('LST_Night_Combinada_Clim_SD/%03d.tif', diasDelAnio), sep=''))
-  colnames(paths) <- c('Media', 'Desviación Estándar')
+  colnames(paths) <- c('Media', 'DesviaciÃ³n EstÃ¡ndar')
 
   estacionesAConsiderar <- estaciones[estaciones$Nombre %in% c('Aeropuerto.Carrasco', 'Prado'),]
   
@@ -102,8 +102,8 @@ graficarClimatologiasPuntuales <- function() {
   
   #aux <- cbind(clims[[1]][,1], clims[[2]][,1])
   #colnames(aux) <- names(clims)
-  #linePlot(x=diasDelAnio, y = aux, tituloEjeX = 'Día del Año', tituloEjeY = 'ºC', 
-  #         titulo = paste('Climatología de LST de ', estacionesAConsiderar$Nombre[1], sep=''))
+  #linePlot(x=diasDelAnio, y = aux, tituloEjeX = 'DÃ­a del AÃ±o', tituloEjeY = 'ÂºC', 
+  #         titulo = paste('ClimatologÃ­a de LST de ', estacionesAConsiderar$Nombre[1], sep=''))
   
   xyLims <- lapply(clims, FUN = function(x) {
     rango <- range(x, na.rm = T)
@@ -117,8 +117,8 @@ graficarClimatologiasPuntuales <- function() {
   i <- 1
   for (iEstacion in seq_along(estacionesAConsiderar)) {
     for (iClimatologia in seq_along(clims)) {
-      gs[[i]] <- linePlot(x=diasDelAnio, y = clims[[iClimatologia]][, iEstacion, drop=F], tituloEjeX = 'Día del Año', tituloEjeY = 'ºC', 
-                          titulo = paste('Climatología ', names(clims)[iClimatologia], ' de LST de ', estaciones$Nombre[iEstacion], sep=''),
+      gs[[i]] <- linePlot(x=diasDelAnio, y = clims[[iClimatologia]][, iEstacion, drop=F], tituloEjeX = 'DÃ­a del AÃ±o', tituloEjeY = 'ÂºC', 
+                          titulo = paste('ClimatologÃ­a ', names(clims)[iClimatologia], ' de LST de ', estaciones$Nombre[iEstacion], sep=''),
                           xyLims = xyLims[[iClimatologia]], dibujar = F)
       i <- i + 1
     }
@@ -126,7 +126,7 @@ graficarClimatologiasPuntuales <- function() {
   multiplot(plotlist=gs, cols=length(estacionesAConsiderar))
   
   iClimatologia <- 1
-  linePlot(x=diasDelAnio, y = clims[[iClimatologia]], tituloEjeX = 'Día del Año', tituloEjeY = 'ºC', 
+  linePlot(x=diasDelAnio, y = clims[[iClimatologia]], tituloEjeX = 'DÃ­a del AÃ±o', tituloEjeY = 'ÂºC', 
            titulo = paste('Climatolog?a ', names(clims)[iClimatologia], ' de LST', sep=''), dibujar = F)
     
       
@@ -156,7 +156,7 @@ plotEjemplosRellenoRasters <- function() {
                               'MOD11A1_LST_Night_9',
                               'MOD11A1_LST_Night_R',
                               'MOD11A1_LST_Night_FRv2'), drop=F]
-  colnames(paths) <- c('MOD11A1_LST_Night', 'Reconstrucción Temporal', 'Reconstrucción Espacial', 'Filtrado + Reconstrucción Espacial')
+  colnames(paths) <- c('MOD11A1_LST_Night', 'ReconstrucciÃ³n Temporal', 'ReconstrucciÃ³n Espacial', 'Filtrado + ReconstrucciÃ³n Espacial')
   
   
   i <- 47
@@ -181,8 +181,8 @@ plotEjemplosRellenoRasters <- function() {
     require(rgdal)
     require(sp)
     require(Rmisc)
-    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
-    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
+    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'))
+    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'))
   })
   parSapplyLB(cl=cl, X=1:length(fechasObservaciones), FUN=plotMultiRastersEnPanelesI, pathsRasters = paths[, c(1, 3, 2, 4)], 
               fechasRasters = fechasObservaciones, shpBase = shpMask$shp, escalas = NULL, 
@@ -201,8 +201,8 @@ plotEjemplosRellenoRasters <- function() {
     require(rgdal)
     require(sp)
     require(Rmisc)
-    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
-    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
+    source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'))
+    source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'))
   })
   parSapplyLB(cl=cl, X=1:length(fechasObservaciones), FUN=plotMultiRastersEnPanelesI, pathsRasters = paths[, c(1, 4, 2, 3)], 
               fechasRasters = fechasObservaciones, shpBase = shpMask$shp, escalas = NULL, 
@@ -213,7 +213,7 @@ plotEjemplosRellenoRasters <- function() {
 plotComparacionModelos <- function(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     pathsModelos=cargarRegresores(carpetaRegresores = 'Resultados/3-Grillado', fechasRegresando = fechasObservaciones), 
-    modelosAPlotear=c('IMERG_V06B', 'GSMaP_v7', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
+    modelosAPlotear=c('IMERG_V06', 'GSMaP_v7', 'K', 'GRK-Combinado', 'GRK-Combinado0.6'), 
     especificacionEscala, shpBase, nColsPlots=3, carpetaSalida='Resultados/5-ComparacionModelos', 
     replot=FALSE) {
   pathsModelos <- pathsModelos[, modelosAPlotear]
@@ -254,7 +254,7 @@ plotComparacionModelos <- function(
         
         gs <- gs[permutacionColumnasParaGraficarPorFilas(length(gs), nColsPlot = nColsPlots)]
         
-        png(nomArchMapa, width = 630 * nColsPlots, height = 630 * nFilasPlots, type='cairo')
+        png(nomArchMapa, width = 630 * nColsPlots, height = 630 * nFilasPlots)
         tryCatch(expr = multiplot(plotlist=gs, cols=nColsPlots), finally = dev.off())
       }
     }
@@ -271,9 +271,9 @@ plotComparacionModelos <- function(
       require(rgdal)
       require(sp)
       require(Rmisc)
-      source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
-      source(paste0(pathSTInterp, 'interpolar/mapearEx.r'), encoding = 'WINDOWS-1252')
-      source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
+      source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'))
+      source(paste0(pathSTInterp, 'interpolar/mapearEx.r'))
+      source(paste0(pathSTInterp, 'interpolar/funcionesAuxiliares.r'))
     })
     parSapplyLB(
       cl=cl, X=seq_along(fechasObservaciones), FUN=plotComparacionModelosI, 
@@ -379,7 +379,7 @@ plotObservacionesYRegresores <- function(
         }
         
         gs <- gs[permutacionColumnasParaGraficarPorFilas(length(gs), nColsPlot = nColsPlots)]
-        png(nomArchMapa, width = 630 * nColsPlots, height = 630 * nFilasPlots, type='cairo')
+        png(nomArchMapa, width = 630 * nColsPlots, height = 630 * nFilasPlots)
         tryCatch(expr = multiplot(plotlist=gs, cols=nColsPlots), finally = dev.off())
       }
     }
@@ -395,10 +395,10 @@ plotObservacionesYRegresores <- function(
     cl <- makeCluster(getOption("cl.cores", nCoresAUsar))
     clusterExport(cl, varlist = c('script.dir.funcionesAuxiliares'))
     clusterEvalQ(cl = cl, expr = {
-      source(paste0(script.dir.funcionesAuxiliares, 'interpolarEx.r'), encoding = 'WINDOWS-1252')
-      source(paste0(script.dir.funcionesAuxiliares, 'leerEscalas.r'), encoding = 'WINDOWS-1252')
-      source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'), encoding = 'WINDOWS-1252')
-      source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'), encoding = 'WINDOWS-1252')
+      source(paste0(script.dir.funcionesAuxiliares, 'interpolarEx.r'))
+      source(paste0(script.dir.funcionesAuxiliares, 'leerEscalas.r'))
+      source(paste0(script.dir.funcionesAuxiliares, 'mapearEx.r'))
+      source(paste0(script.dir.funcionesAuxiliares, 'funcionesAuxiliares.r'))
     })
     parSapplyLB(
       cl=cl, X=seq_along(fechasObservaciones), FUN=plotObservacionesYRegresoresI, 
@@ -432,8 +432,8 @@ plotClimatologiasYSD_v006 <- function() {
                         paste(pathDatos, sprintf('MOD11A1_LST_Night_Clim_mad/%03d.tif', iDias), sep=''),
                         paste(pathDatos, sprintf('MYD11A1_LST_Night_Clim_sd/%03d.tif', iDias), sep=''),
                         paste(pathDatos, sprintf('MYD11A1_LST_Night_Clim_mad/%03d.tif', iDias), sep=''))
-  colnames(pathsRasters) <- c('Media MOD11A1', 'Mediana MOD11A1', 'Desviación Estandar MOD11A1', 'Desviación Mediana Absoluta MOD11A1',
-                              'Media MYD11A1', 'Mediana MYD11A1', 'Desviación Estandar MYD11A1', 'Desviación Mediana Absoluta MYD11A1')
+  colnames(pathsRasters) <- c('Media MOD11A1', 'Mediana MOD11A1', 'DesviaciÃ³n Estandar MOD11A1', 'DesviaciÃ³n Mediana Absoluta MOD11A1',
+                              'Media MYD11A1', 'Mediana MYD11A1', 'DesviaciÃ³n Estandar MYD11A1', 'DesviaciÃ³n Mediana Absoluta MYD11A1')
   
   r1 <- extraerRangoSPDataFrames(as.vector(pathsRasters[,c(1,2,5,6)]))
   r2 <- extraerRangoSPDataFrames(as.vector(pathsRasters[,c(3,4,7,8)]))
@@ -468,7 +468,7 @@ plotClimatologiasYSD_v006 <- function() {
                                   paste(pathDatos, sprintf('MOD11A1_LST_Night_Clim_mad/%03d.tif', iDias), sep=''),
                                   paste(pathDatos, sprintf('MYD11A1_LST_Night_Clim_sd/%03d.tif', iDias), sep=''),
                                   paste(pathDatos, sprintf('MYD11A1_LST_Night_Clim_mad/%03d.tif', iDias), sep=''))
-  colnames(pathsRastersDispersion) <- c('Desviación Estandar MOD11A1', 'Desviación Mediana Absoluta MOD11A1', 'Desviación Estandar MYD11A1', 'Desviación Mediana Absoluta MYD11A1')
+  colnames(pathsRastersDispersion) <- c('DesviaciÃ³n Estandar MOD11A1', 'DesviaciÃ³n Mediana Absoluta MOD11A1', 'DesviaciÃ³n Estandar MYD11A1', 'DesviaciÃ³n Mediana Absoluta MYD11A1')
   
   r1 <- extraerRangoSPDataFrames(as.vector(pathsRastersCentral))
   r2 <- extraerRangoSPDataFrames(as.vector(pathsRastersDispersion))
@@ -514,7 +514,7 @@ plotClimatologiasYSD <- function() {
   escalaSD <- crearEscalaEquiespaciada(r3, brewerPal = 'Reds', nIntervalos = 8, continuo = T)
   
   pathsRasters <- cbind(pathsClimMean, pathsClimMedian, pathsClimSD)
-  colnames(pathsRasters) <- c('Media', 'Mediana', 'Desviación Estandar')
+  colnames(pathsRasters) <- c('Media', 'Mediana', 'DesviaciÃ³n Estandar')
   
   escalas <- list()
   escalas[[1]] <- escalaCentral
@@ -526,11 +526,13 @@ plotClimatologiasYSD <- function() {
                             alturaEscalaContinua = unit(x=1, units = 'in'))
 }
 
-plotVariograma <- function(psill=1, range=1, nugget = 0.05, model='Sph', simularVariogramaEmpirico=F, archivoSalida=NULL, 
-                           maxDist = range * 1.2, annotateNugget=T, annotatePsill=T, annotateRange=T, titulo='') {
+plotVariograma <- function(
+    psill=1, range=1, nugget = 0.05, model='Sph', simularVariogramaEmpirico=F, 
+    archivoSalida=NULL, maxDist = range * 1.2, annotateNugget=T, annotatePsill=T, 
+    annotateRange=T, titulo=''
+) {
   if (!is.null(archivoSalida)) {
-    require('Cairo')
-    Cairo(file = archivoSalida, bg='white')
+    png(file = archivoSalida, bg='white')
   }
   
   require('gstat')
@@ -570,16 +572,16 @@ ejemplosVariogramas <- function() {
   if (F) {
     plotVariograma(simularVariogramaEmpirico = T, archivoSalida = 'Resultados/Ejemplos/Variogramas/variogramaAcotado.png')
     
-    Cairo(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoEnElOrigen.png', bg='white')
+    png(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoEnElOrigen.png', bg='white')
     par(mfrow=c(2,2))
-    plotVariograma(model = 'Gau', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'a) Parabólico')
+    plotVariograma(model = 'Gau', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'a) ParabÃ³lico')
     plotVariograma(model = 'Exp', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'b) Lineal')
     plotVariograma(model = 'Exp', nugget = 0.4, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'c) Efecto Nugget')
     plotVariograma(model = 'Exp', range=1E-4, psill = 0, nugget = 1, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'd) Efecto Nugget Puro')
     par(mfrow=c(1,1))  
     dev.off()
     
-    Cairo(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoAGrandesDistancias.png', bg='white', width = 1024)
+    png(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoAGrandesDistancias.png', bg='white', width = 1024)
     grid.arrange(
       plotVariogramaGGPlot(simularVariogramaEmpirico = T),
       plotVariogramaGGPlot(simularVariogramaEmpirico = T, model = 'Pow', range=1.2),
@@ -587,13 +589,13 @@ ejemplosVariogramas <- function() {
     dev.off()
   }
   
-  # Nueva versión con GGPlot
-  plotVariogramaGGPlot(simularVariogramaEmpirico = T, archivoSalida = 'Resultados/Ejemplos/Variogramas/variogramaAcotado.png', titulo = 'Variograma Empírico y Ajuste Teórico')
+  # Nueva versiÃ³n con GGPlot
+  plotVariogramaGGPlot(simularVariogramaEmpirico = T, archivoSalida = 'Resultados/Ejemplos/Variogramas/variogramaAcotado.png', titulo = 'Variograma EmpÃ­rico y Ajuste TeÃ³rico')
   plotVariogramaGGPlot(simularVariogramaEmpirico = T, model = 'Pow', range=1.2, archivoSalida = 'Resultados/Ejemplos/Variogramas/variogramaNoAcotado.png')
   
-  Cairo(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoEnElOrigen.png', bg='white')
+  png(file = 'Resultados/Ejemplos/Variogramas/VariogramasComportamientoEnElOrigen.png', bg='white')
   grid.arrange(
-    plotVariogramaGGPlot(model = 'Gau', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'a) Parabólico'),
+    plotVariogramaGGPlot(model = 'Gau', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'a) ParabÃ³lico'),
     plotVariogramaGGPlot(model = 'Exp', nugget = 0, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'b) Lineal'),
     plotVariogramaGGPlot(model = 'Exp', nugget = 0.4, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'c) Lineal + Efecto Nugget'),
     plotVariogramaGGPlot(model = 'Exp', range=1E-4, psill = 0, nugget = 1, maxDist = 3, annotateNugget = F, annotatePsill = F, annotateRange = F, titulo = 'd) Efecto Nugget Puro'),
@@ -650,8 +652,7 @@ plotVariogramaGGPlot <- function(psill=1, range=1, nugget = 0.1, model='Sph', si
   p <- p + theme(plot.margin = unit(c(1,rightMargin,1,leftMargin), "lines"))
   
   if (!is.null(archivoSalida)) {
-    require('Cairo')
-    Cairo(file = archivoSalida, bg='white')
+    png(file = archivoSalida, bg='white')
   }
   
   gt <- ggplot_gtable(ggplot_build(p))
@@ -681,10 +682,10 @@ plotComportamientoEnElOrigen <- function() {
   yGauNug <- variogramLine(gauNug, dist_vector = x)
   
   #yes <- cbind(ySph$gamma, yExp$gamma, ySphNug$gamma, yGauNug$gamma)
-  #nombresSeries <- c('Esférico', 'Exponencial', 'Esférico + Nugget', 'Gaussiano + Nugget')
+  #nombresSeries <- c('EsfÃ©rico', 'Exponencial', 'EsfÃ©rico + Nugget', 'Gaussiano + Nugget')
   
   yes <- cbind(ySph$gamma, ySphNug$gamma, yGauNug$gamma)
-  nombresSeries <- c('a) Esférico', 'b) Esférico + Nugget', 'c) Gaussiano + Nugget')
+  nombresSeries <- c('a) EsfÃ©rico', 'b) EsfÃ©rico + Nugget', 'c) Gaussiano + Nugget')
     
   g <- linePlot(x = x, y = yes, 
                 titulo = 'Variogramas - Comportamiento en Origen', tituloEjeX = 'Distancia', tituloEjeY = 'Semivarianza',
@@ -712,7 +713,7 @@ plotFiltrados <- function() {
   dim(paths)
   colnames(paths) <- c('LST Night Combinada', 
                        'Mediana Climatologica', 
-                       'Desviación Estándar Climatológica',
+                       'DesviaciÃ³n EstÃ¡ndar ClimatolÃ³gica',
                        'Q0.0050', 
                        'Q0.9999',
                        'Filtrado Q0.0050-Q0.9999',

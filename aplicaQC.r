@@ -1,5 +1,5 @@
-source(paste0(pathSTInterp, 'qc/qcTests.r'), encoding='WINDOWS-1252')
-source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding='WINDOWS-1252')
+source(paste0(pathSTInterp, 'qc/qcTests.r'))
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'))
 
 paramsInterpolacionSetDeReferencia <- createParamsInterpolarYMapear(
   proj4StringObservaciones=wkt(coordsObservaciones),
@@ -176,7 +176,7 @@ applyQCTests <- function(
       test=test0[test0$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
       coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
       tiposOutliersDeInteres=tiposOutliersValoresSospechosos, tamaniosPuntos=tamaniosPuntos,
-      tamanioResalto=0.5, carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/0/'), 
+      tamanioResalto=0.5, carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/0/'), 
       shpBase=shpBase, replot=replot)
   }
   test0$reemplazar[test0$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
@@ -195,7 +195,7 @@ applyQCTests <- function(
     print(paste0(Sys.time(), ' - Finalizado estimando valores mediante universalGriddingCV...'))
   }
   
-  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 1...'))
+  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de PrecipitaciÃ³n. Pasada 1...'))
   # Two rounds of QC tests
   test1 <- testEspacialPrecipitacion(
     coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones,
@@ -212,14 +212,14 @@ applyQCTests <- function(
       test=test1[test1$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
       coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
       tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-      carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/1/'), shpBase=shpBase, 
+      carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/1/'), shpBase=shpBase, 
       replot=replot)
   }
   
   test1$reemplazar[test1$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test1, valoresObservaciones)
   
-  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 2...'))
+  print(paste0(Sys.time(), ' - Ejecutando Test Espacial de PrecipitaciÃ³n. Pasada 2...'))
   test2 <- testEspacialPrecipitacion(
     coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones,
     valoresObservaciones=valoresObservaciones,ispMax=0.3, ispObs=8, 
@@ -235,7 +235,7 @@ applyQCTests <- function(
       test=test2[test2$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
       tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-      carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/2/'), shpBase=shpBase, 
+      carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/2/'), shpBase=shpBase, 
       replot=replot)
   }
   
@@ -247,13 +247,13 @@ applyQCTests <- function(
   listaMapas <- createDefaultListaMapas(
     paramsInterpolacion, fechasObservaciones=fechasObservaciones, dibujarEscalaFija=FALSE)
   
-  requiredCols <- c('IMERG_V06B', 'GSMaP_v7')
+  requiredCols <- c('IMERG_V06', 'GSMaP_v7')
   if (all(requiredCols %in% colnames(pathsRegresores))) {
-    print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra IMERG...'))
+    print(paste0(Sys.time(), ' - Ejecutando DetecciÃ³n Outliers RLM contra IMERG...'))
     
     test3 <- deteccionOutliersRLM(
       coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
-      pathsRegresores=pathsRegresores[, 'IMERG_V06B', drop=F], listaMapas=listaMapas, 
+      pathsRegresores=pathsRegresores[, 'IMERG_V06', drop=F], listaMapas=listaMapas, 
       factorMADHaciaAbajo=NA, factorSDHaciaAbajo=5.6, factorSDHaciaArriba=5.6, sdMin=1, 
       returnTestDF=TRUE
     )
@@ -261,7 +261,7 @@ applyQCTests <- function(
     # test3[test3$fecha == '2017-04-10',]
     # plot(test3[test3$fecha == '2017-04-10','valor'], test3[test3$fecha == '2017-04-10','estimado'])
     
-    print(paste0(Sys.time(), ' - Ejecutando Detección Outliers RLM contra GSMaP..'))
+    print(paste0(Sys.time(), ' - Ejecutando DetecciÃ³n Outliers RLM contra GSMaP..'))
     test4 <- deteccionOutliersRLM(
       coordsObservaciones, fechasObservaciones, valoresObservaciones, params=paramsInterpolacion, 
       pathsRegresores=pathsRegresores[, 'GSMaP_v7', drop=F], listaMapas=listaMapas, 
@@ -281,7 +281,7 @@ applyQCTests <- function(
         test=test3[iTest, ], 
         coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
         tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-        carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/3/'), shpBase=shpBase, 
+        carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/3/'), shpBase=shpBase, 
         replot=replot)
     }
     
@@ -290,14 +290,14 @@ applyQCTests <- function(
   } else {
     writeLines(paste0(
       Sys.time(), 
-      ' - No se encontró el valor de los siguientes regresores satelitales:\n ',
+      ' - No se encontrÃ³ el valor de los siguientes regresores satelitales:\n ',
       requiredCols[!requiredCols %in% colnames(pathsRegresores)],
-      '\nSalteando control de calidad en base a satélites.'
+      '\nSalteando control de calidad en base a satÃ©lites.'
     ))
   }
 
   
-  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers Media/Desv. Est..'))
+  print(paste0(Sys.time(), ' - Ejecutando DetecciÃ³n Outliers Media/Desv. Est..'))
   test5 <- deteccionOutliersMediaSD(x=valoresObservaciones, factorSDHaciaAbajo=7, sdMin=1)
   # test5[test3$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   
@@ -311,14 +311,14 @@ applyQCTests <- function(
       test=test5[iTest, ], 
       coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
       tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-      carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/4/'), shpBase=shpBase, 
+      carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/4/'), shpBase=shpBase, 
       replot=replot)
   }
   
   test5$reemplazar[iTest] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test5, valoresObservaciones)
   
-  print(paste0(Sys.time(), ' - Ejecutando Detección Outliers Max to Mean Ratios.'))
+  print(paste0(Sys.time(), ' - Ejecutando DetecciÃ³n Outliers Max to Mean Ratios.'))
   test6 <- testMaxToMeanRatios(valoresObservaciones, maxRatio=200)
   # test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ]
   
@@ -327,7 +327,7 @@ applyQCTests <- function(
       test=test6[test6$tipoOutlier %in% tiposOutliersValoresSospechosos, ], 
       coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
       tiposOutliersDeInteres=tiposOutliersValoresSospechosos,
-      carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/5/'), shpBase=shpBase, 
+      carpetaSalida=paste0(pathResultadosQC, 'mapas/PluviÃ³metros/5/'), shpBase=shpBase, 
       replot=replot)
   }
   

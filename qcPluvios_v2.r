@@ -1,4 +1,4 @@
-##### 0 - Descarga y preparaci髇 de los datos
+##### 0 - Descarga y preparaci贸n de los datos
 dt_ini <- '2017-02-01'
 dt_fin <- '2021-12-31'
 #estacionesADescartar <- c(
@@ -11,15 +11,15 @@ forzarReDescarga <- FALSE
 borrarDatosOriginales <- FALSE
 plotDatos <- FALSE
 
-source('cargaDatos.r', encoding = 'WINDOWS-1252')
+source('cargaDatos.r')
 
 valoresObservaciones[valoresObservaciones > 450] <- NA_real_
 
-##### 1 - Correlaci髇 VS Distancia
-source(paste0(pathSTInterp, 'Graficas/graficas.r'), encoding = 'WINDOWS-1252')
+##### 1 - Correlaci贸n VS Distancia
+source(paste0(pathSTInterp, 'Graficas/graficas.r'))
 dist <- rdist(sp::coordinates(coordsObservaciones))
 corr <- cor(valoresObservaciones, use="pairwise.complete.obs")
-# Cuantas veces la estaci髇 es la menos correlacionada con otra
+# Cuantas veces la estaci贸n es la menos correlacionada con otra
 bajaCorr <- table(
   estaciones$NombreEstacionR[apply(corr, MARGIN = 1, FUN = which.min)]
 )
@@ -57,7 +57,7 @@ graficoCorrVsDistancia(
 iRaras <- estaciones$NombreEstacionR %in% estacionesRaras
 
 
-##### 2 - Tablas estad韘ticas
+##### 2 - Tablas estad铆sticas
 max_run_length <- function(x, conditionFunc=function(x) { is.na(x) })  {
   enc <- rle(conditionFunc(x))
   if (any(enc$values, na.rm = T)) {
@@ -228,7 +228,7 @@ iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
 writeLines(text=estacionesDeReferencia, con=paste0(pathResultadosQC, 'estacionesDeReferencia.txt'))
 
 
-##### 3 - Ubicaci髇 Estaciones
+##### 3 - Ubicaci贸n Estaciones
 clasesEstaciones <- rep('General', nrow(estaciones))
 for (estacion in estacionesRaras) clasesEstaciones[which(estaciones$NombreEstacionR == estacion)] <- estacion
 
@@ -243,10 +243,10 @@ mapaDistancias <- SpatialPixelsDataFrame(points=coordsAInterpolar, data=data.fra
 sobreUy <- over(geometry(mapaDistancias), geometry(shpBase))
 mapaDistancias$value[is.na(sobreUy)] <- NA  
 
-png('Resultados/1-Exploracion/histDistanciaEstaciones.png', height=500, width=800, type='cairo')
+png('Resultados/1-Exploracion/histDistanciaEstaciones.png', height=500, width=800)
 tryCatch(expr=print(
-  hist(mapaDistancias$value, main='Distribuci髇 de Distancias a la Estaci髇 M醩 Cercana', 
-       xlab='Distancia[Km]', ylab='Proporci髇 [p.u.]', freq=FALSE)
+  hist(mapaDistancias$value, main='Distribuci贸n de Distancias a la Estaci贸n M谩s Cercana', 
+       xlab='Distancia[Km]', ylab='Proporci贸n [p.u.]', freq=FALSE)
 ), finally = dev.off())
 coordsObservaciones$value <- coordsObservaciones$Nombre
 
@@ -260,11 +260,11 @@ escala <- crearEscala(
   colores=coloresEscala, brewerPal='RdYlGn', continuo=T)
 mapearGrillaGGPlot(
   grilla=mapaDistancias, shpBase=shpBase, xyLims=xyLims, escala=escala,
-  titulo='Distancias a la Observaci髇 M醩 Cercana [Km]',
+  titulo='Distancias a la Observaci贸n M谩s Cercana [Km]',
   # dibujarPuntosObservaciones=T, coordsObservaciones=coordsObservaciones,
   subtitulo=paste0(
     'Media: ', round(mean(mapaDistancias$value, na.rm=T), 1), 
-    ' Km. M醲imo: ', round(max(mapaDistancias$value, na.rm=T), 1), ' Km.'),
+    ' Km. M谩ximo: ', round(max(mapaDistancias$value, na.rm=T), 1), ' Km.'),
   nomArchResultados = 'Resultados/1-Exploracion/mapaDistanciaAEstaciones.png',
   widthPx = widthPx, heightPx = heightPx, DPI = DPI
 )
@@ -298,7 +298,7 @@ coordsObservaciones$etiqueta <- paste0(
 
 mapaEstaciones <- mapearPuntosConEtiquetasGGPlot(
   puntos = coordsObservaciones, shpBase = shpBase, xyLims = xyLims, coloresPuntos = colores, 
-  zcol='etiqueta', titulo = 'Red de Observaci髇 Disponible', tamaniosPuntos = 3, 
+  zcol='etiqueta', titulo = 'Red de Observaci贸n Disponible', tamaniosPuntos = 3, 
   tamanioFuentePuntos = 3, nomArchResultados = 'Resultados/1-Exploracion/mapaEstaciones.png', 
   widthPx = widthPx, heightPx = heightPx, DPI = DPI)
 
@@ -321,9 +321,9 @@ mapaEstacionesConDistMax <- mapaEstaciones +
   geom_text(data=dfRadio, aes(x=x1 + distMax / 2, y=y1 + 20, label=value), size=5, colour="black")
 
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
-       dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in', type='cairo')
+       dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in')
 
-source('aplicaQC.r', encoding = 'WINDOWS-1252')
+source('aplicaQC.r')
 
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 

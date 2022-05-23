@@ -4,18 +4,6 @@ tools::psnice(value = 15)
 if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
-# Linux installations need to run these to have rgdal available
-# sudo apt-get update
-# sudo apt-get install libgdal-dev libproj-dev
-# and this for Cairo
-# sudo apt-get install libcairo2-dev libgtk2.0-dev xvfb xauth xfonts-base libxt-dev
-# and this for devtools
-# sudo apt-get install libcurl4-gnutls-dev libssl-dev libxml2-dev libxslt-dev libcurl4-openssl-dev
-
-# 蚽dice
-# 5 - Preparaci髇 de Par醡etros
-# 6 - Interpolaci髇 de los datos
-# 7 - Cross Validation
 
 #dt_ini <- '2009-09-16'
 dt_ini <- '2017-02-01'
@@ -28,10 +16,6 @@ dt_fin <- '2020-03-05'
 #dt_ini <- '2017-02-01'
 #dt_fin <- '2021-12-31'
 
-
-#estacionesADescartar <- c(
-#  'ANSINA.Paso.BORRACHO.RHT', 'PASO.MAZANGANO.RHT', 'PASO.LAGUNA.I.RHT', 'PASO.AGUIAR.RHT',
-#  'PASO.PEREIRA.RHT', 'PASO.NOVILLOS.RHT', 'VILLA.SORIANO.RHT')
 estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
@@ -48,22 +32,23 @@ runVerif <- TRUE
 runExternalValidation <- TRUE
 
 postFijoPluvios <- ''
-nombreExperimento <- paste0('2021_12', postFijoPluvios)
+nombreExperimento <- paste0('2022_05', postFijoPluvios)
 
-source('cargaDatos.r', encoding = 'WINDOWS-1252')
+source('cargaDatos.r')
 
 localFileNonQCed <- paste0(
   pathDatos, 'pluviometros/', gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_non_qced', postFijoPluvios, '.tsv'
 )
 grabarSeriesArchivoUnico(
   pathArchivoDatos=localFileNonQCed, estaciones=estaciones, 
-  fechas=fechasObservaciones, datos=valoresObservaciones)
+  fechas=fechasObservaciones, datos=valoresObservaciones
+)
 
 localFileQCed <- paste0(
   pathDatos, 'pluviometros/', gsub('-', '', dt_ini), '_', gsub('-', '', dt_fin), '_qced', postFijoPluvios, '.tsv'
 )
 if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
-  source('aplicaQC.r', encoding = 'WINDOWS-1252')
+  source('aplicaQC.r')
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones,
     paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
@@ -72,13 +57,14 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   
   grabarSeriesArchivoUnico(
     pathArchivoDatos=localFileQCed, estaciones=estaciones,
-    fechas=fechasObservaciones, datos=valoresObservaciones
+    fechas=fechasObservaciones, datos=valoresObservaciones, 
+    fileEncoding='WINDOWS-1252'
   )
 } else {
   datos <- leerSeriesArchivoUnico(
     pathArchivoDatos=localFileQCed, 
-    nFilasEstaciones=6, 
-    filaId=3, 
+    nFilasEstaciones=8, 
+    filaId=1, 
     fileEncoding='WINDOWS-1252'
   )
   valoresObservaciones <- datos$datos
@@ -86,8 +72,8 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
 }
 
 if (plotDatos) {
-  source('graficosParticulares.r', encoding = 'WINDOWS-1252')
-  source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'), encoding = 'WINDOWS-1252')
+  source('graficosParticulares.r')
+  source(paste0(pathSTInterp, 'interpolar/leerEscalas.r'))
   especificacionEscala <- crearEspecificacionEscalaRelativaAlMinimoYMaximoDistinguir0(
     nDigitos = 1, continuo = T)
   
@@ -104,7 +90,7 @@ if (plotDatos) {
   )
 }
 
-source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/interpolarYMapearEx.r'))
 # pathsRegresores <- pathsRegresores[, -3]
 
 
@@ -115,7 +101,7 @@ if (FALSE) {
     objSP = coordsObservaciones, pathsRegresores = pathsRegresores)
   sapply(uniqueCuts, FUN = function(x) {
     idx = cuts == x
-    return(cor(valoresObservaciones[idx], valoresRegresores[['IMERG_V06B']][idx], use = "pairwise.complete.obs"))
+    return(cor(valoresObservaciones[idx], valoresRegresores[['IMERG_V06']][idx], use = "pairwise.complete.obs"))
   })
 }
 
@@ -134,7 +120,7 @@ p <- ggplot(data=dfCorrs, aes(x=fecha, y=corr, colour=satelite, group=satelite))
      scale_x_date(date_breaks = "1 month") +
      theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1),
            plot.title = element_text(hjust = 0.5)) +
-     labs(title='Correlaci髇 Diaria', x='Fecha', y='Correlaci髇')
+     labs(title='Correlaci贸n Diaria', x='Fecha', y='Correlaci贸n')
 
 ggsave(filename = 'Resultados/1-Exploracion/CorrelacionDiaria.png', plot = p)
 
@@ -293,7 +279,7 @@ if (FALSE) {
     escalaSD <- crearEscalaEquiespaciada(r3, brewerPal = 'Reds', nIntervalos = 8, continuo = T)
     
     pathsRasters <- cbind(pathsClimMean, pathsClimMedian, pathsClimSD)
-    colnames(pathsRasters) <- c('Media', 'Mediana', 'Desviaci髇 Estandar')
+    colnames(pathsRasters) <- c('Media', 'Mediana', 'Desviaci贸n Estandar')
     
     escalas <- list()
     escalas[[1]] <- escalaCentral
@@ -330,7 +316,7 @@ if (FALSE) {
   paramsI$umbralMascaraCeros <- 0
   paramsI$metodoRemocionDeSesgo <- 'ninguno'
   listaParams[[2]] <- paramsI
-  listaRegresores[[2]] <- pathsRegresores[, c('IMERG_V06B'), drop=FALSE]
+  listaRegresores[[2]] <- pathsRegresores[, c('IMERG_V06'), drop=FALSE]
   
   # 3 - GSMaP sin calibrar
   paramsI <- paramsBase
@@ -349,7 +335,7 @@ if (FALSE) {
   paramsI$metodoIgualacionDistribuciones <- 'GLS'
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[4]] <- paramsI
-  listaRegresores[[4]] <- pathsRegresores[, c('IMERG_V06B'), drop=FALSE]
+  listaRegresores[[4]] <- pathsRegresores[, c('IMERG_V06'), drop=FALSE]
   paramsI$signosValidosRegresores <- 1
   names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[4]])
   
@@ -371,7 +357,7 @@ if (FALSE) {
   paramsI$metodoIgualacionDistribuciones <- 'GLS'
   paramsI$metodoRemocionDeSesgo <- 'IDW_ResiduosPositivos'
   listaParams[[6]] <- paramsI
-  listaRegresores[[6]] <- pathsRegresores[,c('IMERG_V06B', 'GSMaP_v7'), drop=FALSE]
+  listaRegresores[[6]] <- pathsRegresores[,c('IMERG_V06', 'GSMaP_v7'), drop=FALSE]
   
   # 7 - Kriging Universal Espacial + Regresion Generalizada en Combinado
   paramsI <- paramsBase
@@ -432,7 +418,7 @@ if (FALSE) {
   names(paramsI$signosValidosRegresores) <- colnames(listaRegresores[[12]])
   
   
-  # 13 - Kriging Ordinario Espacial sin m醩cara
+  # 13 - Kriging Ordinario Espacial sin m谩scara
   paramsI <- paramsBase
   paramsI$mLimitarValoresInterpolados <- 'LimitarMinimoyMaximo'
   paramsI$interpolationMethod <- 'automap'
@@ -456,10 +442,10 @@ if (FALSE) {
 }
 
 modelosACorrer <- 1:length(listaParams)
-modelosACorrer <- c('K', 'IMERG_V06B', 'GSMaP_v7', 'GR-Combinado', 'GRK-Combinado', 'GRK-IMERG_V06B')
+modelosACorrer <- c('K', 'IMERG_V06', 'GSMaP_v7', 'GR-Combinado', 'GRK-Combinado', 'GRK-IMERG_V06')
 modelosACorrer <- c(1, 2, 3, 12, 7, 4)
 
-source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'), encoding = 'WINDOWS-1252')
+source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'))
 
 ############# Tests Regresores #############
 if (runTestsRegresores) {
@@ -528,9 +514,9 @@ if (runGridding) {
 
 ############# Cross Validation #############
 if (runCV) {
-  # La funci髇 universalGriddingCV retorna una matriz de las mismas dimensiones que 
+  # La funci贸n universalGriddingCV retorna una matriz de las mismas dimensiones que 
   # valoresObservaciones, con cv[i, j] el valor de la LOOCV de la estacion j en la fecha i. 
-  # Es decir el valor de cv[i, j] es la estimaci髇 LOOCV de valoresObservaciones[i, j]
+  # Es decir el valor de cv[i, j] es la estimaci贸n LOOCV de valoresObservaciones[i, j]
   pathResultadosValidacion <- paste0('Resultados/4-Validacion', nombreExperimento, '/')
   cvs <- st_interpCrossValidations(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores,
@@ -583,13 +569,13 @@ if (runCV) {
 ############# Plots #############
 if (runPlots) {
   dirPlots <- paste0('Resultados/5-ComparacionModelos', nombreExperimento, '/')
-  source('graficosParticulares.r', encoding = 'WINDOWS-1252')
+  source('graficosParticulares.r')
   # ti <- 1
   
   plotComparacionModelos(
     coordsObservaciones, fechasObservaciones, valoresObservaciones, 
     pathsModelos=cargarRegresores(carpetaRegresores = pathResultadosGrillado, fechasRegresando = fechasObservaciones), 
-    modelosAPlotear=c('IMERG_V06B', 'GSMaP_v7', 'K', 'GR-Combinado', 'GRK-Combinado'), 
+    modelosAPlotear=c('IMERG_V06', 'GSMaP_v7', 'K', 'GR-Combinado', 'GRK-Combinado'), 
     especificacionEscala=especificacionEscala, shpBase=shpBase, nColsPlots=3, 
     carpetaSalida=dirPlots, replot=FALSE)
 }
@@ -603,7 +589,7 @@ if (runExternalValidation) {
   )
   
   estacionesR3 <- datosR3$estaciones
-  # Cambio el criterio de guardado de los datos de R3 a "d韆 i + 1"
+  # Cambio el criterio de guardado de los datos de R3 a "d铆a i + 1"
   fechasObservacionesR3 <- datosR3$fechas + lubridate::days(1)
   valoresObservacionesR3 <- datosR3$datos
   rownames(valoresObservacionesR3) <- as.character(fechasObservacionesR3)
