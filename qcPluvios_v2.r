@@ -13,6 +13,10 @@ plotDatos <- FALSE
 
 source('cargaDatos.r')
 
+iAConservar <- apply(X = !is.na(valoresObservaciones), FUN = any, MARGIN = 2)
+print(paste0(Sys.time(), ' - Descartando ', sum(!iAConservar), ' estaciones sin datos.'))
+coordsObservaciones <- coordsObservaciones[iAConservar, ]
+valoresObservaciones <- valoresObservaciones[, iAConservar, drop=FALSE]
 valoresObservaciones[valoresObservaciones > 450] <- NA_real_
 
 ##### 1 - Correlación VS Distancia

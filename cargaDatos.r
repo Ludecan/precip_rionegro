@@ -122,6 +122,7 @@ estaciones <- datos$estaciones
 fechasObservaciones <- datos$fechas
 rownames(datos$datos) <- as.character(fechasObservaciones)
 valoresObservaciones <- datos$datos
+rm(datos)
 
 if (!is.null(estacionesADescartar)) {
   iAConservar <- !estaciones$NombreEstacionR %in% estacionesADescartar
