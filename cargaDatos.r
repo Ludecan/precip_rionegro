@@ -55,7 +55,7 @@ if (Sys.getenv(x='URL_MEDIDAS_PLUVIOS_RESPALDO') == '') {
     'Defina su valor y vuelva a intentarlo'))
 }
 
-print(paste0(Sys.time(), ' - Descargando datos de pluviometros convencionales de ADME del ', dt_ini, ' al ', dt_fin))
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros convencionales de UTE del ', dt_ini, ' al ', dt_fin))
 datosConvencionales <- descargaPluviosADMEConvencionales(
   dt_ini=dt_ini, 
   dt_fin=dt_fin, 
@@ -65,7 +65,7 @@ datosConvencionales <- descargaPluviosADMEConvencionales(
 )
 logDatosObtenidosPluviometros(datosConvencionales, " convencionales de UTE")
 
-print(paste0(Sys.time(), ' - Descargando datos de pluviometros de telemedida de ADME del ', dt_ini, ' al ', dt_fin))
+print(paste0(Sys.time(), ' - Descargando datos de pluviometros de telemedida de UTE del ', dt_ini, ' al ', dt_fin))
 datosTelemedida <- descargaPluviosADMETelemedida(
   dt_ini=dt_ini, 
   dt_fin=dt_fin, 
@@ -85,8 +85,8 @@ datosRespaldo <- descargaPluviosRespaldo(
 )
 logDatosObtenidosPluviometros(datosRespaldo, " de respaldo")
 
-datos <- concatenarDatos(datos1=datosConvencionales, datos2=datosTelemedida)
-datos <- concatenarDatos(datos1=datos, datos2=datosRespaldo)
+datos <- concatenarDatosDeDistintasEstaciones(datos1=datosConvencionales, datos2=datosTelemedida)
+datos <- concatenarDatosDeDistintasEstaciones(datos1=datos, datos2=datosRespaldo)
 
 if (is.null(datos)) {
   stop(paste0(

@@ -99,9 +99,6 @@ descargaPluviosADMETelemedida <- function(
     datosTelemedida <- leerSeriesXLSX(
       pathArchivoDatos=localFile, hojaDatos='MedidasHorarias', fileEncoding='UTF-8'
     )
-    
-    # TODO: Actualizar esto para que cumpla con el criterio del día i + 1 si alguna vez 
-    # se vuelve a utilizar
     # Agregacion diaria
     print(paste0(Sys.time(), ' - Agregando valores diarios...'))
     triHourlyUpTo <- list(
