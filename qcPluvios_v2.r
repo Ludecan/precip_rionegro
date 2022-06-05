@@ -331,10 +331,7 @@ ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesCo
 
 
 
-puntos <- coordsObservaciones
-coords <- sp::coordinates(puntos)
-
-
+coords <- sp::coordinates(coordsObservaciones)
 deReferencia <- rep(FALSE, nrow(estaciones))
 deReferencia[iEstacionesDeReferencia] <- TRUE
 df <- data.frame(x=coords[,1], y=coords[,2], redOrigen=coordsObservaciones$redOrigen, deReferencia=deReferencia)
@@ -344,19 +341,25 @@ p <- ggplot(aes(x=x, y=y), data=df) +
   #labs(x = "Este[m]", y = "Norte[m]", fill = "") + 
   labs(x = "", y = "", fill = "") + 
   theme(panel.background=element_blank()) + 
-  geom_point(color=redOrigen, size=deReferencia) +
+  geom_point(aes(color=redOrigen, size=deReferencia)) +
   scale_size_manual(values=c(2, 3.5))
 
 # Dibujar escala no se usa, se pasa con true para que no haga nada
 p <- aplicarOpcionesAMapa(
   p=p, xyLims=xyLims, shpBase=shpBase, dibujarEscala=T, dibujarEjes=T, 
-  titulo="", subtitulo="", widthPx=630
+  titulo="Redes Pluviométricas Disponibles", subtitulo="", widthPx=630
 )  
 
-# p <- p + geom_text_repel(data=df, aes(label=value), size=tamanioFuentePuntos, colour=coloresTexto)
+p <- p + 
+  geom_path(data=shpF, mapping=aes(x=long, y=lat, group=group, z=NULL), color=rgb(25, 25, 25, maxColorValue=255), size=0.7) +
+  geom_point(data=dfRadio, aes(x=x1, y=y1), colour="black", size=2) +
+  geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), data = dfRadio, arrow = arrow(length=unit(0.30,"cm")), size=0.7) +
+  geom_text(data=dfRadio, aes(x=x1 + distMax / 2, y=y1 + 20, label=value), size=5, colour="black")
 
-
-
+ggsave(
+  p, file='Resultados/1-Exploracion/redesDisponibles.png', dpi=DPI, width=widthPx/DPI, 
+  height=heightPx/DPI, units='in'
+)
 
 source('aplicaQC.r')
 

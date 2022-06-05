@@ -15,7 +15,8 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
   paramsStr <- 'dt_fin=2022-05-09'
-  # paramsStr <- 'dt_fin=2022-04-09;dt_ini=2022-04-07'
+  paramsStr <- 'dt_fin=2022-06-04;dt_ini=2017-02-01'
+  paramsStr <- 'dt_fin=2022-06-04;dt_ini=2022-06-01'
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
   # interactivas de desarrollo
