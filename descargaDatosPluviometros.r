@@ -156,9 +156,11 @@ descargaPluviosADMETelemedida <- function(
         return(valoresObservaciones[, idx_i])
       }
       
-      valoresObservaciones[, colsToSplit] <- sapply(
-        seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
-        colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
+      if (length(colsToSplit) > 0) {
+        valoresObservaciones[, colsToSplit] <- sapply(
+          seq_along(colsToSplit), splitAccumulated_i, valoresObservaciones=valoresObservaciones, 
+          colsToSplit=colsToSplit, rowsToSplit=rowsToSplit, rowWeights=rowWeights)
+      }
       return(valoresObservaciones)
     }
     
