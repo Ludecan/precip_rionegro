@@ -112,8 +112,8 @@ descargaPluviosADMETelemedida <- function(
     triHourlyUpTo <- triHourlyUpTo[names(triHourlyUpTo) %in% datosTelemedida$estaciones$Nombre]
     
     colsToSplit <- which(sapply(colnames(datosTelemedida$datos), FUN = function(x) x %in% names(triHourlyUpTo)))
-    # x <- triHourlyUpTo[[5]]
-    rowsToSplit <- sapply(triHourlyUpTo, function(x, fechasObservaciones) {
+    # x <- triHourlyUpTo[[1]]
+    rowsToSplit <- lapply(triHourlyUpTo, function(x, fechasObservaciones) {
       hora <- as.integer(substr(fechasObservaciones, 12, 13))
       if (!is.na(x)) { 
         return(seq_along(fechasObservaciones)[hora %% 3 == 0 & fechasObservaciones <= x])
@@ -122,7 +122,7 @@ descargaPluviosADMETelemedida <- function(
       }
     }, fechasObservaciones=datosTelemedida$fechas)
     
-    idx <- sapply(rowsToSplit, function(x) !is.null(x))
+    idx <- sapply(rowsToSplit, function(x) length(x) > 0)
     colsToSplit <- colsToSplit[idx]
     rowsToSplit <- rowsToSplit[idx]
     rm(idx)
@@ -163,7 +163,11 @@ descargaPluviosADMETelemedida <- function(
     }
     
     datosTelemedida$datos <- splitAccumulated(
-      datosTelemedida$datos, colsToSplit, rowsToSplit, rowWeights = NULL)
+      valoresObservaciones=datosTelemedida$datos, 
+      colsToSplit=colsToSplit, 
+      rowsToSplit=rowsToSplit, 
+      rowWeights=NULL
+    )
     
     rm(rowsToSplit, colsToSplit)
     
