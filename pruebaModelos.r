@@ -519,8 +519,10 @@ if (runCV) {
   # Es decir el valor de cv[i, j] es la estimación LOOCV de valoresObservaciones[i, j]
   pathResultadosValidacion <- paste0('Resultados/4-Validacion', nombreExperimento, '/')
   cvs <- st_interpCrossValidations(
-    coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, listaRegresores,
-    pathResultados=pathResultadosValidacion, modelosACorrer=modelosACorrer, recalcCV=FALSE)
+    coordsObservaciones, fechasObservaciones, valoresObservaciones, listaParams, 
+    listaRegresores, pathResultados=pathResultadosValidacion, 
+    modelosACorrer=modelosACorrer, recalcCV=FALSE
+  )
   
   ############# Validation Stats #############
   if (runValidation) {
@@ -536,7 +538,9 @@ if (runCV) {
     }
     
     validationStats <- calcValidationStatisticsMultipleModels(
-      vObs, cvs_idx, climatologias=NULL, pathResultados='Resultados/4-Validacion/')
+      valoresObservaciones=vObs, cvs=cvs_idx, climatologias=NULL, 
+      pathResultados=pathResultadosValidacion
+    )
     
     validationStats$validationStatsOverall
     
@@ -561,7 +565,14 @@ if (runCV) {
       shpBase = shpBase, xyLims = xyLims, nColsPlots = min(length(ordenModelosPorColumnas), 3),
       ordenModelosPorColumnas = ordenModelosPorColumnas,
       tamaniosPuntos=8, tamanioFuentePuntos=7, tamanioFuenteEjes=20, tamanioFuenteTitulo=22,
-      carpetaSalida=pathResultadosValidacion)    
+      carpetaSalida=pathResultadosValidacion)
+    
+    rainfallDetectionStats <- calcRainfallDetectionStatisticsMultipleModels(
+      valoresObservaciones=vObs, cvs=cvs_idx, thresholds = ,
+      pathResultados=pathResultadosValidacion
+    )
+    
+    rainfallDetectionStats$rainfallDetectionStatsOverall
   }
 }
 

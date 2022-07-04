@@ -15,8 +15,10 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
   paramsStr <- 'dt_fin=2022-05-09'
-  paramsStr <- 'dt_fin=2022-06-04;dt_ini=2017-02-01'
-  paramsStr <- 'dt_fin=2022-06-04;dt_ini=2022-06-01'
+  paramsStr <- 'dt_fin=2022-07-02;dt_ini=2017-02-01'
+  #paramsStr <- 'dt_fin=2018-02-07'
+  #paramsStr <- 'dt_fin=2022-01-05;dt_ini=2022-01-01'
+  paramsStr <- ''
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
   # interactivas de desarrollo
@@ -201,7 +203,8 @@ interpolarYMapear(
   coordsObservaciones=coordsObservaciones, 
   fechasObservaciones=fechasObservaciones, 
   valoresObservaciones=valoresObservaciones, 
-  pathsRegresores=pathsRegresores, 
+  pathsRegresores=pathsRegresores,
+  # pathsRegresores=NULL, 
   coordsAInterpolar=coordsAInterpolar, 
   paramsIyM=params,
   shpMask=shpMask,
