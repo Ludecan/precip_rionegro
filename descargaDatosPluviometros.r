@@ -224,6 +224,22 @@ descargaPluviosADMETelemedida <- function(
     datosTelemedida$estaciones[, 'tipoPluvio'] <- TRUE
     datosTelemedida$estaciones[, 'tipoAutomatica'] <- TRUE
     datosTelemedida$estaciones[, 'redOrigen'] <- 'telemedida'
+    
+    
+    # El período 2021-09-17 al 2021-11-19 los telepluviómetros de UTE tuvieron problemas
+    # de mantenimiento causados por el COVID.
+    # En conversación con Guillermo se recibió:
+    # El 17 de septiembre de 2021 me confirmaron que por razones vinculadas al COVID los
+    # pluviometros de Telemedia no estaban recibiendo mantenimiento y registrando 
+    # valores distintos a los de los convecionales
+    # El 11 de noviembre de 2021 me avisaron que la fecha de conclusión de los 
+    # mantenimientos era el 19 de noviembre
+    # Por esta razón, descartamos los datos desde 2021-09-01 al 2021-11-30
+    iFechasADescartar <- which(
+      between(as.character(datosTelemedida$fechas), '2021-09-01', '2021-11-30')
+    )
+    
+    datosTelemedida$datos[iFechasADescartar, ] <- NA_real_
   } else {
     datosTelemedida <- NULL
   }
@@ -274,7 +290,7 @@ descargaPluviosRespaldo <- function(
     datos[idx, ] <- datosRespaldo$datos[iMatches[idx], ]
     
     if (any(!idx)) {
-      archRespaldoHistorico <- paste0(pathSalida, 'R3_201701_202205.tsv')
+      archRespaldoHistorico <- paste0(pathSalida, 'historico_respaldo.tsv')
       if (file.exists(archRespaldoHistorico)) {
         datosRespaldoHistorico <- leerSeriesArchivoUnico(archRespaldoHistorico)
         # Criterío dia i + 1
