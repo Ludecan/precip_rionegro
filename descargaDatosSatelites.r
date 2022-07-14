@@ -117,9 +117,11 @@ descargaGSMaP <- function(
     }
     
     if (verbose) {
-      print(paste0(
+      print(
+        paste0(Sys.time(), " - ",
         sum(res == 1), " new files downloaded, ", sum(res == 2), " already existed, ", 
-        sum(res == 0), " could not be downloaded."))
+        sum(res == 0), " could not be downloaded.")
+      )
     }
     
     if (length(iHorasADescargar) > 0) {
@@ -253,9 +255,11 @@ descargaIMERG <- function(
     }
     
     if (verbose) {
-      print(paste0(
+      print(
+        paste0(Sys.time(), " - ",
         sum(res == 1), " new files downloaded, ", sum(res == 2), " already existed, ", 
-        sum(res == 0), " could not be downloaded."))
+        sum(res == 0), " could not be downloaded.")
+      )
     }
     
     if (length(iPeriodosADescargar) > 0) {
