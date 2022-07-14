@@ -444,6 +444,8 @@ if (FALSE) {
 modelosACorrer <- 1:length(listaParams)
 modelosACorrer <- c('K', 'IMERG_V06', 'GSMaP_v7', 'GR-Combinado', 'GRK-Combinado', 'GRK-IMERG_V06')
 modelosACorrer <- c(1, 2, 3, 12, 7, 4)
+modelosACorrer <- c(1, 7)
+
 
 source(paste0(pathSTInterp, 'interpolar/testInterpolationModels.r'))
 
@@ -568,7 +570,7 @@ if (runCV) {
       carpetaSalida=pathResultadosValidacion)
     
     rainfallDetectionStats <- calcRainfallDetectionStatisticsMultipleModels(
-      valoresObservaciones=vObs, cvs=cvs_idx, thresholds = ,
+      valoresObservaciones=vObs, cvs=cvs_idx,
       pathResultados=pathResultadosValidacion
     )
     
