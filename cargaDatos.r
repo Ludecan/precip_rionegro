@@ -242,7 +242,7 @@ if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
   shpSubCuencas <- spTransform(shpSubCuencas, coordsAInterpolar@proj4string)
 }
 
-estacionesDeReferencia <- readLines(con=file(paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt'), encoding = 'WINDOWS-1252'))
+estacionesDeReferencia <- readLines(con=file(paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt')))
 iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
 iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
 iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
