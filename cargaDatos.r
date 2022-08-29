@@ -244,6 +244,7 @@ if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
 
 estacionesDeReferencia <- readLines(con=file(paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt')))
 iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
+stopifnot(length(estacionesDeReferencia) == sum(iEstacionesDeReferencia))
 iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
 iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
 
