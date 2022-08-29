@@ -173,7 +173,7 @@ limites <- as.data.frame(t(data.frame(
   pctPrecipPeriodoActiva=c(15, 35),
   pctCerosPeriodoActiva=c(65, 82),
   pctFaltantesPeriodoTotal=c(NA, 20),
-  pctPrecipDatosReportados=c(15, 30),
+  pctPrecipDatosReportados=c(15, 31),
   pctCerosDatosReportados=c(60, 82),
   promedioDiario=c(1.7, 4.6),
   desviacionEstandar=c(6, 15.5),
@@ -229,7 +229,6 @@ estacionesRaras <- estaciones$Nombre[iRaras]
 iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
 iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
 iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
-
 writeLines(text=estacionesDeReferencia, con=paste0(pathResultadosQC, 'estacionesDeReferencia.txt'))
 
 
@@ -327,9 +326,6 @@ mapaEstacionesConDistMax <- mapaEstaciones +
 
 ggsave(mapaEstacionesConDistMax, file='Resultados/1-Exploracion/mapaEstacionesConDistMax.png', 
        dpi=DPI, width = widthPx / DPI, height = heightPx / DPI, units = 'in')
-
-
-
 
 coords <- sp::coordinates(coordsObservaciones)
 deReferencia <- rep(FALSE, nrow(estaciones))
