@@ -143,7 +143,7 @@ pathsGSMaP <- descargaGSMaP(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
   shpBase=shpBase, forzarReDescarga=forzarReDescarga, borrarDatosOriginales=borrarDatosOriginales
 )
-loadGSMaPV8 <- FALSE
+loadGSMaPV8 <- TRUE
 if (loadGSMaPV8) {
   print(paste0(Sys.time(), ' - Descargando datos de GSMaP_v8 del ', dt_ini, ' al ', dt_fin))
   pathsGSMaPv8 <- descargaGSMaP(
