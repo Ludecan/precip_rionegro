@@ -14,11 +14,13 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
-  paramsStr <- 'dt_fin=2022-05-09'
-  paramsStr <- 'dt_fin=2022-07-02;dt_ini=2017-02-01'
+  #paramsStr <- 'dt_fin=2022-07-02;dt_ini=2017-02-01'
+  #paramsStr <- 'dt_fin=2022-09-06;dt_ini=2017-02-01'
   #paramsStr <- 'dt_fin=2018-02-07'
   #paramsStr <- 'dt_fin=2022-01-05;dt_ini=2022-01-01'
-  paramsStr <- ''
+  #paramsStr <- 'dt_fin=2023-08-16'
+  paramsStr <- 'dt_fin=2023-08-20'
+  #paramsStr <- 'dt_fin=2022-05-09'
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
   # interactivas de desarrollo
@@ -204,7 +206,7 @@ interpolarYMapear(
   fechasObservaciones=fechasObservaciones, 
   valoresObservaciones=valoresObservaciones, 
   pathsRegresores=pathsRegresores,
-  # pathsRegresores=NULL, 
+  #pathsRegresores=NULL, 
   coordsAInterpolar=coordsAInterpolar, 
   paramsIyM=params,
   shpMask=shpMask,
@@ -226,6 +228,10 @@ acumuladosPorSubCuencas <- t(agregacionEspacialAPoligonosDesdeArchivos(
   pathsSpObjs=listaMapas$nombreArchivo, shpPoligonos=shpSubCuencas, funcionAgregacion=base::mean,
   zcol=1, na.rm=T, nCoresAUsar=0, guardarCSV=FALSE, retornarResultados=TRUE, useRaster=TRUE))
 
+
+#valoresObservaciones[which(apply(is.na(acumuladosPorSubCuencas), 1, all)), ]
+#unlink(changeFileExt(listaMapas$nombreArchivo[which(apply(is.na(acumuladosPorSubCuencas), 1, all))], ".tif"))
+
 rownames(acumuladosPorSubCuencas) <- gsub(
   pattern='_', replacement='-', x=nombreArchSinPathNiExtension(listaMapas$nombreArchivo), fixed=T)
 
@@ -241,6 +247,6 @@ if (file.exists(archAcumuladosAyer)) {
 } else {
   dir.create(dirname(archAcumuladosHoy), showWarnings = F, recursive = T)
 }
+
 write.table(x = acumuladosPorSubCuencas, file = archAcumuladosHoy, append=TRUE, quote = FALSE,
             sep = '\t', na = '-1111', dec = '.', row.names = TRUE, col.names = FALSE)
-
