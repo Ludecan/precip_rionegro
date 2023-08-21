@@ -119,6 +119,53 @@ applyQCTests <- function(
     logTransforms=FALSE
   )
   
+  if (FALSE) {
+    print(paste0(Sys.time(), ' - Estimando valores del set de Referencia mediante universalGriddingCV...'))
+    estimacionSetReferencia <- universalGriddingCV(
+      coordsObservaciones=coordsObservaciones[iEstacionesDeReferencia, , drop=F],
+      fechasObservaciones=fechasObservaciones,
+      valoresObservaciones=valoresObservaciones[, iEstacionesDeReferencia, drop=F],
+      params=paramsInterpolacionSetDeReferencia,
+      pathsRegresores=regresorCombinado,
+      estimarNAs=FALSE
+    )
+    colnames(estimacionSetReferencia) <- colnames(valoresObservaciones)[iEstacionesDeReferencia]
+    print(paste0(Sys.time(), ' - Finalizado estimando valores del set de Referencia mediante universalGriddingCV...'))
+    
+    stdDifs <- calcStdDifs(
+      valoresObservaciones=valoresObservaciones[, iEstacionesDeReferencia, drop=F],
+      estimaciones=estimacionSetReferencia,
+      minSDValoresObservaciones=0.2,
+      minSDDiffs=2
+    )
+    
+    test0 <- createDFTestsConEstimadosYStdDifsUmbralValor(
+      x=valoresObservaciones[, iEstacionesDeReferencia, drop=F],
+      estimados=estimacionSetReferencia,
+      stdDifs=stdDifs,
+      factorHaciaAbajo=3.5,
+      #factorHaciaArriba=5.4,
+      #umbralValor=10,
+      #factorHaciaAbajoSiMayorAUmbralValor=4,
+      #factorHaciaArribaSiMayorAUmbralValor=7
+    )
+    test0 <- test0[!is.na(test0$valor), ]
+    
+    if (plotMaps) {
+      tamaniosPuntos <- rep(5, nrow(coordsObservaciones))
+      tamaniosPuntos[iEstacionesNoReferencia] <- 2
+      
+      mapearResultadosDeteccionOutliersV2(
+        test=test0[test0$tipoOutlier %in% tiposOutliersValoresSospechosos,], 
+        coordsObservaciones=coordsObservaciones, valoresObservaciones=valoresObservaciones,
+        tiposOutliersDeInteres=tiposOutliersValoresSospechosos, tamaniosPuntos=tamaniosPuntos,
+        tamanioResalto=0.5, carpetaSalida=paste0(pathResultadosQC, 'mapas/Pluviómetros/01/'), 
+        shpBase=shpBase, replot=replot)
+    }
+    test0$reemplazar[test0$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
+    valoresObservaciones <- ejecutarReemplazosSRT(test0, valoresObservaciones)    
+  }
+  
   print(paste0(Sys.time(), ' - Estimando valores del set de no referencia...'))
   listaMapas <- createDefaultListaMapas(
     paramsIyM=paramsInterpolacionSetDeReferencia, fechasObservaciones=fechasObservaciones, 
@@ -140,15 +187,12 @@ applyQCTests <- function(
   colnames(estimacionSetNoReferencia) <- colnames(valoresObservaciones)[iEstacionesNoReferencia]
   
   print(paste0(Sys.time(), ' - Calculando diferencias estandarizadas...'))
-  difs <- valoresObservaciones[, iEstacionesNoReferencia, drop=F] - estimacionSetNoReferencia
-  
-  #which(rownames(valoresObservaciones) == '2017-10-11')
-  #which(colnames(valoresObservaciones[, iEstacionesNoReferencia]) == 'VILLA.SORIANO.RHT')
-  
-  means <- rowMeans(difs, na.rm=T)
-  sds <- rowSds(difs, na.rm=T)
-  sds[rowSds(valoresObservaciones[, iEstacionesDeReferencia, drop=F], na.rm=T) < 0.2 | sds < 2] <- Inf
-  stdDifs <- (difs - means) / sds
+  stdDifs <- calcStdDifs(
+    valoresObservaciones=valoresObservaciones[, iEstacionesNoReferencia, drop=F],
+    estimaciones=estimacionSetNoReferencia,
+    minSDValoresObservaciones=0.2,
+    minSDDiffs=2
+  )
   
   test0 <- createDFTestsConEstimadosYStdDifsUmbralValor(
     x=valoresObservaciones[, iEstacionesNoReferencia, drop=F],
@@ -161,8 +205,7 @@ applyQCTests <- function(
     factorHaciaArribaSiMayorAUmbralValor=7
   )
   test0 <- test0[!is.na(test0$valor), ]
-  
-  # test0[test0$fecha == '2017-02-03',]
+  # test0[test0$fecha == '2019-01-29',]
   # test0[test0$estacion == 'VILLA.SORIANO.RHT' & test0$fecha == '2017-02-12', ]
   # test0$tipoOutlier[test0$valor < 0.2 & test0$estimado > 1] <- TTO_CeroPocoProbable
   
@@ -182,18 +225,6 @@ applyQCTests <- function(
   test0$reemplazar[test0$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test0, valoresObservaciones)
 
-  if (FALSE) {
-    print(paste0(Sys.time(), ' - Estimando valores mediante universalGriddingCV...'))
-    estimacionValores <- universalGriddingCV(
-      coordsObservaciones=coordsObservaciones,
-      fechasObservaciones=fechasObservaciones[1:10],
-      valoresObservaciones=valoresObservaciones[1:10, ], 
-      params=paramsInterpolacionSetDeReferencia,
-      pathsRegresores=regresorCombinado,
-      estimarNAs=FALSE
-    )
-    print(paste0(Sys.time(), ' - Finalizado estimando valores mediante universalGriddingCV...'))
-  }
   
   print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 1...'))
   # Two rounds of QC tests

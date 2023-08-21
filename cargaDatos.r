@@ -10,7 +10,7 @@ if (file.exists('.env')) {
   envvars <- strsplit(readLines('.env'), split='=')
   envvars <- setNames(lapply(envvars, function(x) x[2]), sapply(envvars, function(x) x[1]))
   do.call(Sys.setenv, envvars)
-  Sys.getenv("URL_MEDIDAS_PLUVIOS_TELEMEDIDA")
+  # Sys.getenv("URL_MEDIDAS_PLUVIOS_TELEMEDIDA")
 }
 
 postFijoPluvios <- ''
@@ -137,7 +137,7 @@ if (!is.null(estacionesADescartar)) {
 source('descargaDatosSatelites.r')
 source(paste0(pathSTInterp, 'interpolar/interpolarEx.r'))
 print(paste0(Sys.time(), ' - Cargando shapefile con mapa base de ', pathSHPMapaBase, '...'))
-shpBase <- cargarSHP(pathSHPMapaBase)
+shpBase <- cargarSHP(pathSHP=pathSHPMapaBase)
 print(paste0(Sys.time(), ' - Descargando datos de GSMaP del ', dt_ini, ' al ', dt_fin))
 pathsGSMaP <- descargaGSMaP(
   dt_ini=dt_ini, dt_fin=dt_fin, horaUTCInicioAcumulacion=horaUTCInicioAcumulacion, 
@@ -182,7 +182,20 @@ pathsRegresores <- pathsRegresores[
 # Definición de la grilla de interpolación.
 # Igual a la del primer regresor con factorEscaladoGrillaInterpolacion celdas en la nueva grilla por
 # cleda del satelite
-grillaRegresor <- sp::geometry(suppressWarnings(readGDAL(pathsRegresores[1, 1], silent=T)))
+
+iPrimerNoNA <- which(!is.na(pathsRegresores))
+if (length(iPrimerNoNA) > 0)  {
+  grillaRegresor <- sp::geometry(
+    suppressWarnings(readGDAL(pathsRegresores[iPrimerNoNA[1]], silent=T))
+  )
+} else {
+  # No se pudo bajar datos de ningún satélite, usamos la grilla de interpolación
+  # por defecto
+  grillaRegresor <- sp::geometry(
+    suppressWarnings(readGDAL(paste0(pathDatos, "grilla_uy.tif"), silent=T))
+  )
+}
+
 newNCeldasX <- as.integer(round(grillaRegresor@grid@cells.dim[1] * factorEscaladoGrillaInterpolacion))
 coordsAInterpolar <- grillaPixelesSobreBoundingBox(
   objSP=grillaRegresor, outputCRS=CRS(proj4stringAInterpolar), nCeldasX=newNCeldasX
@@ -244,13 +257,17 @@ if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
 
 estacionesDeReferencia <- readLines(con=file(paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt')))
 iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
+
+# estacionesDeReferencia[!(estacionesDeReferencia %in% estaciones$NombreEstacionR)]
+
 stopifnot(length(estacionesDeReferencia) == sum(iEstacionesDeReferencia))
 iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
 iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
 
 getCorrs <- function(coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms=TRUE) {
   valoresRegresores <- extraerValoresRegresoresSobreSP(
-    objSP=coordsObservaciones, pathsRegresores=pathsRegresores)
+    objSP=coordsObservaciones, pathsRegresores=pathsRegresores
+  )
   
   if (logTransforms) {
     valoresObservaciones <- log1p(valoresObservaciones)
@@ -260,22 +277,26 @@ getCorrs <- function(coordsObservaciones, valoresObservaciones, pathsRegresores,
   # j <- 1
   # i <- 7
   # i <- which(row.names(valoresObservaciones) == '2017-04-13')
-  corrs <- sapply(1:ncol(pathsRegresores), function(j) {
-    return(
-      sapply(1:nrow(valoresObservaciones), FUN = function(i) {
-        idx <- !is.na(valoresObservaciones[i, ]) & !is.na(valoresRegresores[[j]][i, ])
-        if (any(idx)) {
-          if (max(abs(valoresObservaciones[i, idx] - valoresRegresores[[j]][i, idx])) <= 1e-3) {
-            return(1)
+  if (ncol(pathsRegresores) > 0) {
+    corrs <- sapply(1:ncol(pathsRegresores), function(j) {
+      return(
+        sapply(1:nrow(valoresObservaciones), FUN = function(i) {
+          idx <- !is.na(valoresObservaciones[i, ]) & !is.na(valoresRegresores[[j]][i, ])
+          if (any(idx)) {
+            if (max(abs(valoresObservaciones[i, idx] - valoresRegresores[[j]][i, idx])) <= 1e-3) {
+              return(1)
+            } else {
+              return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], 
+                         use = "pairwise.complete.obs", method = "pearson"))
+            }        
           } else {
-            return(cor(valoresObservaciones[i, idx], valoresRegresores[[j]][i, idx], 
-                       use = "pairwise.complete.obs", method = "pearson"))
-          }        
-        } else {
-          return(NA)
-        }})
-    )
-  })
+            return(NA)
+          }})
+      )
+    })
+  } else {
+    corrs <- matrix(data=NA, nrow=nrow(pathsRegresores), ncol=0)
+  }
   if (!is.matrix(corrs)) {
     corrs <- matrix(corrs, nrow = nrow(pathsRegresores), ncol=ncol(pathsRegresores), 
                     dimnames=dimnames(pathsRegresores))
@@ -301,14 +322,16 @@ getRegresorCombinado <- function(
     ncol=1, 
     dimnames=list(rownames(valoresObservaciones), 'Combinado')
   )
-  for (iRow in 1:nrow(pathsRegresores)) {
-    idx <- which.max(corrs[iRow, ])
-    if (length(idx) > 0) {
-      res[iRow, 1] <- pathsRegresores[iRow, idx]
-    } else if (!is.na(pathsRegresores[iRow, 1])) {
-      res[iRow, 1] <- pathsRegresores[iRow, 1]
-    } else {
-      res[iRow, 1] <- pathsRegresores[iRow, 2] 
+  if (ncol(pathsRegresores) > 0) {
+    for (iRow in 1:nrow(pathsRegresores)) {
+      idx <- which.max(corrs[iRow, ])
+      if (length(idx) > 0) {
+        res[iRow, 1] <- pathsRegresores[iRow, idx]
+      } else if (!is.na(pathsRegresores[iRow, 1])) {
+        res[iRow, 1] <- pathsRegresores[iRow, 1]
+      } else {
+        res[iRow, 1] <- pathsRegresores[iRow, 2] 
+      }
     }
   }
   return(res)

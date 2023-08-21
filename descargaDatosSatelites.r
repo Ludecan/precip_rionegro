@@ -135,7 +135,6 @@ descargaGSMaP <- function(
         ctl=ctl, 
         shpBase=shpBase,
         overlap=FALSE, 
-        nCoresAUsar=nCoresAUsar, 
         archivoSalidaUsaFechaFinal=TRUE,
         borrarArchivosFallidos=FALSE
       )
@@ -182,7 +181,8 @@ descargaIMERG <- function(
   # Armo urls y pathsLocales horarios
   mediasHoras <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm) + 30 * 60, by="30 mins")
   
-  productRevision <- rep('C', length(mediasHoras))
+  productRevision <- rep('D', length(mediasHoras))
+  productRevision[between(mediasHoras, "2022-05-08 16:00:00 -03", "2023-07-01 13:30:00 -03")] <- 'C'
   productRevision[mediasHoras < as.POSIXct("2022-05-08 16:00:00 -03")] <- 'B'
   
   urls <- paste0(
@@ -244,7 +244,7 @@ descargaIMERG <- function(
     curlOpts <- list(use_ssl=3, netrc=1, timeout=600L, connecttimeout=600L)
     res <- descargarArchivos(
       urls=urls[iPeriodosADescargar], nombresArchivosDestino=pathsLocales[iPeriodosADescargar],
-      forzarReDescarga=forzarReDescarga, maxRetries=2, segundosEntreIntentos=5, 
+      forzarReDescarga=forzarReDescarga, maxRetries=2L, segundosEntreIntentos=5L, 
       curlOpts=curlOpts, nConexionesSimultaneas=nConexionesSimultaneas, 
       do_unzip=do_unzip[iPeriodosADescargar]
     )
@@ -269,7 +269,7 @@ descargaIMERG <- function(
         formatoNomArchivoSalida=paste0(pathSalida, productVersion, '/%Y%m%d.tif'),
         minNfechasParaAgregar=numPeriodos, nFechasAAgregar=numPeriodos, 
         funcionAgregacion=base::sum, shpBase=shpBase, overlap=FALSE, 
-        funcEscalado=function(x) { x / 20 }, nCoresAUsar=nCoresAUsar, 
+        funcEscalado=function(x) { x / 20 }, 
         archivoSalidaUsaFechaFinal=TRUE,
         borrarArchivosFallidos=FALSE
       )
