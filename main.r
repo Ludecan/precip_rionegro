@@ -61,7 +61,7 @@ estacionesADescartar <- NULL
 horaUTCInicioAcumulacion <- 10
 horaLocalInicioAcumulacion <- horaUTCInicioAcumulacion - 3
 forzarReDescarga <- !interactive()
-#forzarReDescarga <- TRUE
+# forzarReDescarga <- TRUE
 borrarDatosOriginales <- forzarReDescarga
 #borrarDatosOriginales <- FALSE
 pathResultadosOperativos = 'Resultados/Operativo/'
@@ -180,6 +180,7 @@ print(paste0(Sys.time(), ' - Obteniendo regresor de maxima correlacion...'))
 pathsRegresores <- getRegresorCombinado(
   coordsObservaciones, valoresObservaciones, pathsRegresores, logTransforms = FALSE
 )
+print(pathsRegresores)
 params$signosValidosRegresores <- rep(1, ncol(pathsRegresores))
 names(params$signosValidosRegresores) <- colnames(pathsRegresores)
 # Descomentar esto para usar Kriging Ordinario
@@ -250,3 +251,4 @@ if (file.exists(archAcumuladosAyer)) {
 
 write.table(x = acumuladosPorSubCuencas, file = archAcumuladosHoy, append=TRUE, quote = FALSE,
             sep = '\t', na = '-1111', dec = '.', row.names = TRUE, col.names = FALSE)
+
