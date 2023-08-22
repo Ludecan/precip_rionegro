@@ -98,10 +98,6 @@ descargaGSMaP <- function(
       print(paste0(
         Sys.time(), " - Downloading ", length(iHorasADescargar), " files for ", length(iNoExisten), 
         " days. Output Path: ", pathSalida, productVersion, "/"))
-      if (length(pathsLocalesDiarios) == 1) {
-        print(paste0(
-          Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
-      }
     }
     
     res <- descargarArchivos(
@@ -143,6 +139,11 @@ descargaGSMaP <- function(
       unlink(pathsLocales)
       unlink(pathsLocalesDescomprimidos)
     }
+  }
+  
+  if (verbose && (length(pathsLocalesDiarios) == 1) && file.exists(pathsLocalesDiarios[1])) {
+    print(paste0(
+      Sys.time(), " - Daily accumulation saved to: ", pathsLocalesDiarios[1]))
   }
   
   paths <- matrix(
@@ -235,10 +236,6 @@ descargaIMERG <- function(
       print(paste0(
         Sys.time(), " - Downloading ", length(iPeriodosADescargar), " files for ", 
         length(iNoExisten), " days. Output Path: ", pathSalida, productVersion, "/"))
-      if (length(pathsLocalesDiarios) == 1) {
-        print(paste0(
-          Sys.time(), " - Daily accumulation will be saved to: ", pathsLocalesDiarios[1]))
-      }
     }
 
     curlOpts <- list(use_ssl=3, netrc=1, timeout=600L, connecttimeout=600L)
@@ -277,6 +274,11 @@ descargaIMERG <- function(
     if (borrarDatosOriginales) {
       unlink(pathsLocales)
     }
+  }
+  
+  if (verbose && (length(pathsLocalesDiarios) == 1) && file.exists(pathsLocalesDiarios[1])) {
+    print(paste0(
+      Sys.time(), " - Daily accumulation saved to: ", pathsLocalesDiarios[1]))
   }
   
   paths <- matrix(
