@@ -202,7 +202,6 @@ coordsAInterpolar <- grillaPixelesSobreBoundingBox(
 )
 # mapearGrillaGGPlot(SpatialPixelsDataFrame(coordsAInterpolar, data.frame(rep(1, length(coordsAInterpolar)))), spTransform(shpBase, CRSobj = CRS(proj4string(coordsAInterpolar))))
 
-
 # Convierto los dataframes del paso 2 a objetos espaciales del paquete SP
 # Convertimos el data.frame de estaciones en un objeto espacial de tipo SpatialPointsDataFrame, es 
 # un objeto espacial con geometrías tipo puntos y con una tabla de valores asociados
@@ -255,7 +254,15 @@ if (!identicalCRS(coordsAInterpolar, shpSubCuencas)) {
   shpSubCuencas <- spTransform(shpSubCuencas, coordsAInterpolar@proj4string)
 }
 
-estacionesDeReferencia <- readLines(con=file(paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt')))
+# Tomo las estaciones que estén a aproximadamente 1 grado de distancia del área del país
+areaPais <- getPoligonoBoundingBox(objSP=shpBase, factorExtensionX=1.4)
+iEstacionesAConservar <- which(!is.na(over(geometry(coordsObservaciones), geometry(areaPais))))
+estaciones <- estaciones[iEstacionesAConservar, ]
+coordsObservaciones <- coordsObservaciones[iEstacionesAConservar, ]
+valoresObservaciones <- valoresObservaciones[, iEstacionesAConservar, drop=F]
+rm(iEstacionesAConservar)
+
+estacionesDeReferencia <- readLines(con=paste0(pathDatos, 'pluviometros/estacionesDeReferencia.txt'))
 iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferencia
 
 # estacionesDeReferencia[!(estacionesDeReferencia %in% estaciones$NombreEstacionR)]

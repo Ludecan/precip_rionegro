@@ -1,5 +1,5 @@
 # Base R image
-FROM rstudio/r-base:4.2.0-focal
+FROM rstudio/r-base:4.2.3-focal
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,7 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install R packages
 COPY renv.lock ./
+COPY .Rprofile .Rprofile
+COPY renv/activate.R renv/activate.R
+COPY renv/settings.json renv/settings.json
 RUN R -e 'install.packages("renv", repos="https://cran.rstudio.com/")'
+RUN R -e 'print(getOption("repos"))'
 RUN R -e 'renv::restore()'
 
 COPY st_interp ./st_interp

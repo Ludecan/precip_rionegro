@@ -1,3 +1,4 @@
+options("rgdal_show_exportToProj4_warnings"="none")
 if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rionegro')
 } else if (dir.exists('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')) { setwd('/media/palfaro/Seagate Backup Plus Drive/ADME/precip_rionegro')
 } else if (dir.exists('D:/ADME/precip_rionegro')) { setwd('D:/ADME/precip_rionegro') }
@@ -10,7 +11,6 @@ if (dir.exists('G:/workspace/precip_rionegro')) { setwd('G:/workspace/precip_rio
 # utilizado por INUMET, donde se guarda en la fecha de inicio pues el período tiene más horas (14)
 # el día 15 que las que tiene el día 16.
 
-
 # Imprimo los parámetros con los que se llamó el script para que quede en el log
 paramsStr <- commandArgs(trailingOnly=T)
 if (interactive()) {
@@ -19,7 +19,7 @@ if (interactive()) {
   #paramsStr <- 'dt_fin=2018-02-07'
   #paramsStr <- 'dt_fin=2022-01-05;dt_ini=2022-01-01'
   #paramsStr <- 'dt_fin=2023-08-16'
-  paramsStr <- 'dt_fin=2023-11-15'
+  paramsStr <- 'dt_fin=2023-11-22'
   #paramsStr <- 'dt_fin=2022-05-09'
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
@@ -229,7 +229,6 @@ print(paste0(Sys.time(), ' - Finalizado. Resultados guardados en ', getwd(), '/'
 acumuladosPorSubCuencas <- t(agregacionEspacialAPoligonosDesdeArchivos(
   pathsSpObjs=listaMapas$nombreArchivo, shpPoligonos=shpSubCuencas, funcionAgregacion=base::mean,
   zcol=1, na.rm=T, nCoresAUsar=0, guardarCSV=FALSE, retornarResultados=TRUE, useRaster=TRUE))
-
 
 #valoresObservaciones[which(apply(is.na(acumuladosPorSubCuencas), 1, all)), ]
 #unlink(changeFileExt(listaMapas$nombreArchivo[which(apply(is.na(acumuladosPorSubCuencas), 1, all))], ".tif"))
