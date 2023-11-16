@@ -225,7 +225,6 @@ applyQCTests <- function(
   test0$reemplazar[test0$tipoOutlier %in% tiposOutliersValoresSospechosos] <- 1
   valoresObservaciones <- ejecutarReemplazosSRT(test0, valoresObservaciones)
 
-  
   print(paste0(Sys.time(), ' - Ejecutando Test Espacial de Precipitación. Pasada 1...'))
   # Two rounds of QC tests
   test1 <- testEspacialPrecipitacion(
@@ -276,7 +275,8 @@ applyQCTests <- function(
   # Plus another round of testing with the satellites. If for a given observation both satellites
   # agree it's an extreme value, we discard it
   listaMapas <- createDefaultListaMapas(
-    paramsInterpolacion, fechasObservaciones=fechasObservaciones, dibujarEscalaFija=FALSE)
+    paramsInterpolacion, fechasObservaciones=fechasObservaciones, dibujarEscalaFija=FALSE
+  )
   
   requiredCols <- c('IMERG_V06', 'GSMaP_v7')
   if (all(requiredCols %in% colnames(pathsRegresores))) {
