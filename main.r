@@ -19,13 +19,14 @@ if (interactive()) {
   #paramsStr <- 'dt_fin=2018-02-07'
   #paramsStr <- 'dt_fin=2022-01-05;dt_ini=2022-01-01'
   #paramsStr <- 'dt_fin=2023-08-16'
-  paramsStr <- 'dt_fin=2023-08-20'
+  paramsStr <- 'dt_fin=2023-11-15'
   #paramsStr <- 'dt_fin=2022-05-09'
 } else {
   # Deshabilito warnings en corridas de produccion, pero las mantengo en sesiones
   # interactivas de desarrollo
   options(warn=-1)
 }
+
 if (length(paramsStr) == 0) { paramsStr <- '' }
 print(paste0('ParamsStr="', paramsStr, '"'))
 
