@@ -182,7 +182,8 @@ descargaIMERG <- function(
   # Armo urls y pathsLocales horarios
   mediasHoras <- seq(as.POSIXct(dt_ini_gpm), as.POSIXct(dt_fin_gpm) + 30 * 60, by="30 mins")
   
-  productRevision <- rep('D', length(mediasHoras))
+  productRevision <- rep('E', length(mediasHoras))
+  productRevision[between(mediasHoras, "2023-07-01 14:00:00 -03", "2023-11-08 01:30:00 -03")] <- 'C'
   productRevision[between(mediasHoras, "2022-05-08 16:00:00 -03", "2023-07-01 13:30:00 -03")] <- 'C'
   productRevision[mediasHoras < as.POSIXct("2022-05-08 16:00:00 -03")] <- 'B'
   

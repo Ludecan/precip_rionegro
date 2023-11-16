@@ -260,7 +260,6 @@ iEstacionesDeReferencia <- estaciones$NombreEstacionR %in% estacionesDeReferenci
 
 # estacionesDeReferencia[!(estacionesDeReferencia %in% estaciones$NombreEstacionR)]
 
-stopifnot(length(estacionesDeReferencia) == sum(iEstacionesDeReferencia))
 iEstacionesNoReferencia <- which(!iEstacionesDeReferencia)
 iEstacionesDeReferencia <- which(iEstacionesDeReferencia)
 
@@ -336,3 +335,4 @@ getRegresorCombinado <- function(
   }
   return(res)
 }
+
