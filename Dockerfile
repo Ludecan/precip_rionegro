@@ -23,8 +23,9 @@ COPY .Rprofile .Rprofile
 COPY renv/activate.R renv/activate.R
 COPY renv/settings.json renv/settings.json
 
-RUN R -e 'print(getOption("repos"))'
 RUN R -e 'renv::restore()'
+
+RUN mkdir -p .cache/R/renv
 
 COPY st_interp ./st_interp
 COPY *.r ./

@@ -452,6 +452,43 @@
       ],
       "Hash": "543776ae6848fde2f48ff3816d0628bc"
     },
+    "benchmarkme": {
+      "Package": "benchmarkme",
+      "Version": "1.0.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "benchmarkmeData",
+        "compiler",
+        "doParallel",
+        "dplyr",
+        "foreach",
+        "graphics",
+        "httr",
+        "methods",
+        "parallel",
+        "stringr",
+        "tibble",
+        "utils"
+      ],
+      "Hash": "eaa6ca07e7dfe815da4c1f62a425d9d2"
+    },
+    "benchmarkmeData": {
+      "Package": "benchmarkmeData",
+      "Version": "1.0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "dplyr",
+        "graphics",
+        "tibble",
+        "utils"
+      ],
+      "Hash": "03127f8e60281ab3c52f96bb98056dcb"
+    },
     "bitops": {
       "Package": "bitops",
       "Version": "1.0-7",
@@ -714,6 +751,16 @@
       ],
       "Hash": "6b9602c7ebbe87101a9c8edb6e8b6d21"
     },
+    "devEMF": {
+      "Package": "devEMF",
+      "Version": "4.4-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "48874ef8f5b161d53128ad51d3021989"
+    },
     "devtools": {
       "Package": "devtools",
       "Version": "2.4.5",
@@ -828,6 +875,29 @@
         "yaml"
       ],
       "Hash": "14fa1f248b60ed67e1f5418391a17b14"
+    },
+    "dplyr": {
+      "Package": "dplyr",
+      "Version": "1.1.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6",
+        "cli",
+        "generics",
+        "glue",
+        "lifecycle",
+        "magrittr",
+        "methods",
+        "pillar",
+        "rlang",
+        "tibble",
+        "tidyselect",
+        "utils",
+        "vctrs"
+      ],
+      "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
     },
     "e1071": {
       "Package": "e1071",
@@ -1724,6 +1794,23 @@
         "askpass"
       ],
       "Hash": "2a0dc8c6adfb6f032e4d4af82d258ab5"
+    },
+    "openxlsx": {
+      "Package": "openxlsx",
+      "Version": "4.2.5.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "grDevices",
+        "methods",
+        "stats",
+        "stringi",
+        "utils",
+        "zip"
+      ],
+      "Hash": "c03b4c18d42da881fb8e15a085c2b9d6"
     },
     "pROC": {
       "Package": "pROC",
@@ -2675,6 +2762,22 @@
         "vctrs"
       ],
       "Hash": "a84e2cc86d07289b3b6f5069df7a004c"
+    },
+    "tidyselect": {
+      "Package": "tidyselect",
+      "Version": "1.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "cli",
+        "glue",
+        "lifecycle",
+        "rlang",
+        "vctrs",
+        "withr"
+      ],
+      "Hash": "79540e5fcd9e0435af547d885f184fd5"
     },
     "tiff": {
       "Package": "tiff",
