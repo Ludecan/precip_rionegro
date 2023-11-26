@@ -12,13 +12,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libfribidi-dev \
 	libudunits2-dev \
 	jags
+	
+WORKDIR /precip_rionegro
+COPY renv.lock renv.lock
+
+RUN R -e 'install.packages("renv", repos="https://cran.rstudio.com/")'
 
 # Install R packages
-COPY renv.lock ./
 COPY .Rprofile .Rprofile
 COPY renv/activate.R renv/activate.R
 COPY renv/settings.json renv/settings.json
-RUN R -e 'install.packages("renv", repos="https://cran.rstudio.com/")'
+
 RUN R -e 'print(getOption("repos"))'
 RUN R -e 'renv::restore()'
 
