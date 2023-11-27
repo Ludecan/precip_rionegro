@@ -310,7 +310,8 @@ iMasLejano <- which.max(mapaDistancias$value)
 distMax <- achicarToNDigitos(mapaDistancias$value[iMasLejano], 0) 
 puntoMasLejano <- SpatialPoints(
   sp::coordinates(coordsAInterpolar)[iMasLejano,,drop=F], proj4string=coordsAInterpolar@proj4string)
-circuloPuntoMasLejano <- gBuffer(puntoMasLejano, width = distMax, quadsegs = 32)
+# circuloPuntoMasLejano <- gBuffer(puntoMasLejano, width = distMax, quadsegs = 32)
+circuloPuntoMasLejano <- as_Spatial(st_buffer(st_as_sf(puntoMasLejano), dist = distMax, nQuadSegs = 32))
 
 dfRadio <- data.frame(
   x1=sp::coordinates(puntoMasLejano)[,1], y1=sp::coordinates(puntoMasLejano)[,2],
@@ -362,5 +363,5 @@ source('aplicaQC.r')
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
-  plotMaps=TRUE)
+  shpBase=shpBase, plotMaps=TRUE)
 

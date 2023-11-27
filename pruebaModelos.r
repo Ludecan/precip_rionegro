@@ -52,7 +52,8 @@ if (!file.exists(localFileQCed) || file.info(localFileQCed)$size <= 0) {
   valoresObservaciones <- applyQCTests(
     coordsObservaciones, fechasObservaciones, valoresObservaciones,
     paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
-    plotMaps=TRUE, pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/')
+    shpBase=shpBase, plotMaps=TRUE, 
+    pathResultadosQC=paste0('Resultados/2-QC', nombreExperimento, '/')
   )
   
   grabarSeriesArchivoUnico(

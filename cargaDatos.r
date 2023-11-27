@@ -238,7 +238,8 @@ xyLims <- getXYLims(spObjs = c(coordsAInterpolar, shpBase), ejesXYLatLong = T)
 grillaRegresor <- as(object = grillaRegresor, Class = 'SpatialPixels')
 shpRioNegro <- shpBase[shpBase$NOMBRE == 'CuencaRioNegro', ]
 if (length(shpRioNegro) != 1) { stop('cargaDatos.r: error obteniendo polígono del Río Negro') }
-shpBufferRioNegro <- spTransform(gBuffer(shpRioNegro, width = 60), grillaRegresor@proj4string)
+shpBufferRioNegro <- as_Spatial(st_buffer(st_as_sf(shpRioNegro), dist = 60))
+shpBufferRioNegro <- spTransform(shpBufferRioNegro, grillaRegresor@proj4string)
 i <- !is.na(over(grillaRegresor, shpBufferRioNegro))
 coordsQC <- grillaRegresor[i, ]
 
