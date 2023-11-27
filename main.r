@@ -79,7 +79,7 @@ print(paste0(Sys.time(), ' - Aplicando Tests de QC...'))
 valoresObservaciones <- applyQCTests(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, 
   paramsInterpolacion=paramsInterpolacionQCTests, pathsRegresores=pathsRegresores, 
-  plotMaps=TRUE
+  shpBase=shpBase, plotMaps=TRUE
 )
 
 # Guardamos el mapa de pluviómetros y satélites en datos/mapas/
@@ -91,7 +91,7 @@ print(paste0(Sys.time(), ' - Mapeando observaciones de pluviometros y satelites.
 plotObservacionesYRegresores(
   coordsObservaciones=coordsObservaciones, fechasObservaciones=fechasObservaciones,
   pathsRegresoresAEvaluar=pathsRegresores, valoresObservaciones=valoresObservaciones, 
-  shpBase=shpBase, replot = forzarReDescarga, grillaAlternativaRegresores=coordsAInterpolar, 
+  shpBase=shpBase, replot=forzarReDescarga, grillaAlternativaRegresores=coordsAInterpolar,
   carpetaSalida='datos/mapas/', especificacionEscala=especificacionEscala)
 
 

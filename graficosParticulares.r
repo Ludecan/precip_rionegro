@@ -297,13 +297,13 @@ plotObservacionesYRegresores <- function(
     pathsRegresoresAEvaluar=pathsRegresores, shpBase, nColsPlots=ncol(pathsRegresoresAEvaluar)+1, 
     carpetaSalida='datos/mapas/', replot=FALSE, grillaAlternativaRegresores=coordsAInterpolar,
     especificacionEscala=NULL) {
-  # replot=F
+  # replot=TRUE
   plotObservacionesYRegresoresI <- function(
       iFecha, coordsObservaciones, fechasObservaciones, valoresObservaciones, 
       pathsRegresoresAEvaluar, shpBase, nColsPlots, carpetaSalida, replot, 
       grillaAlternativaRegresores, especificacionEscala) {
-    # iFecha <- 481
-    print(iFecha)
+    # iFecha <- 1
+    # print(iFecha)
     
     nomArchMapa <- paste(carpetaSalida, format(fechasObservaciones[iFecha], format='%Y%m%d'), '.png', sep='')
     

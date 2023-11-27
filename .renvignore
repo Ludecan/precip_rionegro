@@ -14,6 +14,7 @@ ResultadosEjemplo/
 .Rproj.user
 tiemposEjecucion.txt
 .git/
+renv/
 .env
 log/
 _netrc

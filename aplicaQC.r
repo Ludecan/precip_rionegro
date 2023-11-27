@@ -106,7 +106,7 @@ paramsInterpolacionQCTests <- createParamsInterpolarYMapear(
 
 applyQCTests <- function(
   coordsObservaciones, fechasObservaciones, valoresObservaciones, paramsInterpolacion, 
-  pathsRegresores, plotMaps=FALSE, pathResultadosQC='Resultados/2-QC/'
+  pathsRegresores, shpBase, plotMaps=FALSE, pathResultadosQC='Resultados/2-QC/'
 ) {
   replot <- FALSE
   # replot <- TRUE
